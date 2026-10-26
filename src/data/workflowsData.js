@@ -1,0 +1,88 @@
+export const workflowTemplates = [
+  {
+    id: 'wf-crating',
+    name: 'Industrial Crating',
+    category: 'Industrial Crating',
+    version: 4,
+    allowJobCustomisation: true,
+    skipOutOfScope: true,
+    requirePhotos: false,
+    stages: [
+      { id: 's1', name: 'Onboarding', ownerRole: 'Unit manager', days: 1, service: 'Admin', photos: false },
+      { id: 's2', name: 'Site survey', ownerRole: 'Supervisor', days: 2, service: 'Site survey', photos: true },
+      { id: 's3', name: 'Design', ownerRole: 'Designer', days: 3, service: 'Design', photos: false },
+      { id: 's4', name: 'Production', ownerRole: 'Unit manager', days: 5, service: 'Production', photos: false },
+      { id: 's5', name: 'Packing', ownerRole: 'Packing supervisor', days: 2, service: 'Packing', photos: true },
+      { id: 's6', name: 'Delivery', ownerRole: 'Logistics', days: 1, service: 'Delivery', photos: true },
+    ],
+  },
+  {
+    id: 'wf-relocation',
+    name: 'Office Relocation',
+    category: 'Relocation',
+    version: 2,
+    allowJobCustomisation: true,
+    skipOutOfScope: true,
+    requirePhotos: true,
+    stages: [
+      { id: 's1', name: 'Onboarding', ownerRole: 'Unit manager', days: 1, service: 'Admin', photos: false },
+      { id: 's2', name: 'Site survey', ownerRole: 'Supervisor', days: 1, service: 'Site survey', photos: true },
+      { id: 's3', name: 'Packing', ownerRole: 'Packing supervisor', days: 2, service: 'Packing', photos: true },
+      { id: 's4', name: 'Delivery', ownerRole: 'Logistics', days: 1, service: 'Delivery', photos: true },
+      { id: 's5', name: 'Unpacking', ownerRole: 'Supervisor', days: 1, service: 'Installation', photos: false },
+    ],
+  },
+  {
+    id: 'wf-product',
+    name: 'Product Packaging Design',
+    category: 'Product Packaging',
+    version: 3,
+    allowJobCustomisation: true,
+    skipOutOfScope: true,
+    requirePhotos: false,
+    stages: [
+      { id: 's1', name: 'Onboarding', ownerRole: 'Unit manager', days: 1, service: 'Admin', photos: false },
+      { id: 's2', name: 'Concept', ownerRole: 'Designer', days: 3, service: 'Design', photos: false },
+      { id: 's3', name: 'Design review', ownerRole: 'Unit manager', days: 2, service: 'Design', photos: false },
+      { id: 's4', name: 'Sampling', ownerRole: 'Designer', days: 3, service: 'Production', photos: true },
+      { id: 's5', name: 'Packing', ownerRole: 'Packing supervisor', days: 2, service: 'Packing', photos: true },
+      { id: 's6', name: 'Delivery', ownerRole: 'Logistics', days: 1, service: 'Delivery', photos: false },
+    ],
+  },
+  {
+    id: 'wf-packing',
+    name: 'Packing Only',
+    category: 'Commercial Packing',
+    version: 1,
+    allowJobCustomisation: false,
+    skipOutOfScope: true,
+    requirePhotos: true,
+    stages: [
+      { id: 's1', name: 'Onboarding', ownerRole: 'Unit manager', days: 1, service: 'Admin', photos: false },
+      { id: 's2', name: 'Material check', ownerRole: 'Packing supervisor', days: 1, service: 'Packing', photos: false },
+      { id: 's3', name: 'Packing', ownerRole: 'Packing supervisor', days: 2, service: 'Packing', photos: true },
+      { id: 's4', name: 'Dispatch', ownerRole: 'Logistics', days: 1, service: 'Delivery', photos: true },
+    ],
+  },
+  {
+    id: 'wf-export',
+    name: 'Export Packaging',
+    category: 'Export Packaging',
+    version: 2,
+    allowJobCustomisation: true,
+    skipOutOfScope: true,
+    requirePhotos: true,
+    stages: [
+      { id: 's1', name: 'Onboarding', ownerRole: 'Unit manager', days: 1, service: 'Admin', photos: false },
+      { id: 's2', name: 'Design', ownerRole: 'Designer', days: 3, service: 'Design', photos: false },
+      { id: 's3', name: 'Compliance check', ownerRole: 'Unit manager', days: 1, service: 'Admin', photos: false },
+      { id: 's4', name: 'Production', ownerRole: 'Unit manager', days: 4, service: 'Production', photos: false },
+      { id: 's5', name: 'Packing', ownerRole: 'Packing supervisor', days: 2, service: 'Packing', photos: true },
+      { id: 's6', name: 'Port delivery', ownerRole: 'Logistics', days: 1, service: 'Delivery', photos: true },
+    ],
+  },
+];
+
+export function getTemplate(id) {
+  return workflowTemplates.find((template) => template.id === id);
+}
