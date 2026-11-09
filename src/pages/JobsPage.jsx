@@ -14,10 +14,9 @@ import { buildJobColumns } from '../features/jobs/jobColumns.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
 import useLookups from '../hooks/useLookups.js';
 import useSimulatedLoading from '../hooks/useSimulatedLoading.js';
-import { units } from '../data/unitsData.js';
 import { jobCategories } from '../data/categoriesData.js';
 import { CITIES, SERVICE_SCOPES } from '../data/constants.js';
-import { displayStatus, isOverdue, stageProgress } from '../utils/jobs.js';
+import { displayStatus, isOverdue, jobProgress } from '../utils/jobs.js';
 import { daysUntil } from '../utils/formatters.js';
 import { exportCsv } from '../utils/exportCsv.js';
 
@@ -38,7 +37,7 @@ const DUE_FILTERS = [
   { value: 'past', label: 'Past due date' },
 ];
 
-const EMPTY_FILTERS = { city: '', unit: '', category: '', scope: '', staff: '', due: '' };
+const EMPTY_FILTERS = { city: '', category: '', scope: '', staff: '', due: '' };
 
 export default function JobsPage() {
   const { jobs, members } = useAppData();
@@ -69,7 +68,6 @@ export default function JobsPage() {
         if (!haystack.includes(q)) return false;
       }
       if (filters.city && lookups.jobCity(job) !== filters.city) return false;
-      if (filters.unit && job.unitId !== filters.unit) return false;
       if (filters.category && job.categoryId !== filters.category) return false;
       if (filters.scope && job.scope !== filters.scope) return false;
       if (filters.staff && !job.teamIds.includes(filters.staff)) return false;
@@ -89,7 +87,6 @@ export default function JobsPage() {
 
   const activeFilterChips = [
     filters.city && { key: 'city', label: `City: ${filters.city}` },
-    filters.unit && { key: 'unit', label: `Unit: ${lookups.getUnit(filters.unit)?.name}` },
     filters.category && { key: 'category', label: `Category: ${lookups.getCategory(filters.category)?.name}` },
     filters.scope && { key: 'scope', label: `Scope: ${filters.scope}` },
     filters.staff && { key: 'staff', label: `Staff: ${lookups.getMember(filters.staff)?.name}` },
@@ -109,9 +106,8 @@ export default function JobsPage() {
         { header: 'Job', value: (j) => j.name },
         { header: 'Client', value: (j) => lookups.getClient(j.clientId)?.name },
         { header: 'City', value: (j) => lookups.jobCity(j) },
-        { header: 'Unit', value: (j) => lookups.getUnit(j.unitId)?.name },
         { header: 'Scope', value: (j) => j.scope },
-        { header: 'Stage', value: (j) => stageProgress(j).currentName },
+        { header: 'Progress', value: (j) => `${jobProgress(j).percent}%` },
         { header: 'Priority', value: (j) => j.priority },
         { header: 'Status', value: (j) => displayStatus(j) },
         { header: 'Start', value: (j) => j.startDate },
@@ -143,10 +139,9 @@ export default function JobsPage() {
         <Tabs tabs={tabs} active={activeTab} onChange={setTab} label="Job status" className="px-4" />
 
         <div className="flex flex-col gap-3.5 border-b border-line px-5 py-4.5">
-          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
             <SearchInput value={query} onChange={setQuery} placeholder="Job name, ID or client" className="sm:col-span-2 lg:col-span-1 2xl:col-span-1" />
             <SelectControl aria-label="City" value={filters.city} onChange={(e) => setFilter('city', e.target.value)} placeholder="City: All" options={CITIES} />
-            <SelectControl aria-label="Unit" value={filters.unit} onChange={(e) => setFilter('unit', e.target.value)} placeholder="Unit: All" options={units.map((u) => ({ value: u.id, label: u.name }))} />
             <SelectControl aria-label="Category" value={filters.category} onChange={(e) => setFilter('category', e.target.value)} placeholder="Category: All" options={jobCategories.map((c) => ({ value: c.id, label: c.name }))} />
             <SelectControl aria-label="Service scope" value={filters.scope} onChange={(e) => setFilter('scope', e.target.value)} placeholder="Scope: All" options={SERVICE_SCOPES} />
             <SelectControl aria-label="Assigned staff" value={filters.staff} onChange={(e) => setFilter('staff', e.target.value)} placeholder="Staff: Anyone" options={members.map((m) => ({ value: m.id, label: m.name }))} />
@@ -176,7 +171,7 @@ export default function JobsPage() {
         <div className="px-2 pb-4 pt-1 sm:px-4">
           <DataTable
             key={activeTab}
-            columns={buildJobColumns(lookups, ['id', 'name', 'category', 'unit', 'scope', 'stage', 'team', 'priority', 'status', 'due'])}
+            columns={buildJobColumns(lookups, ['id', 'name', 'category', 'scope', 'progress', 'team', 'priority', 'status', 'due'])}
             rows={tabRows}
             pageSize={8}
             loading={loading}

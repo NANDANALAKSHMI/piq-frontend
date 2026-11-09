@@ -3,19 +3,18 @@ import { CellStack } from '../../components/common/DataTable.jsx';
 import { StatusBadge, Tag } from '../../components/common/Badge.jsx';
 import { AvatarStack } from '../../components/common/Avatar.jsx';
 import ProgressBar from '../../components/common/ProgressBar.jsx';
-import { displayStatus, isOverdue, stageProgress } from '../../utils/jobs.js';
+import { displayStatus, isOverdue, jobProgress } from '../../utils/jobs.js';
 import { cn, formatDate } from '../../utils/formatters.js';
 
 const PRIORITY_ORDER = { High: 3, Medium: 2, Low: 1 };
 
-function StageCell({ job }) {
-  const progress = stageProgress(job);
+function ProgressCell({ job }) {
+  const progress = jobProgress(job);
   const tone = progress.isFinished ? 'green' : job.status === 'On hold' ? 'amber' : 'brand';
-  const label = job.status === 'Upcoming' && progress.done === 0 ? 'Not started' : `${progress.currentName} · ${progress.done}/${progress.total}`;
   return (
     <div className="flex items-center gap-2.5">
       <ProgressBar value={progress.percent} tone={tone} className="w-16" label={`${progress.percent}% complete`} />
-      <span className="text-[13px]">{label}</span>
+      <span className="text-[13px]">{progress.percent}%</span>
     </div>
   );
 }
@@ -56,25 +55,18 @@ export function buildJobColumns(lookups, keys) {
       sortValue: (job) => lookups.getCategory(job.categoryId)?.name,
       render: (job) => <CellStack primary={lookups.getCategory(job.categoryId)?.name ?? '—'} secondary={job.subcategory} />,
     },
-    unit: {
-      key: 'unit',
-      header: 'Unit',
-      sortable: true,
-      sortValue: (job) => lookups.getUnit(job.unitId)?.city,
-      render: (job) => <CellStack primary={lookups.getUnit(job.unitId)?.city ?? '—'} secondary={lookups.jobCity(job)} />,
-    },
     scope: {
       key: 'scope',
       header: 'Service scope',
       sortable: true,
       render: (job) => <Tag>{job.scope}</Tag>,
     },
-    stage: {
-      key: 'stage',
-      header: 'Workflow stage',
+    progress: {
+      key: 'progress',
+      header: 'Progress',
       sortable: true,
-      sortValue: (job) => stageProgress(job).percent,
-      render: (job) => <StageCell job={job} />,
+      sortValue: (job) => jobProgress(job).percent,
+      render: (job) => <ProgressCell job={job} />,
     },
     team: {
       key: 'team',

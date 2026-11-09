@@ -1,23 +1,18 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, KeyRound, LogOut, Upload } from 'lucide-react';
+import { Check, KeyRound, LogOut } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
 import Toggle from '../components/common/Toggle.jsx';
 import Avatar from '../components/common/Avatar.jsx';
 import Modal from '../components/common/Modal.jsx';
-import { SelectField, TextField } from '../components/common/FormFields.jsx';
+import { TextField } from '../components/common/FormFields.jsx';
 import { useToast } from '../components/common/Toast.jsx';
-import { LogoMark } from '../components/layout/Logo.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
-import { useAppData } from '../context/AppDataContext.jsx';
-import { nextId } from '../utils/jobs.js';
 import { cn } from '../utils/formatters.js';
 
 const SECTIONS = [
-  { id: 'company', label: 'Company profile' },
-  { id: 'numbering', label: 'Job & enquiry numbering' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'account', label: 'My account' },
 ];
@@ -76,25 +71,12 @@ function PasswordModal({ open, onClose, onSave }) {
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
-  const { jobs, enquiries } = useAppData();
   const { showToast } = useToast();
   const navigate = useNavigate();
-  const [company, setCompany] = useState({
-    name: 'PIQ',
-    gstin: '',
-    address: '',
-    phone: '',
-    timezone: 'Asia/Kolkata (IST, UTC+5:30)',
-    currency: 'INR (₹) · DD MMM YYYY',
-  });
-  const [prefixes, setPrefixes] = useState({ job: 'JOB-', enquiry: 'ENQ-' });
   const [notifications, setNotifications] = useState(DEFAULT_NOTIFICATIONS);
   const [passwordOpen, setPasswordOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState('company');
+  const [activeSection, setActiveSection] = useState('notifications');
 
-  const updateCompany = (key) => (e) => setCompany((c) => ({ ...c, [key]: e.target.value }));
-  const nextJob = nextId(prefixes.job, jobs.map((j) => j.id));
-  const nextEnquiry = nextId(prefixes.enquiry, enquiries.map((e) => e.id), 3);
 
   const goTo = (id) => {
     setActiveSection(id);
@@ -105,7 +87,7 @@ export default function SettingsPage() {
     <div className="flex flex-col gap-5.5">
       <PageHeader
         title="Settings"
-        subtitle="Company details, numbering, notifications and your own account."
+        subtitle="Notifications and your own account."
         actions={
           <Button variant="primary" icon={Check} onClick={() => showToast('Settings saved.')}>
             Save changes
@@ -133,38 +115,6 @@ export default function SettingsPage() {
         </Card>
 
         <div className="flex min-w-0 flex-col gap-5.5">
-          <Card id="settings-company" className="scroll-mt-24">
-            <CardHeader title="Company profile" />
-            <div className="mb-5 flex items-center gap-4">
-              <LogoMark size={64} />
-              <div className="flex flex-col gap-2">
-                <b>Company logo</b>
-                <Button size="sm" icon={Upload} onClick={() => showToast('Logo upload will be available once storage is connected.', { tone: 'info' })}>
-                  Upload new
-                </Button>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <TextField label="Company name" value={company.name} onChange={updateCompany('name')} />
-              <TextField label="GSTIN" value={company.gstin} onChange={updateCompany('gstin')} placeholder="[COMPANY GSTIN]" />
-              <TextField label="Head office address" value={company.address} onChange={updateCompany('address')} placeholder="[HEAD OFFICE ADDRESS]" />
-              <TextField label="Support phone" type="tel" value={company.phone} onChange={updateCompany('phone')} placeholder="[PHONE]" />
-              <SelectField label="Time zone" value={company.timezone} onChange={updateCompany('timezone')} options={['Asia/Kolkata (IST, UTC+5:30)', 'Asia/Dubai (GST, UTC+4)']} />
-              <SelectField label="Currency & date format" value={company.currency} onChange={updateCompany('currency')} options={['INR (₹) · DD MMM YYYY', 'USD ($) · MMM DD YYYY']} />
-            </div>
-          </Card>
-
-          <Card id="settings-numbering" className="scroll-mt-24">
-            <CardHeader title="Job & enquiry numbering" />
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <TextField label="Job ID prefix" value={prefixes.job} onChange={(e) => setPrefixes((p) => ({ ...p, job: e.target.value.toUpperCase() }))} />
-              <TextField label="Enquiry prefix" value={prefixes.enquiry} onChange={(e) => setPrefixes((p) => ({ ...p, enquiry: e.target.value.toUpperCase() }))} />
-            </div>
-            <p className="mt-3 text-[13px] text-muted">
-              Next job will be <b className="text-ink">{nextJob}</b> · next enquiry <b className="text-ink">{nextEnquiry}</b>
-            </p>
-          </Card>
-
           <Card id="settings-notifications" className="scroll-mt-24">
             <CardHeader title="Notifications" subtitle="For your account" />
             <div className="scrollbar-thin overflow-x-auto">
@@ -211,7 +161,7 @@ export default function SettingsPage() {
                 <div>
                   <b className="text-base">{user.name}</b>
                   <p className="text-[13px] text-muted">
-                    {user.email} · {user.role === 'Admin' ? 'Administrator · All units' : user.title}
+                    {user.email} · {user.role === 'Admin' ? 'Administrator' : user.title}
                   </p>
                 </div>
               </div>

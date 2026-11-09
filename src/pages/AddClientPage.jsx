@@ -11,7 +11,6 @@ import { useToast } from '../components/common/Toast.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
 import { INDUSTRIES } from '../data/clientsData.js';
 import { CITIES } from '../data/constants.js';
-import { rankUnitsForCity } from '../features/jobs/jobFormHelpers.js';
 import { cn } from '../utils/formatters.js';
 
 let locationKey = 0;
@@ -114,10 +113,9 @@ export default function AddClientPage() {
           </Card>
 
           <Card>
-            <CardHeader title="Locations" subtitle="Add every plant, office or warehouse. Jobs are created against a location, and PIQ suggests the nearest unit." />
+            <CardHeader title="Locations" subtitle="Add every plant, office or warehouse. Jobs are created against a location." />
             <div className="flex flex-col gap-3">
               {locations.map((loc, index) => {
-                const nearest = rankUnitsForCity(loc.city)[0];
                 return (
                   <div key={loc.key} className={cn('flex flex-col gap-3.5 rounded-xl border p-4', loc.primary ? 'border-brand-line bg-[#fffbf6]' : 'border-line')}>
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -158,12 +156,6 @@ export default function AddClientPage() {
                           <MapPin className="size-9 fill-brand text-navy" aria-hidden="true" />
                           <span className="absolute bottom-2.5 left-2.5 rounded-md bg-white px-2 py-1 text-xs font-medium">{loc.city}</span>
                         </div>
-                        <div className="rounded-xl border border-green-200 bg-green-50 px-3 py-2.5 text-[13px] text-green-900">
-                          <b>Nearest unit: {nearest.name}</b>
-                          <br />
-                          {nearest.distance !== null && `${nearest.distance} km · `}
-                          {nearest.services.join(', ')}
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -199,10 +191,6 @@ export default function AddClientPage() {
               <li className="border-b border-line py-2.5">
                 <b>{locations.length} location{locations.length === 1 ? '' : 's'}</b>
                 <p className="text-muted">{locations.map((l) => l.name || 'Unnamed').join(' · ')}</p>
-              </li>
-              <li className="border-b border-line py-2.5">
-                <b>Default units</b>
-                <p className="text-muted">{[...new Set(locations.map((l) => rankUnitsForCity(l.city)[0].name))].join(' · ')}</p>
               </li>
               <li className="py-2.5">
                 <b>Contact</b>

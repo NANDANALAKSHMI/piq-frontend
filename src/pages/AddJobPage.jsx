@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, MapPin, Plus } from 'lucide-react';
+import { Check, Plus } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
-import Badge, { StatusBadge, Tag } from '../components/common/Badge.jsx';
+import { StatusBadge } from '../components/common/Badge.jsx';
 import { Checkbox, SelectControl, SelectField, TextArea, TextField } from '../components/common/FormFields.jsx';
 import { Chip } from '../components/common/Tabs.jsx';
 import { AvatarStack } from '../components/common/Avatar.jsx';
@@ -12,19 +12,18 @@ import { useToast } from '../components/common/Toast.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
 import useLookups from '../hooks/useLookups.js';
 import { jobCategories } from '../data/categoriesData.js';
-import { workflowTemplates, getTemplate } from '../data/workflowsData.js';
 import { vendorCategories } from '../data/vendorsData.js';
 import { PRIORITIES, SCOPE_SERVICES, SERVICES, SERVICE_SCOPES } from '../data/constants.js';
-import { rankUnitsForCity, suggestVendors } from '../features/jobs/jobFormHelpers.js';
+import { suggestVendors } from '../features/jobs/jobFormHelpers.js';
 import { cn, daysFromToday } from '../utils/formatters.js';
 
 const DEFAULT_OWNER_TITLE = {
   'Site survey': 'Packing supervisor',
   Design: 'Packaging designer',
-  Production: 'Unit manager',
+  Production: 'Packaging designer',
   Packing: 'Packing supervisor',
   Delivery: 'Logistics coordinator',
-  Installation: 'Unit manager',
+  Installation: 'Packing supervisor',
 };
 
 function SectionTitle({ number, title, subtitle, action }) {
@@ -66,8 +65,6 @@ export default function AddJobPage() {
     scope: initialCategory.defaultScope,
     services: SCOPE_SERVICES[initialCategory.defaultScope],
     owners: {},
-    templateId: initialCategory.defaultTemplateId,
-    unitId: '',
     vendorChoices: {},
     notes: '',
   });
@@ -78,19 +75,15 @@ export default function AddJobPage() {
   const client = clients.find((c) => c.id === form.clientId);
   const location = client?.locations.find((l) => l.id === form.locationId);
   const category = jobCategories.find((c) => c.id === form.categoryId);
-  const template = getTemplate(form.templateId);
-  const rankedUnits = rankUnitsForCity(location?.city);
-  const unitId = form.unitId || rankedUnits[0].id;
-  const unit = lookups.getUnit(unitId);
 
   const ownerFor = (service) => {
     if (form.owners[service]) return form.owners[service];
     const title = DEFAULT_OWNER_TITLE[service];
-    return (members.find((m) => m.unitId === unitId && m.title === title) ?? members.find((m) => m.title === title) ?? members[0]).id;
+    return (members.find((m) => m.title === title) ?? members[0]).id;
   };
 
   const vendorRows = (category?.vendorCategoryIds ?? []).map((vcId) => {
-    const options = suggestVendors(vendors, vcId, unitId);
+    const options = suggestVendors(vendors, vcId);
     return { category: vendorCategories.find((vc) => vc.id === vcId), options, chosen: form.vendorChoices[vcId] ?? options[0]?.id ?? '' };
   });
 
@@ -98,7 +91,7 @@ export default function AddJobPage() {
 
   const changeClient = (clientId) => {
     const next = clients.find((c) => c.id === clientId);
-    set({ clientId, locationId: next.locations.find((l) => l.primary)?.id ?? next.locations[0]?.id, unitId: '' });
+    set({ clientId, locationId: next.locations.find((l) => l.primary)?.id ?? next.locations[0]?.id });
   };
 
   const changeCategory = (categoryId) => {
@@ -106,7 +99,6 @@ export default function AddJobPage() {
     set({
       categoryId,
       subcategory: next.subcategories[0]?.name ?? '',
-      templateId: next.defaultTemplateId,
       scope: next.defaultScope,
       services: SCOPE_SERVICES[next.defaultScope].length ? SCOPE_SERVICES[next.defaultScope] : form.services,
       vendorChoices: {},
@@ -135,7 +127,6 @@ export default function AddJobPage() {
     { label: 'Job details', done: Boolean(form.name.trim()) },
     { label: 'Service scope', done: form.services.length > 0 },
     { label: 'Vendors', done: vendorRows.every((r) => r.chosen || !r.options.length) },
-    { label: 'Workflow & unit', done: Boolean(form.templateId && unitId) },
   ];
 
   const handleCreate = () => {
@@ -150,9 +141,7 @@ export default function AddJobPage() {
       locationId: form.locationId,
       categoryId: form.categoryId,
       subcategory: form.subcategory,
-      unitId,
       scope: form.scope,
-      templateId: form.templateId,
       status: 'Upcoming',
       priority: form.priority,
       startDate: form.startDate,
@@ -199,7 +188,6 @@ export default function AddJobPage() {
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" role="radiogroup" aria-label="Job location">
               {client.locations.map((loc) => {
-                const nearest = rankUnitsForCity(loc.city)[0];
                 const selected = loc.id === form.locationId;
                 return (
                   <label
@@ -211,12 +199,9 @@ export default function AddJobPage() {
                   >
                     <span className="flex items-center justify-between gap-2">
                       <b>{loc.name}</b>
-                      <input type="radio" name="location" checked={selected} onChange={() => set({ locationId: loc.id, unitId: '' })} className="size-4.5 accent-navy" />
+                      <input type="radio" name="location" checked={selected} onChange={() => set({ locationId: loc.id })} className="size-4.5 accent-navy" />
                     </span>
                     <span className="text-[12.5px] text-muted">{loc.address}, {loc.city}</span>
-                    <Badge tone={nearest.distance !== null && nearest.distance < 60 ? 'green' : 'slate'} dot={false} className="self-start">
-                      {nearest.name}{nearest.distance !== null && ` · ${nearest.distance} km`}
-                    </Badge>
                   </label>
                 );
               })}
@@ -303,7 +288,7 @@ export default function AddJobPage() {
             <SectionTitle
               number={4}
               title="Vendors for this job"
-              subtitle={`Suggested by category and nearest to ${unit?.name}.`}
+              subtitle="Suggested by category."
               action={<Link to="/vendors" className="text-[13px] font-semibold text-brand-ink hover:underline">Open vendor list</Link>}
             />
             <div className="flex flex-col gap-3">
@@ -330,36 +315,10 @@ export default function AddJobPage() {
           </Card>
 
           <Card>
-            <SectionTitle number={5} title="Workflow, unit & team" action={<Link to="/workflows" className="text-[13px] font-semibold text-brand-ink hover:underline">Manage templates</Link>} />
-            <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <SelectField
-                label="Workflow template"
-                required
-                value={form.templateId}
-                onChange={(e) => set({ templateId: e.target.value })}
-                options={workflowTemplates.map((t) => ({ value: t.id, label: `${t.name} · ${t.stages.length} stages` }))}
-              />
-              <SelectField
-                label="Assigned unit"
-                required
-                value={unitId}
-                onChange={(e) => set({ unitId: e.target.value })}
-                options={rankedUnits.map((u, i) => ({ value: u.id, label: `${u.name}${u.distance !== null ? ` · ${u.distance} km` : ''}${i === 0 ? ' (nearest)' : ''}` }))}
-              />
-            </div>
-            <div className="mb-4 flex flex-wrap gap-1.5">
-              {template?.stages.map((stage, i) => (
-                <Tag key={stage.id}>
-                  {i + 1} {stage.name}
-                </Tag>
-              ))}
-            </div>
+            <SectionTitle number={5} title="Team" />
             <div className="flex flex-wrap items-center gap-3 rounded-xl bg-slate-50 p-3">
               <AvatarStack people={lookups.membersFor(teamIds)} max={5} size="sm" />
               <span className="text-[13px]">{teamIds.length} {teamIds.length === 1 ? 'person' : 'people'} assigned from service owners</span>
-              <span className="ml-auto flex items-center gap-1 text-[12.5px] text-muted">
-                <MapPin className="size-3.5" aria-hidden="true" /> {unit?.name}
-              </span>
             </div>
           </Card>
 
@@ -379,7 +338,6 @@ export default function AddJobPage() {
                 ['Dates', `${form.startDate} → ${form.dueDate} · ${form.priority}`],
                 ['Scope', `${form.scope} · ${form.services.length} service${form.services.length === 1 ? '' : 's'}`],
                 ['Vendors', `${vendorRows.filter((r) => r.chosen).length} of ${vendorRows.length} categories chosen`],
-                ['Unit & workflow', `${unit?.name} · ${template?.name}`],
               ].map(([label, value]) => (
                 <div key={label}>
                   <dt className="text-xs text-muted">{label}</dt>

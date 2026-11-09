@@ -1,4 +1,3 @@
-import { getTemplate } from '../data/workflowsData.js';
 import { daysUntil } from './formatters.js';
 
 const ACTIVE_STATUSES = ['In progress', 'On hold'];
@@ -12,20 +11,18 @@ export function displayStatus(job) {
   return isOverdue(job) ? 'Overdue' : job.status;
 }
 
-/** Stage progress for a job based on its workflow template. */
-export function stageProgress(job) {
-  const stages = job.stages ?? getTemplate(job.templateId)?.stages ?? [];
-  const total = stages.length;
-  const done = Math.min(job.currentStage, total);
-  const isFinished = done >= total;
-  return {
-    stages,
-    total,
-    done,
-    percent: total ? Math.round((done / total) * 100) : 0,
-    currentName: isFinished ? 'Delivered' : stages[done]?.name ?? '—',
-    isFinished,
-  };
+/** Overall job progress, averaged across its services. */
+export function jobProgress(job) {
+  const services = job.services ?? [];
+  const total = services.length;
+  const done = services.filter((s) => s.progress >= 100).length;
+  const percent =
+    job.status === 'Completed'
+      ? 100
+      : total
+        ? Math.round(services.reduce((sum, s) => sum + (s.progress ?? 0), 0) / total)
+        : 0;
+  return { total, done, percent, isFinished: percent >= 100 };
 }
 
 export function serviceStatus(progress) {

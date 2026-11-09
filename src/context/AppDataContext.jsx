@@ -5,7 +5,6 @@ import { enquiries as initialEnquiries } from '../data/enquiriesData.js';
 import { vendors as initialVendors } from '../data/vendorsData.js';
 import { teamMembers as initialMembers } from '../data/teamData.js';
 import { notifications as initialNotifications } from '../data/activityData.js';
-import { getTemplate } from '../data/workflowsData.js';
 import { SCOPE_SERVICES } from '../data/constants.js';
 import { nextId } from '../utils/jobs.js';
 import { daysFromToday } from '../utils/formatters.js';
@@ -44,7 +43,6 @@ export function AppDataProvider({ children }) {
   const addJob = useCallback(
     (draft) => {
       const createdId = nextId('JOB-', jobs.map((job) => job.id));
-      const template = getTemplate(draft.templateId);
       const job = {
         vendorIds: [],
         media: [],
@@ -53,32 +51,12 @@ export function AppDataProvider({ children }) {
         createdFrom: null,
         ...draft,
         id: createdId,
-        stages: template?.stages ?? [],
-        currentStage: 0,
         activity: [logEntry('created', draft.createdFrom ? `Created from enquiry ${draft.createdFrom}` : 'Job created', actorId)],
       };
       setJobs((list) => [job, ...list]);
       return createdId;
     },
     [actorId, jobs],
-  );
-
-  const advanceStage = useCallback(
-    (jobId) => {
-      updateJob(jobId, (job) => {
-        const stages = job.stages ?? getTemplate(job.templateId)?.stages ?? [];
-        const next = Math.min(job.currentStage + 1, stages.length);
-        const finished = next >= stages.length;
-        const text = finished ? 'All stages complete — job delivered' : `Stage moved to ${stages[next].name}`;
-        return {
-          currentStage: next,
-          status: finished ? 'Completed' : 'In progress',
-          services: finished ? job.services.map((s) => ({ ...s, progress: 100 })) : job.services,
-          activity: [logEntry(finished ? 'done' : 'stage', text, actorId), ...job.activity],
-        };
-      });
-    },
-    [actorId, updateJob],
   );
 
   const setJobStatus = useCallback(
@@ -195,7 +173,7 @@ export function AppDataProvider({ children }) {
 
   /** Creates (or reuses) the client and a new job from an enquiry — nothing is re-typed. */
   const convertEnquiry = useCallback(
-    (enquiry, { templateId, unitId, categoryId, dueInDays = 14 }) => {
+    (enquiry, { categoryId, dueInDays = 14 }) => {
       const existing = clients.find((c) => c.name.toLowerCase() === enquiry.company.toLowerCase());
       let clientId = existing?.id;
       let locationId = existing?.locations[0]?.id;
@@ -221,9 +199,7 @@ export function AppDataProvider({ children }) {
         locationId,
         categoryId,
         subcategory: '',
-        unitId,
         scope: enquiry.scope,
-        templateId,
         status: 'Upcoming',
         priority: 'Medium',
         startDate: daysFromToday(2),
@@ -258,7 +234,7 @@ export function AppDataProvider({ children }) {
   const inviteMember = useCallback((draft) => {
     setMembers((list) => [
       ...list,
-      { ...draft, id: localId('u'), status: 'Invited', lastActive: '—', color: 'bg-slate-500', phone: draft.phone ?? '' },
+      { status: 'Invited', ...draft, id: localId('u'), lastActive: '—', color: 'bg-slate-500', phone: draft.phone ?? '' },
     ]);
   }, []);
 
@@ -273,7 +249,7 @@ export function AppDataProvider({ children }) {
   const value = useMemo(
     () => ({
       jobs, clients, enquiries, vendors, members, notifications,
-      addJob, updateJob, advanceStage, setJobStatus, setServiceProgress, addComment, addMedia,
+      addJob, updateJob, setJobStatus, setServiceProgress, addComment, addMedia,
       addClient, addLocation,
       addEnquiry, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry,
       addVendor, updateVendor,
@@ -282,7 +258,7 @@ export function AppDataProvider({ children }) {
     }),
     [
       jobs, clients, enquiries, vendors, members, notifications,
-      addJob, updateJob, advanceStage, setJobStatus, setServiceProgress, addComment, addMedia,
+      addJob, updateJob, setJobStatus, setServiceProgress, addComment, addMedia,
       addClient, addLocation,
       addEnquiry, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry,
       addVendor, updateVendor,

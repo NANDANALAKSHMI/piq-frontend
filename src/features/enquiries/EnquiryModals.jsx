@@ -6,8 +6,6 @@ import { SelectField, TextArea, TextField } from '../../components/common/FormFi
 import { CITIES, SCOPE_SERVICES, SERVICES, SERVICE_SCOPES } from '../../data/constants.js';
 import { ENQUIRY_SOURCES } from '../../data/enquiriesData.js';
 import { jobCategories } from '../../data/categoriesData.js';
-import { workflowTemplates } from '../../data/workflowsData.js';
-import { rankUnitsForCity } from '../jobs/jobFormHelpers.js';
 import { daysFromToday } from '../../utils/formatters.js';
 
 const EMPTY_ENQUIRY = {
@@ -125,11 +123,7 @@ export function FollowUpModal({ open, enquiry, onClose, onSave }) {
 }
 
 export function ConvertModal({ open, enquiry, onClose, onConvert }) {
-  const ranked = rankUnitsForCity(enquiry.city);
   const [categoryId, setCategoryId] = useState(jobCategories[0].id);
-  const category = jobCategories.find((c) => c.id === categoryId);
-  const [templateId, setTemplateId] = useState(category.defaultTemplateId);
-  const [unitId, setUnitId] = useState(ranked[0].id);
 
   return (
     <Modal
@@ -140,7 +134,7 @@ export function ConvertModal({ open, enquiry, onClose, onConvert }) {
       footer={
         <>
           <Button onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={() => onConvert({ categoryId, templateId, unitId })}>
+          <Button variant="primary" onClick={() => onConvert({ categoryId })}>
             Create job
           </Button>
         </>
@@ -155,19 +149,8 @@ export function ConvertModal({ open, enquiry, onClose, onConvert }) {
         <SelectField
           label="Job category"
           value={categoryId}
-          onChange={(e) => {
-            const next = jobCategories.find((c) => c.id === e.target.value);
-            setCategoryId(next.id);
-            setTemplateId(next.defaultTemplateId);
-          }}
+          onChange={(e) => setCategoryId(e.target.value)}
           options={jobCategories.map((c) => ({ value: c.id, label: c.name }))}
-        />
-        <SelectField label="Workflow template" value={templateId} onChange={(e) => setTemplateId(e.target.value)} options={workflowTemplates.map((t) => ({ value: t.id, label: t.name }))} />
-        <SelectField
-          label="Assigned unit"
-          value={unitId}
-          onChange={(e) => setUnitId(e.target.value)}
-          options={ranked.map((u, i) => ({ value: u.id, label: `${u.name}${u.distance !== null ? ` · ${u.distance} km` : ''}${i === 0 ? ' (nearest)' : ''}` }))}
         />
       </div>
     </Modal>

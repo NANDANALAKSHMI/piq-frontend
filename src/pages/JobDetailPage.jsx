@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowRight, FileQuestion, MapPin, MessageSquare, Pencil, RefreshCw, Star, Upload } from 'lucide-react';
+import { CheckCircle2, FileQuestion, MessageSquare, Pencil, RefreshCw, Star, Upload } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
@@ -9,7 +9,6 @@ import { StatusBadge, Tag } from '../components/common/Badge.jsx';
 import Avatar from '../components/common/Avatar.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import { useToast } from '../components/common/Toast.jsx';
-import WorkflowStepper from '../features/jobs/WorkflowStepper.jsx';
 import ServiceScopeTable from '../features/jobs/ServiceScopeTable.jsx';
 import MediaGallery from '../features/jobs/MediaGallery.jsx';
 import CommentsPanel from '../features/jobs/CommentsPanel.jsx';
@@ -18,9 +17,8 @@ import ProgressRing from '../features/jobs/ProgressRing.jsx';
 import { EditJobModal, StatusModal } from '../features/jobs/JobModals.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
 import useLookups from '../hooks/useLookups.js';
-import { getTemplate } from '../data/workflowsData.js';
 import { vendors as allVendors, getVendorCategory } from '../data/vendorsData.js';
-import { displayStatus, isOverdue, stageProgress } from '../utils/jobs.js';
+import { displayStatus, isOverdue, jobProgress } from '../utils/jobs.js';
 import { cn, dueLabel, formatDate } from '../utils/formatters.js';
 
 function InfoItem({ label, children }) {
@@ -34,7 +32,7 @@ function InfoItem({ label, children }) {
 
 export default function JobDetailPage() {
   const { jobId } = useParams();
-  const { jobs, vendors, advanceStage, setJobStatus, setServiceProgress, addComment, addMedia, updateJob } = useAppData();
+  const { jobs, vendors, setJobStatus, setServiceProgress, addComment, addMedia, updateJob } = useAppData();
   const lookups = useLookups();
   const { showToast } = useToast();
   const [tab, setTab] = useState('overview');
@@ -58,18 +56,15 @@ export default function JobDetailPage() {
 
   const client = lookups.getClient(job.clientId);
   const location = lookups.getLocation(job.clientId, job.locationId);
-  const unit = lookups.getUnit(job.unitId);
   const category = lookups.getCategory(job.categoryId);
-  const template = getTemplate(job.templateId);
-  const progress = stageProgress(job);
+  const progress = jobProgress(job);
   const team = lookups.membersFor(job.teamIds);
   const jobVendors = job.vendorIds.map((id) => vendors.find((v) => v.id === id) ?? allVendors.find((v) => v.id === id)).filter(Boolean);
   const closed = job.status === 'Completed' || job.status === 'Cancelled';
-  const nextStageName = progress.isFinished ? null : progress.stages[progress.done + 1]?.name;
 
-  const handleAdvance = () => {
-    advanceStage(job.id);
-    showToast(nextStageName ? `${job.id} moved to ${nextStageName}.` : `${job.id} marked as delivered.`);
+  const handleComplete = () => {
+    setJobStatus(job.id, 'Completed');
+    showToast(`${job.id} marked as completed.`);
   };
 
   const handleUpload = (files) => {
@@ -84,29 +79,11 @@ export default function JobDetailPage() {
 
   const tabs = [
     { id: 'overview', label: 'Overview' },
-    { id: 'workflow', label: 'Workflow' },
     { id: 'services', label: 'Services', count: job.services.length },
     { id: 'media', label: 'Media', count: job.media.length },
     { id: 'comments', label: 'Comments', count: job.comments.length },
     { id: 'activity', label: 'Activity' },
   ];
-
-  const workflowCard = (
-    <Card>
-      <CardHeader
-        title={`Workflow · ${template?.name ?? 'Custom'}`}
-        subtitle={template?.allowJobCustomisation ? 'Stages can be adjusted for this job only.' : 'Template stages are fixed for this job.'}
-        action={
-          !closed && (
-            <Button size="sm" variant="primary" iconRight={ArrowRight} onClick={handleAdvance}>
-              {nextStageName ? `Move to ${nextStageName}` : 'Mark delivered'}
-            </Button>
-          )
-        }
-      />
-      <WorkflowStepper stages={progress.stages} current={progress.done} status={job.status} />
-    </Card>
-  );
 
   const servicesCard = (
     <Card>
@@ -181,7 +158,6 @@ export default function JobDetailPage() {
 
       {tab === 'overview' && (
         <>
-          {workflowCard}
           <div className="grid grid-cols-1 gap-5.5 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
             <div className="flex min-w-0 flex-col gap-5.5">
               <Card>
@@ -197,9 +173,6 @@ export default function JobDetailPage() {
                   <InfoItem label="Expected completion">
                     {formatDate(job.dueDate)}
                     {!closed && <span className={cn('block text-xs', isOverdue(job) ? 'text-red-700' : 'text-muted')}>{dueLabel(job.dueDate)}</span>}
-                  </InfoItem>
-                  <InfoItem label="Assigned unit">
-                    <Link to="/units" className="text-brand-ink hover:underline">{unit?.name}</Link>
                   </InfoItem>
                   <InfoItem label="Created from">{job.createdFrom ?? 'Direct entry'}</InfoItem>
                 </dl>
@@ -226,10 +199,9 @@ export default function JobDetailPage() {
               <Card>
                 <CardHeader title="Progress" />
                 <div className="flex items-center gap-5">
-                  <ProgressRing value={progress.percent} label={`${progress.percent}% complete, ${progress.done} of ${progress.total} stages`} />
+                  <ProgressRing value={progress.percent} label={`${progress.percent}% complete`} />
                   <div className="flex flex-col gap-1">
-                    <b>{progress.done} of {progress.total} stages done</b>
-                    <span className="text-[13px] text-muted">Current: {progress.currentName}</span>
+                    <b>{progress.done} of {progress.total} services done</b>
                     {!closed && (
                       <span className={cn('text-[13px] font-semibold', isOverdue(job) ? 'text-red-700' : 'text-green-700')}>
                         {isOverdue(job) ? 'Behind schedule' : 'On track'} · {dueLabel(job.dueDate)}
@@ -255,24 +227,15 @@ export default function JobDetailPage() {
                     }}
                   />
                   <Button icon={MessageSquare} onClick={openComments} className="justify-start">Add comment</Button>
-                  <Button icon={ArrowRight} onClick={handleAdvance} disabled={closed} className="justify-start">
-                    {nextStageName ? `Move to ${nextStageName}` : 'Mark delivered'}
+                  <Button icon={CheckCircle2} onClick={handleComplete} disabled={closed} className="justify-start">
+                    Mark completed
                   </Button>
                   <Button icon={RefreshCw} onClick={() => setModal('status')} className="justify-start">Update status</Button>
                 </div>
               </Card>
 
               <Card>
-                <CardHeader title="Unit & team" action={<Link to="/units" className="text-[13px] font-semibold text-brand-ink hover:underline">Manage</Link>} />
-                <div className="mb-3.5 flex items-center gap-3 rounded-xl bg-slate-50 p-3">
-                  <span className="grid size-9.5 place-items-center rounded-[10px] bg-brand-soft text-brand-ink">
-                    <MapPin className="size-4.5" aria-hidden="true" />
-                  </span>
-                  <div>
-                    <p className="font-semibold">{unit?.name}</p>
-                    <p className="text-[12.5px] text-muted">{unit?.services.join(', ')}</p>
-                  </div>
-                </div>
+                <CardHeader title="Team" />
                 {team.length ? (
                   <ul className="flex flex-col">
                     {team.map((member) => (
@@ -318,29 +281,6 @@ export default function JobDetailPage() {
         </>
       )}
 
-      {tab === 'workflow' && (
-        <>
-          {workflowCard}
-          <Card>
-            <CardHeader title="Stage details" />
-            <ol className="flex flex-col gap-2.5">
-              {progress.stages.map((stage, index) => (
-                <li key={stage.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-line p-3.5">
-                  <span className="grid size-7 place-items-center rounded-lg bg-brand-soft text-xs font-bold text-brand-ink">{index + 1}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold">{stage.name}</p>
-                    <p className="text-[12.5px] text-muted">
-                      Owner: {stage.ownerRole} · {stage.days} day{stage.days === 1 ? '' : 's'}
-                      {stage.photos && ' · photos required'}
-                    </p>
-                  </div>
-                  <StatusBadge value={index < progress.done ? 'Done' : index === progress.done ? (job.status === 'Upcoming' ? 'Upcoming' : 'In progress') : 'Not started'} />
-                </li>
-              ))}
-            </ol>
-          </Card>
-        </>
-      )}
       {tab === 'services' && servicesCard}
       {tab === 'media' && mediaCard(false)}
       {tab === 'comments' && commentsCard}

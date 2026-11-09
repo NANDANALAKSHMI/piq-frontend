@@ -294,7 +294,7 @@ export default function EnquiriesPage() {
             ) : (
               <>
                 <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-3.5 text-[13px] text-green-900">
-                  Converting carries over client, contact, location, services and notes. You just pick a workflow and unit.
+                  Converting carries over client, contact, location, services and notes. You just pick a job category.
                 </div>
                 <div className="mt-3.5 flex gap-2.5">
                   <Button

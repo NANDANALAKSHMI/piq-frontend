@@ -22,7 +22,6 @@ export function StatusModal({ open, job, onClose, onSave }) {
       }
     >
       <SelectField label="Status" value={status} onChange={(e) => setStatus(e.target.value)} options={JOB_STATUSES} />
-      <p className="mt-3 text-[13px] text-muted">To move the job forward through its workflow, use “Move to next stage” instead.</p>
     </Modal>
   );
 }

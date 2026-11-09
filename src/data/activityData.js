@@ -8,7 +8,7 @@ export const recentActivities = [
 ];
 
 export const notifications = [
-  { id: 'n1', type: 'overdue', title: 'JOB-0107 is overdue', body: 'Pharma Cold-Chain Boxes · Hyderabad Unit', minutesAgo: 30, read: false, link: '/jobs/JOB-0107' },
+  { id: 'n1', type: 'overdue', title: 'JOB-0107 is overdue', body: 'Pharma Cold-Chain Boxes · Hyderabad', minutesAgo: 30, read: false, link: '/jobs/JOB-0107' },
   { id: 'n2', type: 'mention', title: 'Arun Joseph mentioned you', body: 'On JOB-0110 · “Updated drawing v3 uploaded…”', minutesAgo: 40, read: false, link: '/jobs/JOB-0110' },
   { id: 'n3', type: 'enquiry', title: 'Follow-up due today', body: 'ENQ-046 · Call Meera Iyer at 3:00 PM', minutesAgo: 95, read: false, link: '/enquiries' },
   { id: 'n4', type: 'stage', title: 'JOB-0112 moved to Packing', body: 'Rajesh Kumar updated the stage', minutesAgo: 600, read: true, link: '/jobs/JOB-0112' },

@@ -12,9 +12,7 @@ import { Tag } from '../components/common/Badge.jsx';
 import { SelectField, TextField } from '../components/common/FormFields.jsx';
 import { useToast } from '../components/common/Toast.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
-import useLookups from '../hooks/useLookups.js';
 import { jobCategories, serviceCatalog } from '../data/categoriesData.js';
-import { workflowTemplates } from '../data/workflowsData.js';
 import { vendorCategories } from '../data/vendorsData.js';
 import { SCOPE_SERVICES, SERVICES, SERVICE_SCOPES } from '../data/constants.js';
 import { cn } from '../utils/formatters.js';
@@ -46,7 +44,6 @@ function AddCategoryModal({ open, onClose, onSave }) {
 
 export default function CategoriesPage() {
   const { jobs } = useAppData();
-  const lookups = useLookups();
   const { showToast } = useToast();
   const [categories, setCategories] = useState(jobCategories);
   const [selectedId, setSelectedId] = useState('cat-crating');
@@ -133,14 +130,8 @@ export default function CategoriesPage() {
                   </Button>
                 }
               />
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <TextField label="Category name" value={selected.name} onChange={(e) => patch({ name: e.target.value })} />
-                <SelectField
-                  label="Default workflow"
-                  value={selected.defaultTemplateId}
-                  onChange={(e) => patch({ defaultTemplateId: e.target.value })}
-                  options={workflowTemplates.map((t) => ({ value: t.id, label: `${t.name} · ${t.stages.length} stages` }))}
-                />
                 <SelectField label="Default scope" value={selected.defaultScope} onChange={(e) => patch({ defaultScope: e.target.value })} options={SERVICE_SCOPES} />
               </div>
             </Card>
@@ -180,12 +171,7 @@ export default function CategoriesPage() {
               <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 {SERVICES.map((service) => (
                   <li key={service} className="flex items-center justify-between gap-3 rounded-xl border border-line px-3.5 py-3">
-                    <span>
-                      <b>{service}</b>
-                      <span className="block text-[12.5px] text-muted">
-                        {serviceCatalog.find((s) => s.name === service)?.unitIds.map((id) => lookups.getUnit(id)?.city).join(', ')}
-                      </span>
-                    </span>
+                    <b>{service}</b>
                     <Toggle
                       checked={selected.services[service]}
                       label={`${service} included`}
@@ -224,7 +210,6 @@ export default function CategoriesPage() {
             columns={[
               { key: 'name', header: 'Service', sortable: true, render: (s) => <b>{s.name}</b> },
               { key: 'ownerRole', header: 'Default owner', sortable: true },
-              { key: 'units', header: 'Units that offer it', render: (s) => <div className="flex gap-1.5">{s.unitIds.map((id) => <Tag key={id}>{lookups.getUnit(id)?.city}</Tag>)}</div> },
               { key: 'categories', header: 'Used by categories', render: (s) => categories.filter((c) => c.services[s.name]).length },
             ]}
           />
@@ -262,7 +247,6 @@ export default function CategoriesPage() {
                 id,
                 name,
                 description,
-                defaultTemplateId: workflowTemplates[0].id,
                 defaultScope: 'Custom',
                 vendorCategoryIds: [],
                 services: Object.fromEntries(SERVICES.map((s) => [s, false])),

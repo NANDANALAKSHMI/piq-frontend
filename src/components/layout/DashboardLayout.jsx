@@ -14,7 +14,7 @@ function titleFor(pathname) {
 
 export default function DashboardLayout() {
   const { user, logout } = useAuth();
-  const { jobs, enquiries } = useAppData();
+  const { jobs, enquiries, notifications } = useAppData();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -23,8 +23,9 @@ export default function DashboardLayout() {
     () => ({
       activeJobs: jobs.filter((j) => j.status === 'In progress' || j.status === 'Upcoming').length,
       openEnquiries: enquiries.filter((e) => !['Converted', 'Lost'].includes(e.status)).length,
+      unreadNotifications: notifications.filter((n) => !n.read).length,
     }),
-    [jobs, enquiries],
+    [jobs, enquiries, notifications],
   );
 
   const handleLogout = () => {
@@ -42,7 +43,7 @@ export default function DashboardLayout() {
         onLogout={handleLogout}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <Header title={titleFor(pathname)} user={user} onOpenMenu={() => setMobileOpen(true)} onLogout={handleLogout} />
+        <Header title={titleFor(pathname)} onOpenMenu={() => setMobileOpen(true)} />
         <main className="mx-auto w-full max-w-[1480px] flex-1 px-4 pb-28 pt-5 md:px-7 md:pb-10 md:pt-7">
           <Outlet />
         </main>

@@ -13,7 +13,6 @@ import EmptyState from '../components/common/EmptyState.jsx';
 import { useToast } from '../components/common/Toast.jsx';
 import LocationModal from '../features/clients/LocationModal.jsx';
 import { buildJobColumns } from '../features/jobs/jobColumns.jsx';
-import { rankUnitsForCity } from '../features/jobs/jobFormHelpers.js';
 import { useAppData } from '../context/AppDataContext.jsx';
 import useLookups from '../hooks/useLookups.js';
 import { isOverdue } from '../utils/jobs.js';
@@ -216,7 +215,6 @@ export default function ClientsPage() {
               />
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3">
                 {selected.locations.map((loc) => {
-                  const nearest = rankUnitsForCity(loc.city)[0];
                   const count = clientJobs.filter((j) => j.locationId === loc.id).length;
                   return (
                     <div key={loc.id} className={cn('flex flex-col gap-2 rounded-xl border p-3.5', loc.primary ? 'border-brand-line bg-[#fffbf6]' : 'border-line')}>
@@ -230,8 +228,7 @@ export default function ClientsPage() {
                       <span className="text-[12.5px] text-muted">
                         {[loc.address, loc.city, loc.pin].filter(Boolean).join(', ')}
                       </span>
-                      <div className="mt-auto flex items-center justify-between text-[12.5px]">
-                        <span>{nearest.name}{nearest.distance !== null && ` · ${nearest.distance} km`}</span>
+                      <div className="mt-auto flex items-center justify-end text-[12.5px]">
                         <b>{count} job{count === 1 ? '' : 's'}</b>
                       </div>
                     </div>
@@ -265,7 +262,7 @@ export default function ClientsPage() {
               <div className="p-4">
                 <DataTable
                   key={`${selected.id}-${jobTab}`}
-                  columns={buildJobColumns(lookups, ['id', 'jobName', 'scope', 'stage', 'status', 'due'])}
+                  columns={buildJobColumns(lookups, ['id', 'jobName', 'scope', 'progress', 'status', 'due'])}
                   rows={tabRows}
                   minWidth={700}
                   pageSize={5}

@@ -12,10 +12,9 @@ const AddJobPage = lazy(() => import('../pages/AddJobPage.jsx'));
 const ClientsPage = lazy(() => import('../pages/ClientsPage.jsx'));
 const AddClientPage = lazy(() => import('../pages/AddClientPage.jsx'));
 const EnquiriesPage = lazy(() => import('../pages/EnquiriesPage.jsx'));
-const UnitsPage = lazy(() => import('../pages/UnitsPage.jsx'));
 const VendorsPage = lazy(() => import('../pages/VendorsPage.jsx'));
 const CategoriesPage = lazy(() => import('../pages/CategoriesPage.jsx'));
-const WorkflowsPage = lazy(() => import('../pages/WorkflowsPage.jsx'));
+const NotificationsPage = lazy(() => import('../pages/NotificationsPage.jsx'));
 const TeamPage = lazy(() => import('../pages/TeamPage.jsx'));
 const ReportsPage = lazy(() => import('../pages/ReportsPage.jsx'));
 const SettingsPage = lazy(() => import('../pages/SettingsPage.jsx'));
@@ -36,8 +35,9 @@ function PageLoader() {
 }
 
 function RequireAuth({ children }) {
-  const { user } = useAuth();
+  const { user, authReady } = useAuth();
   const location = useLocation();
+  if (!authReady) return <PageLoader />;
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   return children;
 }
@@ -67,10 +67,9 @@ export default function AppRoutes() {
         <Route path="clients/new" element={page(AddClientPage)} />
         <Route path="clients/:clientId" element={page(ClientsPage)} />
         <Route path="enquiries" element={page(EnquiriesPage)} />
-        <Route path="units" element={page(UnitsPage)} />
         <Route path="vendors" element={page(VendorsPage)} />
         <Route path="categories" element={page(CategoriesPage)} />
-        <Route path="workflows" element={page(WorkflowsPage)} />
+        <Route path="notifications" element={page(NotificationsPage)} />
         <Route path="team" element={page(TeamPage)} />
         <Route path="reports" element={page(ReportsPage)} />
         <Route path="settings" element={page(SettingsPage)} />

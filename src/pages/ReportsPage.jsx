@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { CheckCircle2, Clock, Download, FileText, Gauge, MessageSquareText, AlertTriangle } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
 import DataTable from '../components/common/DataTable.jsx';
 import Avatar from '../components/common/Avatar.jsx';
-import ProgressBar from '../components/common/ProgressBar.jsx';
 import { SelectControl } from '../components/common/FormFields.jsx';
 import { useToast } from '../components/common/Toast.jsx';
 import StatCard from '../components/dashboard/StatCard.jsx';
@@ -14,14 +13,17 @@ import HorizontalBars from '../components/dashboard/HorizontalBars.jsx';
 import ChartTooltip from '../components/dashboard/ChartTooltip.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
 import useLookups from '../hooks/useLookups.js';
-import { units } from '../data/unitsData.js';
 import { SERVICE_SCOPES } from '../data/constants.js';
 import { lastMonthLabels, monthlyCompletedByUnit, savedReports, staffPerformance, unitPerformance } from '../data/reportsData.js';
-import { displayStatus, isOverdue, stageProgress } from '../utils/jobs.js';
+import { displayStatus, isOverdue, jobProgress } from '../utils/jobs.js';
 import { cn } from '../utils/formatters.js';
 import { exportCsv } from '../utils/exportCsv.js';
 
-const UNIT_COLORS = { blr: '#F28C28', kch: '#2563EB', chn: '#0F766E', hyd: '#9333EA' };
+/** Monthly completed jobs, combined into one series. */
+const MONTHLY_COMPLETED = Object.values(monthlyCompletedByUnit).reduce(
+  (totals, series) => totals.map((value, i) => value + series[i]),
+  Array(6).fill(0),
+);
 const PERIODS = [
   { value: '6', label: 'Last 6 months' },
   { value: '3', label: 'Last 3 months' },
@@ -32,43 +34,24 @@ export default function ReportsPage() {
   const lookups = useLookups();
   const { showToast } = useToast();
   const [months, setMonths] = useState('6');
-  const [unitId, setUnitId] = useState('');
 
   const count = Number(months);
-  const visibleUnits = unitId ? units.filter((u) => u.id === unitId) : units;
   const labels = lastMonthLabels(count);
 
-  const chartData = labels.map((label, i) => {
-    const index = 6 - count + i;
-    return Object.fromEntries([['month', label], ...visibleUnits.map((u) => [u.id, monthlyCompletedByUnit[u.id][index]])]);
-  });
+  const chartData = labels.map((label, i) => ({ month: label, completed: MONTHLY_COMPLETED[6 - count + i] }));
 
-  const totalCompleted = chartData.reduce((sum, row) => sum + visibleUnits.reduce((s, u) => s + row[u.id], 0), 0);
-  const previousTotal = visibleUnits.reduce((sum, u) => sum + monthlyCompletedByUnit[u.id].slice(0, 6 - count).reduce((a, b) => a + b, 0), 0);
-  const perf = unitPerformance.filter((p) => !unitId || p.unitId === unitId);
-  const avg = (key) => (perf.reduce((sum, p) => sum + p[key], 0) / perf.length).toFixed(key === 'avgDays' ? 1 : 0);
-  const scopedJobs = jobs.filter((j) => !unitId || j.unitId === unitId);
+  const totalCompleted = chartData.reduce((sum, row) => sum + row.completed, 0);
+  const previousTotal = MONTHLY_COMPLETED.slice(0, 6 - count).reduce((a, b) => a + b, 0);
+  const avg = (key) => (unitPerformance.reduce((sum, p) => sum + p[key], 0) / unitPerformance.length).toFixed(key === 'avgDays' ? 1 : 0);
+  const scopedJobs = jobs;
   const overdue = scopedJobs.filter(isOverdue).length;
   const decided = enquiries.filter((e) => ['Converted', 'Lost'].includes(e.status));
   const conversion = decided.length ? Math.round((decided.filter((e) => e.status === 'Converted').length / decided.length) * 100) : 0;
 
   const scopeItems = SERVICE_SCOPES.map((scope) => ({ label: scope, value: scopedJobs.filter((j) => j.scope === scope).length }));
 
-  const unitRows = perf.map((p) => {
-    const unitJobs = jobs.filter((j) => j.unitId === p.unitId);
-    return {
-      ...p,
-      id: p.unitId,
-      name: lookups.getUnit(p.unitId)?.name,
-      completed: monthlyCompletedByUnit[p.unitId].slice(6 - count).reduce((a, b) => a + b, 0),
-      ongoing: unitJobs.filter((j) => j.status === 'In progress').length,
-      overdue: unitJobs.filter(isOverdue).length,
-    };
-  });
-
   const staffRows = staffPerformance
-    .map((s) => ({ ...s, id: s.memberId, member: lookups.getMember(s.memberId), active: jobs.filter((j) => j.teamIds.includes(s.memberId) && j.status === 'In progress').length }))
-    .filter((s) => !unitId || s.member?.unitId === unitId);
+    .map((s) => ({ ...s, id: s.memberId, member: lookups.getMember(s.memberId), active: jobs.filter((j) => j.teamIds.includes(s.memberId) && j.status === 'In progress').length }));
 
   const downloadReport = (report) => {
     const files = {
@@ -76,7 +59,7 @@ export default function ReportsPage() {
         { header: 'Job ID', value: (j) => j.id },
         { header: 'Job', value: (j) => j.name },
         { header: 'Client', value: (j) => lookups.getClient(j.clientId)?.name },
-        { header: 'Stage', value: (j) => stageProgress(j).currentName },
+        { header: 'Progress', value: (j) => `${jobProgress(j).percent}%` },
         { header: 'Status', value: (j) => displayStatus(j) },
         { header: 'Due', value: (j) => j.dueDate },
       ], scopedJobs),
@@ -111,15 +94,15 @@ export default function ReportsPage() {
   };
 
   const exportSummary = () => {
-    exportCsv('unit-performance.csv', [
-      { header: 'Unit', value: (u) => u.name },
-      { header: 'Completed', value: (u) => u.completed },
-      { header: 'Ongoing', value: (u) => u.ongoing },
-      { header: 'Overdue', value: (u) => u.overdue },
-      { header: 'On-time %', value: (u) => u.onTime },
-      { header: 'Avg days', value: (u) => u.avgDays },
-      { header: 'Utilisation %', value: (u) => u.utilisation },
-    ], unitRows);
+    exportCsv('piq-jobs-summary.csv', [
+      { header: 'Job ID', value: (j) => j.id },
+      { header: 'Job', value: (j) => j.name },
+      { header: 'Client', value: (j) => lookups.getClient(j.clientId)?.name },
+      { header: 'Scope', value: (j) => j.scope },
+      { header: 'Progress', value: (j) => `${jobProgress(j).percent}%` },
+      { header: 'Status', value: (j) => displayStatus(j) },
+      { header: 'Due', value: (j) => j.dueDate },
+    ], jobs);
     showToast('Report exported.');
   };
 
@@ -129,11 +112,10 @@ export default function ReportsPage() {
     <div className="flex flex-col gap-5.5">
       <PageHeader
         title="Reports"
-        subtitle="How jobs, units, staff and enquiries are performing."
+        subtitle="How jobs, staff and enquiries are performing."
         actions={
           <>
             <SelectControl aria-label="Period" value={months} onChange={(e) => setMonths(e.target.value)} options={PERIODS} className="h-10.5 w-auto" />
-            <SelectControl aria-label="Unit" value={unitId} onChange={(e) => setUnitId(e.target.value)} placeholder="All units" options={units.map((u) => ({ value: u.id, label: u.name }))} className="h-10.5 w-auto" />
             <Button variant="primary" icon={Download} onClick={exportSummary}>
               Export
             </Button>
@@ -151,7 +133,7 @@ export default function ReportsPage() {
 
       <div className="grid grid-cols-1 gap-5.5 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
         <Card>
-          <CardHeader title="Jobs completed per month" subtitle={unitId ? lookups.getUnit(unitId)?.name : 'Stacked by unit'} />
+          <CardHeader title="Jobs completed per month" subtitle="All jobs" />
           <div className="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 8, right: 4, left: -24, bottom: 0 }}>
@@ -159,55 +141,16 @@ export default function ReportsPage() {
                 <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#5B6476' }} />
                 <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#5B6476' }} />
                 <Tooltip content={<ChartTooltip />} cursor={{ fill: '#F3F5F9' }} />
-                <Legend iconType="square" iconSize={10} wrapperStyle={{ fontSize: 12 }} />
-                {visibleUnits.map((u, i) => (
-                  <Bar
-                    key={u.id}
-                    dataKey={u.id}
-                    name={u.city}
-                    stackId="units"
-                    fill={UNIT_COLORS[u.id]}
-                    maxBarSize={44}
-                    radius={i === visibleUnits.length - 1 ? [6, 6, 0, 0] : 0}
-                    isAnimationActive={false}
-                  />
-                ))}
+                <Bar dataKey="completed" name="Completed" fill="#F28C28" maxBarSize={44} radius={[6, 6, 0, 0]} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </Card>
         <Card>
-          <CardHeader title="Jobs by service scope" subtitle="All jobs in the selected unit(s)" />
+          <CardHeader title="Jobs by service scope" subtitle="All jobs" />
           <HorizontalBars items={scopeItems} />
         </Card>
       </div>
-
-      <Card>
-        <CardHeader title="Unit performance" />
-        <DataTable
-          rows={unitRows}
-          minWidth={820}
-          columns={[
-            { key: 'name', header: 'Unit', sortable: true, render: (u) => <b>{u.name}</b> },
-            { key: 'completed', header: 'Completed', sortable: true },
-            { key: 'ongoing', header: 'Ongoing', sortable: true },
-            { key: 'overdue', header: 'Overdue', sortable: true, render: (u) => <span className={cn(u.overdue > 0 && 'font-semibold text-red-700')}>{u.overdue}</span> },
-            { key: 'onTime', header: 'On-time %', sortable: true, render: (u) => <span className={cn(u.onTime >= 90 && 'font-semibold text-green-700')}>{u.onTime}%</span> },
-            { key: 'avgDays', header: 'Avg. duration', sortable: true, render: (u) => `${u.avgDays} d` },
-            {
-              key: 'utilisation',
-              header: 'Staff utilisation',
-              sortable: true,
-              render: (u) => (
-                <div className="flex items-center gap-2.5">
-                  <ProgressBar value={u.utilisation} tone="auto" className="w-28" label={`${u.name} utilisation`} />
-                  <span className="text-[13px] font-semibold">{u.utilisation}%</span>
-                </div>
-              ),
-            },
-          ]}
-        />
-      </Card>
 
       <div className="grid grid-cols-1 gap-5.5 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
         <Card>
@@ -238,7 +181,7 @@ export default function ReportsPage() {
           />
         </Card>
         <Card>
-          <CardHeader title="Saved reports" subtitle="Downloads use the unit filter above" />
+          <CardHeader title="Saved reports" subtitle="Download as CSV" />
           <ul className="flex flex-col">
             {savedReports.map((report) => (
               <li key={report.id} className="flex items-center gap-3 border-b border-line py-3 first:pt-0 last:border-0 last:pb-0">

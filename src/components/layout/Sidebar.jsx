@@ -15,7 +15,7 @@ function SidebarContent({ counts, user, onNavigate, onLogout }) {
             {section.label && (
               <p className="px-3 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-wider text-[#8f9bb3]">{section.label}</p>
             )}
-            {section.items.map(({ to, label, icon: Icon, end, countKey }) => (
+            {section.items.map(({ to, label, icon: Icon, end, countKey, alert }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -36,7 +36,7 @@ function SidebarContent({ counts, user, onNavigate, onLogout }) {
                       <span
                         className={cn(
                           'rounded-full px-2 py-0.5 text-[11px] font-semibold',
-                          isActive ? 'bg-navy text-white' : 'bg-navy-3 text-white',
+                          alert ? 'bg-red-600 text-white' : isActive ? 'bg-navy text-white' : 'bg-navy-3 text-white',
                         )}
                       >
                         {counts[countKey]}

@@ -8,8 +8,6 @@ import Card, { CardHeader } from '../components/common/Card.jsx';
 import DataTable from '../components/common/DataTable.jsx';
 import Badge from '../components/common/Badge.jsx';
 import { SelectControl } from '../components/common/FormFields.jsx';
-import ProgressBar from '../components/common/ProgressBar.jsx';
-import { Tag } from '../components/common/Badge.jsx';
 import StatCard from '../components/dashboard/StatCard.jsx';
 import StatusDonut from '../components/dashboard/StatusDonut.jsx';
 import HorizontalBars from '../components/dashboard/HorizontalBars.jsx';
@@ -21,10 +19,9 @@ import { useAuth } from '../context/AuthContext.jsx';
 import useLookups from '../hooks/useLookups.js';
 import useSimulatedLoading from '../hooks/useSimulatedLoading.js';
 import { recentActivities } from '../data/activityData.js';
-import { units, workforce } from '../data/unitsData.js';
 import { CITIES, SERVICE_SCOPES } from '../data/constants.js';
 import { isOverdue } from '../utils/jobs.js';
-import { cn, daysUntil, dueLabel, formatDate, formatToday, percent } from '../utils/formatters.js';
+import { cn, daysUntil, dueLabel, formatDate, formatToday } from '../utils/formatters.js';
 
 const STATUS_COLORS = {
   'In progress': '#F28C28',
@@ -102,22 +99,6 @@ export default function DashboardPage() {
         .filter((j) => ['In progress', 'On hold', 'Upcoming'].includes(j.status))
         .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
         .slice(0, 5),
-    [jobs],
-  );
-
-  const workload = useMemo(
-    () =>
-      units.map((unit) => {
-        const staff = workforce.filter((w) => w.unitId === unit.id);
-        const busy = staff.filter((w) => w.availability === 'On job').length;
-        return {
-          ...unit,
-          activeJobs: jobs.filter((j) => j.unitId === unit.id && ['In progress', 'On hold'].includes(j.status)).length,
-          staffTotal: staff.length,
-          busy,
-          utilisation: percent(busy, staff.length),
-        };
-      }),
     [jobs],
   );
 
@@ -199,7 +180,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader title="Recent jobs" action={<Link to="/jobs" className="text-[13px] font-semibold text-brand-ink hover:underline">View all jobs</Link>} />
           <DataTable
-            columns={buildJobColumns(lookups, ['id', 'name', 'stage', 'status', 'due'])}
+            columns={buildJobColumns(lookups, ['id', 'name', 'progress', 'status', 'due'])}
             rows={recentJobs}
             loading={loading}
             minWidth={640}
@@ -235,31 +216,7 @@ export default function DashboardPage() {
         </Card>
       </section>
 
-      <section className="grid grid-cols-1 gap-5.5 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
-        <Card>
-          <CardHeader title="Unit workload" action={<Link to="/units" className="text-[13px] font-semibold text-brand-ink hover:underline">Units &amp; workforce</Link>} />
-          <DataTable
-            minWidth={640}
-            rows={workload}
-            columns={[
-              { key: 'name', header: 'Unit', sortable: true, render: (u) => <div><p className="font-semibold">{u.name}</p><p className="text-[12.5px] text-muted">{u.state}</p></div> },
-              { key: 'activeJobs', header: 'Active jobs', sortable: true },
-              { key: 'busy', header: 'Staff busy', sortable: true, render: (u) => `${u.busy} of ${u.staffTotal}` },
-              {
-                key: 'utilisation',
-                header: 'Capacity used',
-                sortable: true,
-                render: (u) => (
-                  <div className="flex items-center gap-2.5">
-                    <ProgressBar value={u.utilisation} tone="auto" className="w-28" label={`${u.name} capacity`} />
-                    <span className={cn('text-[13px] font-semibold', u.utilisation >= 85 && 'text-red-700', u.utilisation <= 45 && 'text-green-700')}>{u.utilisation}%</span>
-                  </div>
-                ),
-              },
-              { key: 'services', header: 'Services', render: (u) => <div className="flex gap-1.5">{u.services.slice(0, 3).map((s) => <Tag key={s}>{s}</Tag>)}</div> },
-            ]}
-          />
-        </Card>
+      <section>
         <Card>
           <CardHeader title="Recent activity" />
           <RecentActivity items={activity} />

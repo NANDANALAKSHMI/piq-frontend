@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Briefcase, Eye, EyeOff, MapPin, MessageSquare, Smartphone } from 'lucide-react';
+import { Briefcase, Eye, EyeOff, MessageSquare, Users } from 'lucide-react';
 import { LogoMark } from '../components/layout/Logo.jsx';
 import Button from '../components/common/Button.jsx';
 import { TextField, Checkbox } from '../components/common/FormFields.jsx';
@@ -9,12 +9,23 @@ import { useToast } from '../components/common/Toast.jsx';
 
 const HIGHLIGHTS = [
   { icon: Briefcase, text: 'Track every job stage by stage' },
-  { icon: MapPin, text: 'Match jobs to the right unit and team' },
+  { icon: Users, text: 'Assign the right team to every job' },
   { icon: MessageSquare, text: 'Photos, comments and decisions on every job' },
 ];
 
+function GoogleIcon({ className }) {
+  return (
+    <svg viewBox="0 0 48 48" className={className} aria-hidden="true">
+      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" />
+      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
+      <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z" />
+      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z" />
+    </svg>
+  );
+}
+
 export default function LoginPage() {
-  const { user, login } = useAuth();
+  const { user, login, loginWithGoogle } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -24,6 +35,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   if (user) return <Navigate to="/" replace />;
 
@@ -43,6 +55,18 @@ export default function LoginPage() {
     }, 500);
   };
 
+  const handleGoogle = async () => {
+    setError('');
+    setGoogleLoading(true);
+    const result = await loginWithGoogle({ remember });
+    setGoogleLoading(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    navigate(location.state?.from ?? '/', { replace: true });
+  };
+
   return (
     <div className="grid min-h-screen bg-canvas lg:grid-cols-2">
       <section className="hidden flex-col justify-between gap-10 bg-navy p-14 text-white lg:flex">
@@ -56,7 +80,7 @@ export default function LoginPage() {
         <div className="max-w-md">
           <h2 className="text-4xl font-bold leading-tight tracking-tight">Every job, from enquiry to delivery.</h2>
           <p className="mt-3.5 text-base text-[#c9d2e3]">
-            One place for clients, jobs, workflows, units and vendors across every city you work in.
+            One place for clients, jobs, team and vendors across every city you work in.
           </p>
           <ul className="mt-8 flex flex-col gap-3.5">
             {HIGHLIGHTS.map(({ icon: Icon, text }) => (
@@ -137,11 +161,12 @@ export default function LoginPage() {
             <Button
               variant="secondary"
               size="lg"
-              icon={Smartphone}
+              icon={GoogleIcon}
               fullWidth
-              onClick={() => showToast('OTP sent to your registered mobile number.', { tone: 'info' })}
+              onClick={handleGoogle}
+              disabled={googleLoading || submitting}
             >
-              Sign in with OTP
+              {googleLoading ? 'Connecting to Google…' : 'Sign in with Google'}
             </Button>
             <p className="rounded-lg bg-canvas px-3 py-2.5 text-center text-xs text-muted">
               Demo: any team email (e.g. <b className="text-ink">anil@piq.in</b>) and any password of 6+ characters.

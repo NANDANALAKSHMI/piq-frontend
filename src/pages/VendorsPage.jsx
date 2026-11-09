@@ -13,7 +13,6 @@ import { SelectControl } from '../components/common/FormFields.jsx';
 import { useToast } from '../components/common/Toast.jsx';
 import { AddVendorModal, PurchaseOrderModal } from '../features/vendors/VendorModals.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
-import useLookups from '../hooks/useLookups.js';
 import { vendorCategories, getVendorCategory } from '../data/vendorsData.js';
 import { CITIES } from '../data/constants.js';
 import { cn } from '../utils/formatters.js';
@@ -38,7 +37,6 @@ const TONE_CLASSES = {
 
 export default function VendorsPage() {
   const { vendors, jobs, addVendor, updateVendor } = useAppData();
-  const lookups = useLookups();
   const { showToast } = useToast();
   const [categoryId, setCategoryId] = useState(vendorCategories[0].id);
   const [query, setQuery] = useState('');
@@ -181,10 +179,6 @@ export default function VendorsPage() {
               <div>
                 <dt className="text-xs text-muted">Payment terms</dt>
                 <dd className="font-medium">{selected.payment}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted">Serves units</dt>
-                <dd className="font-medium">{selected.unitIds.map((id) => lookups.getUnit(id)?.city).join(' · ') || '—'}</dd>
               </div>
               <div>
                 <dt className="text-xs text-muted">Lead time</dt>

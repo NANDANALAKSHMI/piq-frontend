@@ -13,7 +13,7 @@ const TYPE_STYLES = {
 
 export default function ActivityTimeline({ items, getMember, limit }) {
   const visible = limit ? items.slice(0, limit) : items;
-  if (!visible.length) return <EmptyState title="No activity yet" description="Stage changes, uploads and comments will appear here." />;
+  if (!visible.length) return <EmptyState title="No activity yet" description="Status changes, uploads and comments will appear here." />;
 
   return (
     <ol className="flex flex-col">

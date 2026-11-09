@@ -40,14 +40,12 @@ function createJob({ start, due, services, customServices, ...job }) {
 
 export const jobs = [
   createJob({
-    id: 'JOB-0113', name: 'Electronics Relocation', clientId: 'c8', locationId: 'c8-l1', categoryId: 'cat-relocation', subcategory: 'Office move',
-    unitId: 'blr', scope: 'Custom', customServices: ['Packing', 'Delivery', 'Installation'], templateId: 'wf-relocation', currentStage: 0,
+    id: 'JOB-0113', name: 'Electronics Relocation', clientId: 'c8', locationId: 'c8-l1', categoryId: 'cat-relocation', subcategory: 'Office move', scope: 'Custom', customServices: ['Packing', 'Delivery', 'Installation'],
     status: 'Upcoming', priority: 'Low', start: 5, due: 15, teamIds: ['u2', 'u9'], createdFrom: 'ENQ-045',
     description: 'Move of 120 workstations and 6 server racks to the new campus. Weekend packing preferred.',
   }),
   createJob({
-    id: 'JOB-0112', name: 'Office Equipment Packing', clientId: 'c2', locationId: 'c2-l1', categoryId: 'cat-commercial', subcategory: 'Office equipment',
-    unitId: 'blr', scope: 'Packing only', templateId: 'wf-packing', currentStage: 2, status: 'In progress', priority: 'High', start: -6, due: 2,
+    id: 'JOB-0112', name: 'Office Equipment Packing', clientId: 'c2', locationId: 'c2-l1', categoryId: 'cat-commercial', subcategory: 'Office equipment', scope: 'Packing only', status: 'In progress', priority: 'High', start: -6, due: 2,
     teamIds: ['u2', 'u9'], vendorIds: ['v10', 'v14'],
     services: [{ name: 'Packing', ownerId: 'u2', progress: 60 }],
     description: 'Packing and crating of office equipment including computers, printers and delicate electronics for relocation.',
@@ -64,18 +62,16 @@ export const jobs = [
     ],
   }),
   createJob({
-    id: 'JOB-0111', name: 'Retail Gift Box Range', clientId: 'c3', locationId: 'c3-l1', categoryId: 'cat-product', subcategory: 'Gift boxes',
-    unitId: 'kch', scope: 'Design + Packing', templateId: 'wf-product', currentStage: 2, status: 'In progress', priority: 'Medium', start: -10, due: 6,
+    id: 'JOB-0111', name: 'Retail Gift Box Range', clientId: 'c3', locationId: 'c3-l1', categoryId: 'cat-product', subcategory: 'Gift boxes', scope: 'Design + Packing', status: 'In progress', priority: 'Medium', start: -10, due: 6,
     teamIds: ['u4', 'u8'], vendorIds: ['v8', 'v12'],
     services: [{ name: 'Design', ownerId: 'u8', progress: 70 }, { name: 'Packing', ownerId: 'u4', progress: 0 }],
     description: 'Festive gift-box range in three sizes with foil-printed sleeves.',
     comments: [
-      { id: 'cm1', authorId: 'u4', role: 'Unit manager', minutesAgo: 1500, text: 'Client wants the large box 10 mm taller. Anjali to revise the dieline.' },
+      { id: 'cm1', authorId: 'u4', role: 'Operations manager', minutesAgo: 1500, text: 'Client wants the large box 10 mm taller. Anjali to revise the dieline.' },
     ],
   }),
   createJob({
-    id: 'JOB-0110', name: 'Industrial Machine Crating', clientId: 'c1', locationId: 'c1-l1', categoryId: 'cat-crating', subcategory: 'Heavy machinery',
-    unitId: 'chn', scope: 'Complete project', templateId: 'wf-crating', currentStage: 3, status: 'In progress', priority: 'High', start: -12, due: 9,
+    id: 'JOB-0110', name: 'Industrial Machine Crating', clientId: 'c1', locationId: 'c1-l1', categoryId: 'cat-crating', subcategory: 'Heavy machinery', scope: 'Complete project', status: 'In progress', priority: 'High', start: -12, due: 9,
     teamIds: ['u3', 'u6', 'u7', 'u10'], vendorIds: ['v1', 'v9', 'v16', 'v13'], createdFrom: 'ENQ-038',
     services: [
       { name: 'Design', ownerId: 'u6', progress: 100 },
@@ -104,18 +100,15 @@ export const jobs = [
     ],
   }),
   createJob({
-    id: 'JOB-0109', name: 'Export Carton Redesign', clientId: 'c5', locationId: 'c5-l1', categoryId: 'cat-export', subcategory: 'Cartons',
-    unitId: 'hyd', scope: 'Design only', templateId: 'wf-export', currentStage: 0, status: 'Upcoming', priority: 'Medium', start: 3, due: 12,
+    id: 'JOB-0109', name: 'Export Carton Redesign', clientId: 'c5', locationId: 'c5-l1', categoryId: 'cat-export', subcategory: 'Cartons', scope: 'Design only', status: 'Upcoming', priority: 'Medium', start: 3, due: 12,
     teamIds: ['u6'], description: 'Redesign of export cartons for lighter board with the same stacking strength.',
   }),
   createJob({
-    id: 'JOB-0108', name: 'Showroom Furniture Packing', clientId: 'c6', locationId: 'c6-l1', categoryId: 'cat-commercial', subcategory: 'Furniture',
-    unitId: 'blr', scope: 'Packing only', templateId: 'wf-packing', currentStage: 4, status: 'Completed', priority: 'Low', start: -14, due: -4,
+    id: 'JOB-0108', name: 'Showroom Furniture Packing', clientId: 'c6', locationId: 'c6-l1', categoryId: 'cat-commercial', subcategory: 'Furniture', scope: 'Packing only', status: 'Completed', priority: 'Low', start: -14, due: -4,
     teamIds: ['u2', 'u9'], vendorIds: ['v10'],
   }),
   createJob({
-    id: 'JOB-0107', name: 'Pharma Cold-Chain Boxes', clientId: 'c4', locationId: 'c4-l1', categoryId: 'cat-product', subcategory: 'Insulated boxes',
-    unitId: 'hyd', scope: 'Complete project', templateId: 'wf-product', currentStage: 3, status: 'In progress', priority: 'High', start: -16, due: -1,
+    id: 'JOB-0107', name: 'Pharma Cold-Chain Boxes', clientId: 'c4', locationId: 'c4-l1', categoryId: 'cat-product', subcategory: 'Insulated boxes', scope: 'Complete project', status: 'In progress', priority: 'High', start: -16, due: -1,
     teamIds: ['u5', 'u8'], vendorIds: ['v9', 'v15'],
     services: [
       { name: 'Design', ownerId: 'u8', progress: 100 },
@@ -126,89 +119,72 @@ export const jobs = [
     description: 'Insulated shipper boxes holding 2–8 °C for 48 hours.',
   }),
   createJob({
-    id: 'JOB-0106', name: 'Hotel Linen Packaging', clientId: 'c7', locationId: 'c7-l1', categoryId: 'cat-product', subcategory: 'Textile',
-    unitId: 'kch', scope: 'Design + Packing', templateId: 'wf-product', currentStage: 2, status: 'On hold', priority: 'Medium', start: -8, due: 19,
+    id: 'JOB-0106', name: 'Hotel Linen Packaging', clientId: 'c7', locationId: 'c7-l1', categoryId: 'cat-product', subcategory: 'Textile', scope: 'Design + Packing', status: 'On hold', priority: 'Medium', start: -8, due: 19,
     teamIds: ['u4'], description: 'Awaiting client approval on the printed sleeve artwork.',
   }),
   createJob({
-    id: 'JOB-0105', name: 'Gearbox Spare Kits', clientId: 'c1', locationId: 'c1-l3', categoryId: 'cat-crating', subcategory: 'Spare parts',
-    unitId: 'chn', scope: 'Packing only', templateId: 'wf-packing', currentStage: 2, status: 'In progress', priority: 'Medium', start: -3, due: 5,
+    id: 'JOB-0105', name: 'Gearbox Spare Kits', clientId: 'c1', locationId: 'c1-l3', categoryId: 'cat-crating', subcategory: 'Spare parts', scope: 'Packing only', status: 'In progress', priority: 'Medium', start: -3, due: 5,
     teamIds: ['u7'], vendorIds: ['v9'],
   }),
   createJob({
-    id: 'JOB-0104', name: 'Spare Parts Kitting Boxes', clientId: 'c1', locationId: 'c1-l1', categoryId: 'cat-crating', subcategory: 'Spare parts',
-    unitId: 'chn', scope: 'Packing only', templateId: 'wf-packing', currentStage: 1, status: 'In progress', priority: 'Low', start: -2, due: 17,
+    id: 'JOB-0104', name: 'Spare Parts Kitting Boxes', clientId: 'c1', locationId: 'c1-l1', categoryId: 'cat-crating', subcategory: 'Spare parts', scope: 'Packing only', status: 'In progress', priority: 'Low', start: -2, due: 17,
     teamIds: ['u7', 'u10'],
   }),
   createJob({
-    id: 'JOB-0103', name: 'Lab Equipment Move', clientId: 'c4', locationId: 'c4-l1', categoryId: 'cat-relocation', subcategory: 'Office move',
-    unitId: 'hyd', scope: 'Custom', customServices: ['Packing', 'Delivery'], templateId: 'wf-relocation', currentStage: 2, status: 'In progress',
+    id: 'JOB-0103', name: 'Lab Equipment Move', clientId: 'c4', locationId: 'c4-l1', categoryId: 'cat-relocation', subcategory: 'Office move', scope: 'Custom', customServices: ['Packing', 'Delivery'], status: 'In progress',
     priority: 'Medium', start: -4, due: -3, teamIds: ['u5'],
     services: [{ name: 'Packing', ownerId: 'u5', progress: 70 }, { name: 'Delivery', ownerId: 'u5', progress: 0 }],
   }),
   createJob({
-    id: 'JOB-0102', name: 'Festive Hamper Boxes', clientId: 'c3', locationId: 'c3-l1', categoryId: 'cat-product', subcategory: 'Gift boxes',
-    unitId: 'kch', scope: 'Complete project', templateId: 'wf-product', currentStage: 6, status: 'Completed', priority: 'Medium', start: -30, due: -9,
+    id: 'JOB-0102', name: 'Festive Hamper Boxes', clientId: 'c3', locationId: 'c3-l1', categoryId: 'cat-product', subcategory: 'Gift boxes', scope: 'Complete project', status: 'Completed', priority: 'Medium', start: -30, due: -9,
     teamIds: ['u4', 'u8'],
   }),
   createJob({
-    id: 'JOB-0101', name: 'Plant Relocation — Line B', clientId: 'c1', locationId: 'c1-l2', categoryId: 'cat-relocation', subcategory: 'Plant move',
-    unitId: 'blr', scope: 'Custom', customServices: ['Site survey', 'Packing', 'Delivery'], templateId: 'wf-relocation', currentStage: 1,
+    id: 'JOB-0101', name: 'Plant Relocation — Line B', clientId: 'c1', locationId: 'c1-l2', categoryId: 'cat-relocation', subcategory: 'Plant move', scope: 'Custom', customServices: ['Site survey', 'Packing', 'Delivery'],
     status: 'In progress', priority: 'High', start: -5, due: 35, teamIds: ['u2', 'u9'],
   }),
   createJob({
-    id: 'JOB-0100', name: 'Data Centre Rack Packing', clientId: 'c8', locationId: 'c8-l1', categoryId: 'cat-commercial', subcategory: 'Office equipment',
-    unitId: 'blr', scope: 'Packing only', templateId: 'wf-packing', currentStage: 4, status: 'Completed', priority: 'High', start: -25, due: -18,
+    id: 'JOB-0100', name: 'Data Centre Rack Packing', clientId: 'c8', locationId: 'c8-l1', categoryId: 'cat-commercial', subcategory: 'Office equipment', scope: 'Packing only', status: 'Completed', priority: 'High', start: -25, due: -18,
     teamIds: ['u9'],
   }),
   createJob({
-    id: 'JOB-0099', name: 'Hydraulic Press Crate', clientId: 'c1', locationId: 'c1-l1', categoryId: 'cat-crating', subcategory: 'Heavy machinery',
-    unitId: 'chn', scope: 'Complete project', templateId: 'wf-crating', currentStage: 6, status: 'Completed', priority: 'Medium', start: -45, due: -22,
+    id: 'JOB-0099', name: 'Hydraulic Press Crate', clientId: 'c1', locationId: 'c1-l1', categoryId: 'cat-crating', subcategory: 'Heavy machinery', scope: 'Complete project', status: 'Completed', priority: 'Medium', start: -45, due: -22,
     teamIds: ['u3', 'u6'], vendorIds: ['v1'],
   }),
   createJob({
-    id: 'JOB-0098', name: 'Export Pallets — Batch 4', clientId: 'c5', locationId: 'c5-l1', categoryId: 'cat-export', subcategory: 'Sea freight crates',
-    unitId: 'chn', scope: 'Complete project', templateId: 'wf-export', currentStage: 6, status: 'Completed', priority: 'Medium', start: -40, due: -20,
+    id: 'JOB-0098', name: 'Export Pallets — Batch 4', clientId: 'c5', locationId: 'c5-l1', categoryId: 'cat-export', subcategory: 'Sea freight crates', scope: 'Complete project', status: 'Completed', priority: 'Medium', start: -40, due: -20,
     teamIds: ['u3'],
   }),
   createJob({
-    id: 'JOB-0097', name: 'Warehouse Shelving Move', clientId: 'c2', locationId: 'c2-l1', categoryId: 'cat-relocation', subcategory: 'Office move',
-    unitId: 'blr', scope: 'Custom', customServices: ['Packing', 'Delivery'], templateId: 'wf-relocation', currentStage: 1, status: 'Cancelled',
+    id: 'JOB-0097', name: 'Warehouse Shelving Move', clientId: 'c2', locationId: 'c2-l1', categoryId: 'cat-relocation', subcategory: 'Office move', scope: 'Custom', customServices: ['Packing', 'Delivery'], status: 'Cancelled',
     priority: 'Low', start: -20, due: -10, teamIds: ['u2'],
   }),
   createJob({
-    id: 'JOB-0096', name: 'Linen Range Sampling', clientId: 'c7', locationId: 'c7-l1', categoryId: 'cat-product', subcategory: 'Textile',
-    unitId: 'kch', scope: 'Design only', templateId: 'wf-product', currentStage: 6, status: 'Completed', priority: 'Low', start: -35, due: -26,
+    id: 'JOB-0096', name: 'Linen Range Sampling', clientId: 'c7', locationId: 'c7-l1', categoryId: 'cat-product', subcategory: 'Textile', scope: 'Design only', status: 'Completed', priority: 'Low', start: -35, due: -26,
     teamIds: ['u8'],
   }),
   createJob({
-    id: 'JOB-0095', name: 'Server Room Packing', clientId: 'c8', locationId: 'c8-l1', categoryId: 'cat-commercial', subcategory: 'Office equipment',
-    unitId: 'blr', scope: 'Packing only', templateId: 'wf-packing', currentStage: 0, status: 'Upcoming', priority: 'Medium', start: 8, due: 11,
+    id: 'JOB-0095', name: 'Server Room Packing', clientId: 'c8', locationId: 'c8-l1', categoryId: 'cat-commercial', subcategory: 'Office equipment', scope: 'Packing only', status: 'Upcoming', priority: 'Medium', start: 8, due: 11,
     teamIds: ['u9'],
   }),
   createJob({
-    id: 'JOB-0094', name: 'Vaccine Shipper Trial', clientId: 'c4', locationId: 'c4-l1', categoryId: 'cat-product', subcategory: 'Insulated boxes',
-    unitId: 'hyd', scope: 'Design + Packing', templateId: 'wf-product', currentStage: 0, status: 'Upcoming', priority: 'High', start: 10, due: 24,
+    id: 'JOB-0094', name: 'Vaccine Shipper Trial', clientId: 'c4', locationId: 'c4-l1', categoryId: 'cat-product', subcategory: 'Insulated boxes', scope: 'Design + Packing', status: 'Upcoming', priority: 'High', start: 10, due: 24,
     teamIds: ['u5', 'u8'],
   }),
   createJob({
-    id: 'JOB-0093', name: 'Showroom Restock Packing', clientId: 'c6', locationId: 'c6-l1', categoryId: 'cat-commercial', subcategory: 'Retail stock',
-    unitId: 'blr', scope: 'Packing only', templateId: 'wf-packing', currentStage: 4, status: 'Completed', priority: 'Low', start: -12, due: -7,
+    id: 'JOB-0093', name: 'Showroom Restock Packing', clientId: 'c6', locationId: 'c6-l1', categoryId: 'cat-commercial', subcategory: 'Retail stock', scope: 'Packing only', status: 'Completed', priority: 'Low', start: -12, due: -7,
     teamIds: ['u9'],
   }),
   createJob({
-    id: 'JOB-0092', name: 'Electrical Panel Crates', clientId: 'c1', locationId: 'c1-l1', categoryId: 'cat-crating', subcategory: 'Electrical panels',
-    unitId: 'chn', scope: 'Complete project', templateId: 'wf-crating', currentStage: 2, status: 'On hold', priority: 'Medium', start: -9, due: 14,
+    id: 'JOB-0092', name: 'Electrical Panel Crates', clientId: 'c1', locationId: 'c1-l1', categoryId: 'cat-crating', subcategory: 'Electrical panels', scope: 'Complete project', status: 'On hold', priority: 'Medium', start: -9, due: 14,
     teamIds: ['u3', 'u6'], description: 'Paused until the client confirms panel dimensions.',
   }),
   createJob({
-    id: 'JOB-0091', name: 'Seasonal Gift Sleeves', clientId: 'c3', locationId: 'c3-l1', categoryId: 'cat-product', subcategory: 'Gift boxes',
-    unitId: 'kch', scope: 'Design only', templateId: 'wf-product', currentStage: 6, status: 'Completed', priority: 'Low', start: -50, due: -38,
+    id: 'JOB-0091', name: 'Seasonal Gift Sleeves', clientId: 'c3', locationId: 'c3-l1', categoryId: 'cat-product', subcategory: 'Gift boxes', scope: 'Design only', status: 'Completed', priority: 'Low', start: -50, due: -38,
     teamIds: ['u8'],
   }),
   createJob({
-    id: 'JOB-0090', name: 'Cold Room Panels Export', clientId: 'c5', locationId: 'c5-l1', categoryId: 'cat-export', subcategory: 'Sea freight crates',
-    unitId: 'chn', scope: 'Complete project', templateId: 'wf-export', currentStage: 3, status: 'In progress', priority: 'High', start: -7, due: 10,
+    id: 'JOB-0090', name: 'Cold Room Panels Export', clientId: 'c5', locationId: 'c5-l1', categoryId: 'cat-export', subcategory: 'Sea freight crates', scope: 'Complete project', status: 'In progress', priority: 'High', start: -7, due: 10,
     teamIds: ['u3', 'u7'], vendorIds: ['v1', 'v13'],
   }),
 ];

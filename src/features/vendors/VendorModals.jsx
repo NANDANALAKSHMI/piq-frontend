@@ -4,7 +4,6 @@ import Button from '../../components/common/Button.jsx';
 import { Chip } from '../../components/common/Tabs.jsx';
 import { SelectField, TextArea, TextField } from '../../components/common/FormFields.jsx';
 import { vendorCategories } from '../../data/vendorsData.js';
-import { units } from '../../data/unitsData.js';
 import { CITIES } from '../../data/constants.js';
 import { daysFromToday } from '../../utils/formatters.js';
 
@@ -20,7 +19,6 @@ export function AddVendorModal({ open, defaultCategoryId, onClose, onSave }) {
     leadDays: '3',
     payment: '30 days credit',
     status: 'Approved',
-    unitIds: [],
   });
   const [errors, setErrors] = useState({});
   const update = (key) => (e) => setForm((current) => ({ ...current, [key]: e.target.value }));
@@ -83,16 +81,6 @@ export function AddVendorModal({ open, defaultCategoryId, onClose, onSave }) {
         <TextField label="Lead time (days)" type="number" min="1" value={form.leadDays} onChange={update('leadDays')} />
         <SelectField label="Payment terms" value={form.payment} onChange={update('payment')} options={['Advance', 'Advance 50%', '15 days credit', '30 days credit', 'Cash']} />
         <SelectField label="Status" value={form.status} onChange={update('status')} options={['Preferred', 'Approved', 'On hold']} />
-        <div>
-          <p className="mb-2 text-xs font-semibold text-muted">Serves units</p>
-          <div className="flex flex-wrap gap-2">
-            {units.map((u) => (
-              <Chip key={u.id} active={form.unitIds.includes(u.id)} onClick={() => toggle('unitIds', u.id)}>
-                {u.city}
-              </Chip>
-            ))}
-          </div>
-        </div>
       </div>
     </Modal>
   );
