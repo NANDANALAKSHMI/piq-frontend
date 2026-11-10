@@ -64,6 +64,20 @@ async function withReturnLink(send) {
 /** "Keep me signed in": remember the session in this browser, or only for this tab. */
 const persist = (remember) => setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
 
+/** Firestore errors worth a quick retry (connection still starting, brief network hiccup). */
+const TEMPORARY = new Set(['unavailable', 'deadline-exceeded', 'internal', 'unknown', 'aborted']);
+
+async function withRetries(task, attempts = 3) {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await task();
+    } catch (err) {
+      if (attempt >= attempts || !TEMPORARY.has(err?.code)) throw err;
+      await new Promise((resolve) => setTimeout(resolve, 1200 * attempt));
+    }
+  }
+}
+
 /** Turn a signed-in Firebase user into the Box Theory user. `member` is their invitation record (null for owners). */
 function toAppUser(firebaseUser, member) {
   const email = normaliseEmail(firebaseUser.email ?? '');
@@ -104,13 +118,23 @@ async function resolveAccess(firebaseUser) {
   if (!isFirebaseConfigured || !email) return { ok: false, error: denied };
 
   let membersApi;
-  let member;
   try {
     membersApi = await import('../lib/members.js'); // Firestore loads only when it's needed
-    member = await membersApi.getMemberRecord(email);
   } catch (err) {
-    console.warn('[auth] Could not read the invitation — is Firestore created and firestore.rules published?', err);
-    return { ok: false, error: 'Could not check your invitation right now. Please try again in a moment.' };
+    console.warn('[auth] Could not load the team module', err);
+    return { ok: false, error: 'Box Theory was just updated. Reload the page and sign in again.' };
+  }
+
+  let member;
+  try {
+    member = await withRetries(() => membersApi.getMemberRecord(email));
+  } catch (err) {
+    console.warn('[auth] Could not read the invitation', err);
+    const error =
+      err?.code === 'permission-denied'
+        ? 'Firestore refused to read your invitation. An admin needs to publish the latest firestore.rules.'
+        : `Could not check your invitation right now (${err?.code ?? err?.message ?? 'network error'}). Please try again in a moment.`;
+    return { ok: false, error };
   }
   if (!member) return { ok: false, error: denied };
   if (member.status === 'Inactive') {

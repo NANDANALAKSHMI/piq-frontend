@@ -7,8 +7,6 @@ import {
   increment,
   initializeFirestore,
   onSnapshot,
-  persistentLocalCache,
-  persistentMultipleTabManager,
   serverTimestamp,
   setDoc,
   updateDoc,
@@ -26,19 +24,14 @@ import { memberId, normaliseEmail } from './memberUtils.js';
 const MEMBERS = 'members';
 
 /**
- * Firestore set up for a fast Team page:
- * - an on-device cache (IndexedDB, shared by all tabs), so after the first visit the team shows
- *   instantly while fresh data loads in the background;
- * - long-polling, which avoids the slow or stuck first load that some networks, VPNs and antivirus
- *   tools cause with Firestore's default streaming connection.
+ * Firestore with long-polling, which avoids the slow or stuck first load that some networks, VPNs
+ * and antivirus tools cause with Firestore's default streaming connection. Each tab keeps its own
+ * in-memory cache (a cache shared between tabs broke sign-in when several tabs were open).
  */
 function createDb() {
   if (!firebaseApp) return null;
   try {
-    return initializeFirestore(firebaseApp, {
-      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
-      experimentalForceLongPolling: true,
-    });
+    return initializeFirestore(firebaseApp, { experimentalForceLongPolling: true });
   } catch {
     return getFirestore(firebaseApp); // already set up (e.g. after a hot reload in dev)
   }
