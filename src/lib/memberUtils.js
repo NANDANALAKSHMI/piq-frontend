@@ -26,7 +26,7 @@ export function describeFirestoreError(error) {
     case 'failed-precondition':
       return 'Firestore is not set up yet. Create the Firestore database in the Firebase console.';
     case 'unavailable':
-      return 'Cannot reach Firestore right now. Check your connection and try again.';
+      return 'Cannot reach Firestore. Check your connection, and that the Firestore database has been created in the Firebase console.';
     default:
       return error?.message || 'Something went wrong while saving. Please try again.';
   }

@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { SearchX, Send, TriangleAlert, UserPlus, X } from 'lucide-react';
+import { LoaderCircle, SearchX, Send, TriangleAlert, UserPlus, X } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card from '../components/common/Card.jsx';
@@ -248,7 +248,7 @@ export default function TeamPage() {
         <div className="px-2 pb-4 sm:px-4">
           <DataTable
             rows={rows}
-            loading={teamLoading}
+            loading={teamLoading && rows.length === 0}
             minWidth={820}
             pageSize={10}
             emptyState={<EmptyState icon={SearchX} title="No team members match" />}
@@ -299,6 +299,12 @@ export default function TeamPage() {
             ]}
           />
         </div>
+        {teamLoading && (
+          <p className="flex items-center gap-2 border-t border-line px-4 py-3 text-[13px] text-muted sm:px-6">
+            <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+            Loading invited members…
+          </p>
+        )}
         {nobodyInvited && (
           <p className="border-t border-line px-4 py-3 text-[13px] text-muted sm:px-6">
             No one has been invited yet. Use <b className="text-ink">Invite member</b> to add your team — they get an email and sign in

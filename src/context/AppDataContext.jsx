@@ -21,6 +21,18 @@ const NO_MEMBERS = [];
 /** Firestore + invitation helpers load on demand, keeping the SDK out of the first page load. */
 const loadMembersApi = () => import('../lib/members.js');
 
+/** True when this browser has a saved Google sign-in (Firebase keeps it in localStorage). */
+function hasSavedGoogleSession() {
+  try {
+    return Object.keys(window.localStorage).some((key) => key.startsWith('firebase:authUser:'));
+  } catch {
+    return false;
+  }
+}
+
+// Returning Google users: download Firestore while the sign-in is still being restored.
+if (isFirebaseConfigured && hasSavedGoogleSession()) loadMembersApi().catch(() => {});
+
 function logEntry(type, text, by) {
   return { id: localId('a'), type, text, by, when: 'Just now' };
 }
