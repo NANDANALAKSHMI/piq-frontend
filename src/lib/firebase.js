@@ -16,5 +16,9 @@ export const isFirebaseConfigured = Boolean(firebaseConfig.apiKey && firebaseCon
 export const firebaseApp = isFirebaseConfigured ? initializeApp(firebaseConfig) : null;
 export const auth = firebaseApp ? getAuth(firebaseApp) : null;
 
-export const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({ prompt: 'select_account' });
+/** Google provider for the sign-in popup. `loginHint` pre-selects the invited account. */
+export function createGoogleProvider(loginHint) {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters(loginHint ? { prompt: 'select_account', login_hint: loginHint } : { prompt: 'select_account' });
+  return provider;
+}

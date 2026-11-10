@@ -10,7 +10,7 @@ const PROGRESS_OPTIONS = [0, 25, 50, 75, 100].map((value) => ({ value: String(va
 
 /** Per-service tracking: each service in scope has its own owner, progress and status. */
 export default function ServiceScopeTable({ services, getMember, onProgressChange, editable = true }) {
-  if (!services.length) return <EmptyState title="No services in scope" description="Edit the job to choose which services PIQ is responsible for." />;
+  if (!services.length) return <EmptyState title="No services in scope" description="Edit the job to choose which services Box Theory is responsible for." />;
 
   return (
     <DataTable

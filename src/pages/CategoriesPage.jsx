@@ -185,7 +185,7 @@ export default function CategoriesPage() {
             <Card>
               <CardHeader
                 title="Vendor categories needed"
-                subtitle="PIQ suggests vendors from these categories when a job is created."
+                subtitle="Box Theory suggests vendors from these categories when a job is created."
                 action={<Link to="/vendors" className="text-[13px] font-semibold text-brand-ink hover:underline">Open vendors</Link>}
               />
               <div className="flex flex-wrap gap-2">
@@ -202,7 +202,7 @@ export default function CategoriesPage() {
 
       {tab === 'services' && (
         <Card>
-          <CardHeader title="Service catalog" subtitle="Every service PIQ can be responsible for on a job." />
+          <CardHeader title="Service catalog" subtitle="Every service Box Theory can be responsible for on a job." />
           <DataTable
             rows={serviceCatalog}
             rowKey={(s) => s.name}
@@ -218,7 +218,7 @@ export default function CategoriesPage() {
 
       {tab === 'presets' && (
         <Card>
-          <CardHeader title="Scope presets" subtitle="Quick choices when defining what PIQ is responsible for on a job." />
+          <CardHeader title="Scope presets" subtitle="Quick choices when defining what Box Theory is responsible for on a job." />
           <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {SERVICE_SCOPES.map((scope) => (
               <li key={scope} className="rounded-xl border border-line p-4">

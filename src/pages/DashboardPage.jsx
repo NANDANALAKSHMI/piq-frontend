@@ -24,7 +24,7 @@ import { isOverdue } from '../utils/jobs.js';
 import { cn, daysUntil, dueLabel, formatDate, formatToday } from '../utils/formatters.js';
 
 const STATUS_COLORS = {
-  'In progress': '#F28C28',
+  'In progress': '#b99a60',
   Upcoming: '#2563EB',
   Completed: '#16A34A',
   'On hold': '#FCD34D',
@@ -156,13 +156,13 @@ export default function DashboardPage() {
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={cityData} margin={{ top: 16, right: 4, left: -24, bottom: 0 }}>
-                <CartesianGrid vertical={false} stroke="#E3E8F0" />
-                <XAxis dataKey="city" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#5B6476' }} interval={0} />
-                <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#5B6476' }} />
-                <Tooltip content={<ChartTooltip />} cursor={{ fill: '#F3F5F9' }} />
+                <CartesianGrid vertical={false} stroke="#E8E2DA" />
+                <XAxis dataKey="city" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#6E625B' }} interval={0} />
+                <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#6E625B' }} />
+                <Tooltip content={<ChartTooltip />} cursor={{ fill: '#F6F4F1' }} />
                 <Bar dataKey="value" name="Jobs" radius={[6, 6, 0, 0]} maxBarSize={44} isAnimationActive={false}>
                   {cityData.map((entry) => (
-                    <Cell key={entry.city} fill={entry.city === 'Others' ? '#CBD3DF' : '#F28C28'} />
+                    <Cell key={entry.city} fill={entry.city === 'Others' ? '#D8CFC5' : '#b99a60'} />
                   ))}
                 </Bar>
               </BarChart>

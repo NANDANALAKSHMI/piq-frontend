@@ -18,7 +18,7 @@ export default function MediaGallery({ media, onUpload, getMember, compact = fal
             key={item.id}
             className={cn(
               'relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-[10px] p-2',
-              item.type === 'video' ? 'bg-navy-2 text-white' : 'bg-[#e9edf3] text-slate-700',
+              item.type === 'video' ? 'bg-navy-2 text-white' : 'bg-[#efeae4] text-slate-700',
             )}
           >
             <Icon className={cn('absolute inset-0 m-auto size-8', item.type === 'video' ? 'text-white/80' : 'text-slate-400')} aria-hidden="true" />

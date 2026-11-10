@@ -1,22 +1,26 @@
 @import 'tailwindcss';
 
 @theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  /* Box Theory brand guidelines: Archivo (body) + Saira (headings), Cocoa Umber + Antique Champagne Gold */
+  --font-sans: 'Archivo', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Saira', 'Archivo', ui-sans-serif, system-ui, sans-serif;
 
-  --color-navy: #0f1b33;
-  --color-navy-2: #1b2a4a;
-  --color-navy-3: #2a3a5e;
-  --color-navy-muted: #aeb9ce;
+  /* "navy" tokens now hold the Cocoa Umber family (names kept so existing classes still work) */
+  --color-navy: #4a3831;
+  --color-navy-2: #5a463d;
+  --color-navy-3: #6b564b;
+  --color-navy-muted: #cbbcae;
 
-  --color-brand: #f28c28;
-  --color-brand-ink: #b4470a;
-  --color-brand-soft: #fef0e2;
-  --color-brand-line: #f6c79a;
+  /* "brand" tokens now hold Antique Champagne Gold */
+  --color-brand: #b99a60;
+  --color-brand-ink: #86682f;
+  --color-brand-soft: #f6f0e4;
+  --color-brand-line: #e3d3b0;
 
-  --color-canvas: #f3f5f9;
-  --color-line: #e3e8f0;
-  --color-ink: #0f172a;
-  --color-muted: #5b6476;
+  --color-canvas: #f6f4f1;
+  --color-line: #e8e2da;
+  --color-ink: #2b211d;
+  --color-muted: #6e625b;
 }
 
 @layer base {
@@ -28,6 +32,11 @@
 
   body {
     @apply bg-canvas font-sans text-sm text-ink antialiased;
+  }
+
+  h1,
+  h2 {
+    @apply font-display;
   }
 
   :focus-visible {

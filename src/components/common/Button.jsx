@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { cn } from '../../utils/formatters.js';
 
 const VARIANTS = {
-  primary: 'bg-brand text-navy border-brand hover:bg-[#e47d18] hover:border-[#e47d18]',
+  primary: 'bg-brand text-navy border-brand hover:bg-[#a6884f] hover:border-[#a6884f]',
   secondary: 'bg-white text-ink border-line hover:bg-slate-50 hover:border-slate-300',
   dark: 'bg-navy text-white border-navy hover:bg-navy-2',
   danger: 'bg-white text-red-700 border-red-200 hover:bg-red-50',

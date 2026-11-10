@@ -26,7 +26,7 @@ export default function MobileTabBar({ onOpenMenu }) {
       <NavLink
         to="/jobs/new"
         aria-label="Create new job"
-        className="-mt-7 grid size-14 place-items-center rounded-2xl bg-brand text-navy shadow-[0_8px_18px_rgba(242,140,40,0.38)]"
+        className="-mt-7 grid size-14 place-items-center rounded-2xl bg-brand text-navy shadow-[0_8px_18px_rgba(185,154,96,0.38)]"
       >
         <Plus className="size-6" aria-hidden="true" />
       </NavLink>

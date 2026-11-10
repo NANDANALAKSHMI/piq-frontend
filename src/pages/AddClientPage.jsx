@@ -117,7 +117,7 @@ export default function AddClientPage() {
             <div className="flex flex-col gap-3">
               {locations.map((loc, index) => {
                 return (
-                  <div key={loc.key} className={cn('flex flex-col gap-3.5 rounded-xl border p-4', loc.primary ? 'border-brand-line bg-[#fffbf6]' : 'border-line')}>
+                  <div key={loc.key} className={cn('flex flex-col gap-3.5 rounded-xl border p-4', loc.primary ? 'border-brand-line bg-[#fbf8f2]' : 'border-line')}>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2.5">
                         <span className="grid size-8.5 place-items-center rounded-lg bg-brand-soft text-brand-ink">
@@ -151,7 +151,7 @@ export default function AddClientPage() {
                         <div
                           role="img"
                           aria-label={`Map preview for ${loc.city}`}
-                          className="relative grid h-40 place-items-center rounded-xl bg-[#e6ebf2] bg-[linear-gradient(#d5dce6_1px,transparent_1px),linear-gradient(90deg,#d5dce6_1px,transparent_1px)] bg-[size:28px_28px]"
+                          className="relative grid h-40 place-items-center rounded-xl bg-[#ece6df] bg-[linear-gradient(#ddd4c9_1px,transparent_1px),linear-gradient(90deg,#ddd4c9_1px,transparent_1px)] bg-[size:28px_28px]"
                         >
                           <MapPin className="size-9 fill-brand text-navy" aria-hidden="true" />
                           <span className="absolute bottom-2.5 left-2.5 rounded-md bg-white px-2 py-1 text-xs font-medium">{loc.city}</span>

@@ -76,10 +76,11 @@ export default function AddJobPage() {
   const location = client?.locations.find((l) => l.id === form.locationId);
   const category = jobCategories.find((c) => c.id === form.categoryId);
 
+  const activeMembers = members.filter((m) => m.status === 'Active');
   const ownerFor = (service) => {
     if (form.owners[service]) return form.owners[service];
     const title = DEFAULT_OWNER_TITLE[service];
-    return (members.find((m) => m.title === title) ?? members[0]).id;
+    return (activeMembers.find((m) => m.title === title) ?? activeMembers[0])?.id ?? '';
   };
 
   const vendorRows = (category?.vendorCategoryIds ?? []).map((vcId) => {
@@ -87,7 +88,7 @@ export default function AddJobPage() {
     return { category: vendorCategories.find((vc) => vc.id === vcId), options, chosen: form.vendorChoices[vcId] ?? options[0]?.id ?? '' };
   });
 
-  const teamIds = [...new Set(form.services.map(ownerFor))];
+  const teamIds = [...new Set(form.services.map(ownerFor))].filter(Boolean);
 
   const changeClient = (clientId) => {
     const next = clients.find((c) => c.id === clientId);
@@ -194,7 +195,7 @@ export default function AddJobPage() {
                     key={loc.id}
                     className={cn(
                       'flex cursor-pointer flex-col gap-1.5 rounded-xl border p-3.5 transition-colors',
-                      selected ? 'border-2 border-brand bg-[#fffbf6]' : 'border-line hover:border-slate-300',
+                      selected ? 'border-2 border-brand bg-[#fbf8f2]' : 'border-line hover:border-slate-300',
                     )}
                   >
                     <span className="flex items-center justify-between gap-2">
@@ -254,7 +255,7 @@ export default function AddJobPage() {
           </Card>
 
           <Card>
-            <SectionTitle number={3} title="Service scope" subtitle="What PIQ is responsible for. Each service is tracked separately." />
+            <SectionTitle number={3} title="Service scope" subtitle="What Box Theory is responsible for. Each service is tracked separately." />
             <div className="mb-4 flex flex-wrap gap-2">
               {SERVICE_SCOPES.map((scope) => (
                 <Chip key={scope} active={form.scope === scope} onClick={() => changeScope(scope)}>
@@ -266,14 +267,14 @@ export default function AddJobPage() {
               {SERVICES.map((service) => {
                 const included = form.services.includes(service);
                 return (
-                  <div key={service} className={cn('flex items-center gap-3 rounded-xl border p-3', included ? 'border-brand-line bg-[#fffbf6]' : 'border-line')}>
+                  <div key={service} className={cn('flex items-center gap-3 rounded-xl border p-3', included ? 'border-brand-line bg-[#fbf8f2]' : 'border-line')}>
                     <Checkbox label={<b>{service}</b>} checked={included} onChange={() => toggleService(service)} className="flex-1" />
                     {included && (
                       <SelectControl
                         aria-label={`${service} owner`}
                         value={ownerFor(service)}
                         onChange={(e) => set({ owners: { ...form.owners, [service]: e.target.value } })}
-                        options={members.filter((m) => m.status === 'Active').map((m) => ({ value: m.id, label: m.name }))}
+                        options={activeMembers.map((m) => ({ value: m.id, label: m.name }))}
                         className="h-9 w-40 text-[13px]"
                       />
                     )}

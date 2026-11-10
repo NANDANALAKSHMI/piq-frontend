@@ -1,0 +1,31 @@
+/**
+ * Box Theory brand mark (gold "T in a box", 132x132 PNG) used as the inline logo in emails.
+ * Generated from the SVG in src/components/layout/Logo.jsx — kept as base64 so the
+ * serverless function needs no file reads.
+ */
+export const BRAND_MARK_PNG = [
+  'iVBORw0KGgoAAAANSUhEUgAAAIQAAACECAYAAABRRIOnAAAABmJLR0QA/wD/AP+gvaeTAAAGsklEQVR4nO3d24scZR7G8ef3zkEz',
+  '8XxAjCgGQUR2cfGEB/CcqfGYKOjuJmamOqa7vRDBxQsPF/aVB4SAh4vparV7xuAhB2WzSbqrJ25QIUbxH3BBjYuwN7IsCYomTv28',
+  'MGandOKkp/utt6r6+VxOqt+3hnx5p7v6rW4JA/8DACMgl76HYo9B9PKK8vS/XZ6IhIG/H8CJLk+CjvhOEN0/Wpp+19UJGEDF1eT0',
+  'GyMKs7lV9Ve7OgHjamI6qgERTLdrhb+6mJxBpNOAqr4eBv5fkp6YQaTXAICNSUfBINJtAMB0WPVXJTUhg0i/IQg2tWqFlUlMZgDh',
+  'q4z0GxLVTe1g4i7bE3GFyI5hhWy2HQWDyJZhhWwOJ/07bU3AILJnGAZbwqBwh43BGUQ2DQO6tVWduL3XAzOI7BoWkZ5HwSCy7TgR',
+  '2dwK1t3SqwEZRPYtEUTb2pMTN/diMAOA1yGyb4ka2RbWCjd1OxBXiPwYgeo/WtXxG7sZhEHky4iI2d5NFAwif0ZEzPZmzb9hMQ9m',
+  'EPk0YhTb20Hh+k4fyCDya6lCd4STE9d18iAJA/9bC7uu/wfopz0eM+PkWgBLHEy83wi8FcXG3mM52E4Qgg+8YqPj5SrPwpq/Aopt',
+  'AI53MP1+qIx65frHCx3I6xAJ8YqNGVFdCeB7B9OfBNGw9cr4lQsdyOcQCRotT7UNZJWjKE6WyLQXioJBJGxFqR5qhLsdRhE2A/+K',
+  'ox1gJwiFWhk3J8YebLSA6B4APziY/hQDtNuT6y6f7x+5QjjilaabQHS3qyjURDPzRcEgHPJK000ROFsp1ETtsDZx2dwfMgjHRouN',
+  'nZFgNYBDDqY/FSozrWrh0l9+wCBS4NZi4x2IrAb0RwfTnyqirZmq/0fYCkLAJ5Wd8or1LQqscRTFmRGwY9fL46dzhUiRsdLUJkDW',
+  'AphNfHLBubPD8hiDSBmv1HhLFeNOolC5h0Gk0Fi58YaI+IlHIXqelfcyFMLnEF0aLdY3QmRNslHIIFeIFPOK9beh8gCAKKk5LQWh',
+  'XCF6xCvXpwRILAquEBkwWmo0VGR9ElFwP0RGjBXrdQBF21FwhcgQr9R4DaIlm1FYCUKFVypt8YpTr4pKGZauBhsbA4vyz5BNo+X6',
+  'K4C+Z2NsO9chuEIkwFh5d3TQxqCiuCisFqo2xp6PIto2Vp7akdR882nX/Ns0kkQ+KQ4AoPoHG+uwlSAAnHP4yU8ijMrXAJwGoSqX',
+  'Jvk728JXGRTD6xAUwxWCYhgExTAIimEQFMMgKIZBUAyDoBheh6AYrhAUwyAohkFQDIOgGAZBMQyCYhgEzfVfBkH/p7qTQdAvPpwd',
+  'Mn+ztaeSek11o8rAlI2hRaOvP/rP+f+qVCrRIKDCq9cZILJGNPrcKzcqNqfhn4zsEAieCgP/1d2VirWVnUFkz7qDy/Zt2bPhXitf',
+  'tcAgsmnlgROW/nN3tXRGrwdmENl11SE5+P5Mdfy8Xg5qAOEzyoxS4OJIzN524P+pV2Nyhci+sxXYvZgvXJsPg8iHUxQahrXCn7sd',
+  'iEHkx3FQfTMMCo92MwiDyBcB9PmwVnihUqks6v+WQeSR6sPXLNvX+LRaGur0oQwipxRY+4052Nz54pqTOnkcg8gxUdw8sGTwvV21',
+  '9Wcd62N4X0beqVw+qz9+tCsYv/BYDucK0R+Wz4rZ05wcv3qhAxlEv1CcboyZadf8237vMAbRX5aq6t/b1cL6ox3AIPqODKpoEFb9',
+  'eTfaMIj+JBA81Q4mXvr1BSwG0ccU8tDVy/ZtnbvZhkHQqgMnLG3OVEsng0HQYddHcujdSqViGAQdpjdec85XqxkEHaGR3scgaA5d',
+  'zvcyaA4Z4gpBMQyCYhgExTAIijEADrg+CUoPA+gnrk+C0sMAusH1SVB6GK803RTgOdcnQulg8PO3zz8GwbOuT4bcO/Iqwys2HmcU',
+  'FHvZySjoN9chGEV/m/fCFKPoX0e9Usko+tPvXrpmFP1nwfcyGEV/OebNMWEwsQGQR+yezqJ9DuiXbk9BlgO4wO05dEnxWUe7pcJg',
+  '4mlAHrd3RuSU4rOO3v72SlNPAPqMvTMi1zreD8Eo8m1RG2QYRX4tescUo8inrrbQMYr86XpPJaPIl55ssmUU+dGzXdeMIh96ug2f',
+  'UWRfz+/LYBTZZuVGHa809YQqnrYxNtll7c6tsXLjSUaRPVZv5WMU2WP93k5GkS2J3OzLKLIjsbu/GUU2JPpxAIwi/RL/fAhGkW5O',
+  'PjCEUaSXs0+QGSs3noSg8vPXQ1FaOP9IwmbgX2GAMkQvQSSnuT6fvib6xU+HSAUP8XWjZwAAAABJRU5ErkJggg==',
+].join('');

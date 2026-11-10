@@ -137,11 +137,11 @@ export default function ReportsPage() {
           <div className="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 8, right: 4, left: -24, bottom: 0 }}>
-                <CartesianGrid vertical={false} stroke="#E3E8F0" />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#5B6476' }} />
-                <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#5B6476' }} />
-                <Tooltip content={<ChartTooltip />} cursor={{ fill: '#F3F5F9' }} />
-                <Bar dataKey="completed" name="Completed" fill="#F28C28" maxBarSize={44} radius={[6, 6, 0, 0]} isAnimationActive={false} />
+                <CartesianGrid vertical={false} stroke="#E8E2DA" />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#6E625B' }} />
+                <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#6E625B' }} />
+                <Tooltip content={<ChartTooltip />} cursor={{ fill: '#F6F4F1' }} />
+                <Bar dataKey="completed" name="Completed" fill="#b99a60" maxBarSize={44} radius={[6, 6, 0, 0]} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>

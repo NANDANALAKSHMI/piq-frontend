@@ -87,7 +87,7 @@ export default function JobDetailPage() {
 
   const servicesCard = (
     <Card>
-      <CardHeader title="Service scope & tracking" subtitle="Each service PIQ is responsible for is tracked on its own." action={<Tag>{job.scope}</Tag>} />
+      <CardHeader title="Service scope & tracking" subtitle="Each service Box Theory is responsible for is tracked on its own." action={<Tag>{job.scope}</Tag>} />
       <ServiceScopeTable
         services={job.services}
         getMember={lookups.getMember}
@@ -180,7 +180,7 @@ export default function JobDetailPage() {
                 <p className="mb-1 text-xs text-muted">Description</p>
                 <p className="whitespace-pre-line">{job.description || 'No description added.'}</p>
                 {job.keyDecision && (
-                  <div className="mt-4 flex gap-3 rounded-xl border border-brand-line bg-brand-soft p-3.5 text-[13px] text-[#7a2f05]">
+                  <div className="mt-4 flex gap-3 rounded-xl border border-brand-line bg-brand-soft p-3.5 text-[13px] text-[#5c4520]">
                     <Star className="size-4.5 shrink-0" aria-hidden="true" />
                     <p>
                       <b>Key decision (pinned)</b>

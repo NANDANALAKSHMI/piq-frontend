@@ -4,11 +4,11 @@ import { jobCategories } from '../data/categoriesData.js';
 
 /** Id → record lookups shared by pages that render jobs. */
 export default function useLookups() {
-  const { clients, members } = useAppData();
+  const { clients, knownMembers } = useAppData();
 
   return useMemo(() => {
     const clientMap = new Map(clients.map((c) => [c.id, c]));
-    const memberMap = new Map(members.map((m) => [m.id, m]));
+    const memberMap = new Map(knownMembers.map((m) => [m.id, m]));
     const categoryMap = new Map(jobCategories.map((c) => [c.id, c]));
 
     const getClient = (id) => clientMap.get(id);
@@ -22,5 +22,5 @@ export default function useLookups() {
       membersFor: (ids = []) => ids.map((id) => memberMap.get(id)).filter(Boolean),
       jobCity: (job) => getLocation(job.clientId, job.locationId)?.city ?? '—',
     };
-  }, [clients, members]);
+  }, [clients, knownMembers]);
 }

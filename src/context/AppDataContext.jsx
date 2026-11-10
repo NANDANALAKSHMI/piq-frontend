@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { jobs as initialJobs } from '../data/jobsData.js';
 import { clients as initialClients } from '../data/clientsData.js';
 import { enquiries as initialEnquiries } from '../data/enquiriesData.js';
@@ -9,19 +9,26 @@ import { SCOPE_SERVICES } from '../data/constants.js';
 import { nextId } from '../utils/jobs.js';
 import { daysFromToday } from '../utils/formatters.js';
 import { useAuth } from './AuthContext.jsx';
+import { isFirebaseConfigured } from '../lib/firebase.js';
+import { ADMIN_EMAILS, describeFirestoreError, memberId, normaliseEmail } from '../lib/memberUtils.js';
 
 const AppDataContext = createContext(null);
 
 let uid = 0;
 const localId = (prefix) => `${prefix}-${Date.now().toString(36)}-${(uid += 1)}`;
+const NO_MEMBERS = [];
+
+/** Firestore + invitation helpers load on demand, keeping the SDK out of the first page load. */
+const loadMembersApi = () => import('../lib/members.js');
 
 function logEntry(type, text, by) {
   return { id: localId('a'), type, text, by, when: 'Just now' };
 }
 
 /**
- * Holds every record the UI can change. There is no backend, so all actions
- * update local React state and last until the page is reloaded.
+ * Holds every record the UI can change. Most data is still dummy data, so those actions
+ * update local React state and last until the page is reloaded. The exception is team
+ * invitations: for a Google-signed-in admin they live in Firestore and are emailed for real.
  */
 export function AppDataProvider({ children }) {
   const { user } = useAuth();
@@ -31,8 +38,86 @@ export function AppDataProvider({ children }) {
   const [clients, setClients] = useState(initialClients);
   const [enquiries, setEnquiries] = useState(initialEnquiries);
   const [vendors, setVendors] = useState(initialVendors);
-  const [members, setMembers] = useState(initialMembers);
+  const [localMembers, setLocalMembers] = useState(initialMembers);
   const [notifications, setNotifications] = useState(initialNotifications);
+  const [teamSnapshot, setTeamSnapshot] = useState({ key: null, list: NO_MEMBERS, error: null });
+
+  /**
+   * Where the team comes from:
+   * live — signed in with Google: the real team in Firestore. There is one role, so everyone on
+   *        the team can invite people and manage access.
+   * demo — demo password login: the dummy team in src/data/teamData.js.
+   */
+  let teamMode = 'none';
+  if (user?.provider === 'google') teamMode = isFirebaseConfigured ? 'live' : 'none';
+  else if (user) teamMode = 'demo';
+  const realTeam = teamMode === 'live';
+  const teamKey = realTeam ? `${teamMode}:${user.email}` : null;
+
+  useEffect(() => {
+    if (!teamKey) return undefined;
+    let unsubscribe = null;
+    let cancelled = false;
+    loadMembersApi()
+      .then(({ subscribeToMembers }) => {
+        if (cancelled) return;
+        unsubscribe = subscribeToMembers(
+          (list) => setTeamSnapshot({ key: teamKey, list, error: null }),
+          (err) =>
+            setTeamSnapshot((current) => ({
+              key: teamKey,
+              list: current.key === teamKey ? current.list : NO_MEMBERS,
+              error: describeFirestoreError(err),
+            })),
+        );
+      })
+      .catch(() =>
+        setTeamSnapshot({ key: teamKey, list: NO_MEMBERS, error: 'Could not load the team. Refresh the page and try again.' }),
+      );
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [teamKey]);
+
+  const teamSynced = teamKey !== null && teamSnapshot.key === teamKey;
+  const firestoreMembers = teamSynced ? teamSnapshot.list : NO_MEMBERS;
+  const teamLoading = teamKey !== null && !teamSynced;
+  const teamError = teamSynced ? teamSnapshot.error : null;
+
+  /** Admins come from VITE_ADMIN_EMAILS rather than Firestore, so they're added to the real team here. */
+  const adminRows = useMemo(() => {
+    if (!realTeam) return NO_MEMBERS;
+    return ADMIN_EMAILS.map((email) => {
+      const isSelf = user.email === email;
+      const record = firestoreMembers.find((m) => m.email === email);
+      return {
+        id: memberId(email),
+        source: 'admin',
+        name: isSelf ? user.name : record?.name ?? email,
+        email,
+        phone: (isSelf ? user.phone : record?.phone) ?? '',
+        title: 'Administrator',
+        role: 'Admin',
+        status: 'Active',
+        color: 'bg-brand-ink',
+        lastActive: '—',
+      };
+    });
+  }, [realTeam, user, firestoreMembers]);
+
+  /** The team shown on the Team page and in the job pickers: real people when signed in with Google. */
+  const members = useMemo(
+    () => (realTeam ? [...adminRows, ...firestoreMembers.filter((m) => !ADMIN_EMAILS.includes(m.email))] : localMembers),
+    [realTeam, adminRows, firestoreMembers, localMembers],
+  );
+
+  /** For name lookups only: the team plus the dummy people still referenced by the dummy jobs. */
+  const knownMembers = useMemo(() => {
+    if (!realTeam) return localMembers;
+    const ids = new Set(members.map((m) => m.id));
+    return [...members, ...localMembers.filter((m) => !ids.has(m.id))];
+  }, [realTeam, members, localMembers]);
 
   /* ---------- jobs ---------- */
 
@@ -225,18 +310,88 @@ export function AppDataProvider({ children }) {
     setVendors((list) => list.map((v) => (v.id === vendorId ? { ...v, ...patch } : v)));
   }, []);
 
-  const toggleMemberAccess = useCallback((memberId) => {
-    setMembers((list) =>
-      list.map((m) => (m.id === memberId ? { ...m, status: m.status === 'Active' ? 'Inactive' : 'Active' } : m)),
-    );
+  /** Switches someone's access off/on. For the real team this is saved in Firestore and blocks sign-in. */
+  const toggleMemberAccess = useCallback(
+    async (id) => {
+      const member = members.find((m) => m.id === id);
+      if (!member) return { ok: false, error: 'That person is no longer on the team.' };
+      if (member.source === 'admin') return { ok: false, error: 'Admins are set in VITE_ADMIN_EMAILS.' };
+      if (member.source === 'invite') {
+        if (teamMode !== 'live') return { ok: false, error: 'Only admins can change access.' };
+        const next = member.status === 'Inactive' ? (member.acceptedAt ? 'Active' : 'Invited') : 'Inactive';
+        try {
+          const { setMemberStatus } = await loadMembersApi();
+          await setMemberStatus(member.email, next);
+          return { ok: true, status: next };
+        } catch (err) {
+          return { ok: false, error: describeFirestoreError(err) };
+        }
+      }
+      const next = member.status === 'Inactive' ? 'Active' : 'Inactive';
+      setLocalMembers((list) => list.map((m) => (m.id === id ? { ...m, status: next } : m)));
+      return { ok: true, status: next };
+    },
+    [members, teamMode],
+  );
+
+  /**
+   * Adds someone to the team. As a Google-signed-in admin this saves the invitation in Firestore
+   * and emails it from the Snap Infinity mailbox; in demo mode it only updates local state.
+   * Resolves to { ok, emailed, error }.
+   */
+  const inviteMember = useCallback(
+    async (draft) => {
+      if (teamMode === 'demo') {
+        setLocalMembers((list) => [
+          ...list,
+          { ...draft, status: 'Active', id: localId('u'), lastActive: '—', color: 'bg-slate-500', phone: draft.phone ?? '' },
+        ]);
+        return { ok: true, emailed: false };
+      }
+      if (teamMode !== 'live') return { ok: false, error: 'Only admins can invite people.' };
+      const email = normaliseEmail(draft.email);
+      if (ADMIN_EMAILS.includes(email)) return { ok: false, error: `${email} is already an admin.` };
+      try {
+        const { createInvite } = await loadMembersApi();
+        await createInvite(draft, user.email);
+      } catch (err) {
+        return { ok: false, error: err.code === 'already-member' ? err.message : describeFirestoreError(err) };
+      }
+      try {
+        const { sendInviteEmail } = await loadMembersApi();
+        await sendInviteEmail(draft);
+        return { ok: true, emailed: true };
+      } catch (err) {
+        return { ok: true, emailed: false, error: err.message };
+      }
+    },
+    [teamMode, user],
+  );
+
+  const resendInvite = useCallback(async (member) => {
+    try {
+      const { sendInviteEmail } = await loadMembersApi();
+      await sendInviteEmail(member);
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
   }, []);
 
-  const inviteMember = useCallback((draft) => {
-    setMembers((list) => [
-      ...list,
-      { status: 'Invited', ...draft, id: localId('u'), lastActive: '—', color: 'bg-slate-500', phone: draft.phone ?? '' },
-    ]);
-  }, []);
+  /** Cancels a pending invitation (e.g. a mistyped email); its link stops working. */
+  const removeInvite = useCallback(
+    async (member) => {
+      if (teamMode !== 'live' || member.source !== 'invite') return { ok: false, error: 'Only admins can cancel invitations.' };
+      try {
+        const { deleteInvite } = await loadMembersApi();
+        await deleteInvite(member.email);
+        return { ok: true };
+      } catch (err) {
+        return { ok: false, error: describeFirestoreError(err) };
+      }
+    },
+    [teamMode],
+  );
 
   const markNotificationRead = useCallback((id) => {
     setNotifications((list) => list.map((n) => (n.id === id ? { ...n, read: true } : n)));
@@ -248,21 +403,21 @@ export function AppDataProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      jobs, clients, enquiries, vendors, members, notifications,
+      jobs, clients, enquiries, vendors, members, knownMembers, notifications,
       addJob, updateJob, setJobStatus, setServiceProgress, addComment, addMedia,
       addClient, addLocation,
       addEnquiry, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry,
       addVendor, updateVendor,
-      toggleMemberAccess, inviteMember,
+      toggleMemberAccess, inviteMember, resendInvite, removeInvite, teamMode, teamLoading, teamError,
       markNotificationRead, markAllNotificationsRead,
     }),
     [
-      jobs, clients, enquiries, vendors, members, notifications,
+      jobs, clients, enquiries, vendors, members, knownMembers, notifications,
       addJob, updateJob, setJobStatus, setServiceProgress, addComment, addMedia,
       addClient, addLocation,
       addEnquiry, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry,
       addVendor, updateVendor,
-      toggleMemberAccess, inviteMember,
+      toggleMemberAccess, inviteMember, resendInvite, removeInvite, teamMode, teamLoading, teamError,
       markNotificationRead, markAllNotificationsRead,
     ],
   );

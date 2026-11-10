@@ -4,3 +4,6 @@ dist
 *.log
 .env.local
 .env
+
+# Files the Claude desktop app saves into this folder
+Claude outputs/

@@ -155,7 +155,7 @@ export default function JobsPage() {
                   key={chip.key}
                   type="button"
                   onClick={() => setFilter(chip.key, '')}
-                  className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-brand-line bg-brand-soft px-3 text-[13px] font-medium text-brand-ink hover:bg-[#fde3c8]"
+                  className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-brand-line bg-brand-soft px-3 text-[13px] font-medium text-brand-ink hover:bg-[#efe4cc]"
                 >
                   {chip.label}
                   <X className="size-3.5" aria-label="Remove filter" />

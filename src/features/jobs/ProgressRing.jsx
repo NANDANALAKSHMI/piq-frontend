@@ -5,13 +5,13 @@ export default function ProgressRing({ value, size = 116, label }) {
   const dash = (Math.max(0, Math.min(100, value)) / 100) * CIRCUMFERENCE;
   return (
     <svg width={size} height={size} viewBox="0 0 116 116" role="img" aria-label={label ?? `${value}% complete`} className="shrink-0">
-      <circle cx="58" cy="58" r={RADIUS} fill="none" stroke="#EEF1F5" strokeWidth="12" />
+      <circle cx="58" cy="58" r={RADIUS} fill="none" stroke="#F1EDE8" strokeWidth="12" />
       <circle
         cx="58"
         cy="58"
         r={RADIUS}
         fill="none"
-        stroke={value >= 100 ? '#16A34A' : '#F28C28'}
+        stroke={value >= 100 ? '#16A34A' : '#b99a60'}
         strokeWidth="12"
         strokeLinecap="round"
         strokeDasharray={`${dash} ${CIRCUMFERENCE}`}

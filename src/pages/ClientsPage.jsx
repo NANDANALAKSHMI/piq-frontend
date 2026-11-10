@@ -217,7 +217,7 @@ export default function ClientsPage() {
                 {selected.locations.map((loc) => {
                   const count = clientJobs.filter((j) => j.locationId === loc.id).length;
                   return (
-                    <div key={loc.id} className={cn('flex flex-col gap-2 rounded-xl border p-3.5', loc.primary ? 'border-brand-line bg-[#fffbf6]' : 'border-line')}>
+                    <div key={loc.id} className={cn('flex flex-col gap-2 rounded-xl border p-3.5', loc.primary ? 'border-brand-line bg-[#fbf8f2]' : 'border-line')}>
                       <div className="flex items-center justify-between">
                         <span className={cn('grid size-8.5 place-items-center rounded-lg', loc.primary ? 'bg-brand-soft text-brand-ink' : 'bg-slate-100 text-slate-600')}>
                           <MapPin className="size-4" aria-hidden="true" />

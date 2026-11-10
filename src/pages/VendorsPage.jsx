@@ -92,7 +92,7 @@ export default function VendorsPage() {
               }}
               className={cn(
                 'flex flex-col gap-2 rounded-2xl border bg-white p-4 text-left transition-colors hover:border-slate-300',
-                active ? 'border-2 border-brand bg-[#fffbf6]' : 'border-line',
+                active ? 'border-2 border-brand bg-[#fbf8f2]' : 'border-line',
               )}
             >
               <span className="flex items-center justify-between">

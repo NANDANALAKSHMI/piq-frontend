@@ -13,7 +13,7 @@ function SidebarContent({ counts, user, onNavigate, onLogout }) {
         {NAV_SECTIONS.map((section) => (
           <div key={section.id} className="flex flex-col gap-0.5">
             {section.label && (
-              <p className="px-3 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-wider text-[#8f9bb3]">{section.label}</p>
+              <p className="px-3 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-wider text-[#b5a597]">{section.label}</p>
             )}
             {section.items.map(({ to, label, icon: Icon, end, countKey, alert }) => (
               <NavLink
@@ -24,7 +24,7 @@ function SidebarContent({ counts, user, onNavigate, onLogout }) {
                 className={({ isActive }) =>
                   cn(
                     'flex min-h-[42px] items-center gap-3 rounded-[10px] px-3 text-sm font-medium transition-colors',
-                    isActive ? 'bg-brand font-semibold text-navy' : 'text-[#c9d2e3] hover:bg-navy-2 hover:text-white',
+                    isActive ? 'bg-brand font-semibold text-navy' : 'text-[#e6ddd3] hover:bg-navy-2 hover:text-white',
                   )
                 }
               >
@@ -59,7 +59,7 @@ function SidebarContent({ counts, user, onNavigate, onLogout }) {
           <button
             type="button"
             onClick={onLogout}
-            className="grid size-9 place-items-center rounded-lg bg-navy-3 text-white transition-colors hover:bg-[#3a4b72]"
+            className="grid size-9 place-items-center rounded-lg bg-navy-3 text-white transition-colors hover:bg-[#7a6457]"
             aria-label="Sign out"
             title="Sign out"
           >

@@ -1,0 +1,60 @@
+rules_version = '2';
+
+// Box Theory - Firestore security rules.
+// Publish: Firebase console -> Firestore Database -> Rules -> paste this file -> Publish
+//      or: npx firebase-tools deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Owners: the admins set in VITE_ADMIN_EMAILS (.env.local and Vercel). Keep this list in sync.
+    function isOwner() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() in ['boxybeetm@gmail.com'];
+    }
+
+    // Signed in and on the team: their own member record exists and isn't switched off.
+    function isTeamMember() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/members/$(request.auth.token.email.lower()))
+        && get(/databases/$(database)/documents/members/$(request.auth.token.email.lower())).data.status in ['Invited', 'Active'];
+    }
+
+    // There is one role: everyone on the team has full admin access.
+    function isAdmin() {
+      return isOwner() || isTeamMember();
+    }
+
+    // The signed-in Google account owns this member record (document id = lower-case email).
+    function isSelf(memberEmail) {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() == memberEmail;
+    }
+
+    // The team: people invited from the Team page.
+    match /members/{memberEmail} {
+      // The team can see and manage the team; anyone signed in can check their own invitation.
+      allow get: if isAdmin() || isSelf(memberEmail);
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.email == memberEmail
+        && request.resource.data.status == 'Invited';
+      allow delete: if isAdmin();
+      // Accepting an invitation: the invited person can only record their sign-in, and someone who
+      // has been switched off can't switch themselves back on.
+      allow update: if isAdmin()
+        || (isSelf(memberEmail)
+            && resource.data.status in ['Invited', 'Active']
+            && request.resource.data.status == 'Active'
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['status', 'uid', 'acceptedAt', 'lastSignInAt']));
+    }
+
+    // Everything else stays closed until more of the app moves to Firestore.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
