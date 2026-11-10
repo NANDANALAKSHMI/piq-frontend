@@ -1,4 +1,4 @@
-/** People who can sign in to PIQ. */
+/** Sample team referenced by the sample jobs, enquiries and reports (nobody signs in with these). */
 export const teamMembers = [
   { id: 'u1', name: 'Anil S', email: 'anil@piq.in', phone: '+91 98450 10001', role: 'Admin', title: 'Operations head', lastActive: 'Now', status: 'Active', color: 'bg-brand-ink' },
   { id: 'u2', name: 'Rajesh Kumar', email: 'rajesh@piq.in', phone: '+91 98450 10002', role: 'Manager', title: 'Operations manager', lastActive: '12 min ago', status: 'Active', color: 'bg-blue-700' },

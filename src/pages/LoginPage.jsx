@@ -3,9 +3,8 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Briefcase, Eye, EyeOff, MailCheck, MessageSquare, Users } from 'lucide-react';
 import Logo, { LogoMark } from '../components/layout/Logo.jsx';
 import Button from '../components/common/Button.jsx';
-import { TextField, Checkbox } from '../components/common/FormFields.jsx';
+import { Checkbox, TextField } from '../components/common/FormFields.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
-import { useToast } from '../components/common/Toast.jsx';
 
 const HIGHLIGHTS = [
   { icon: Briefcase, text: 'Track every job stage by stage' },
@@ -24,79 +23,316 @@ function GoogleIcon({ className }) {
   );
 }
 
-/** Shown when the page is opened from an invitation email (/login?invite=person@example.com). */
-function InvitePanel({ email, error, loading, onGoogle, onSwitch }) {
+const CARD = 'flex flex-col gap-4 rounded-2xl border border-line bg-white p-7 sm:p-9';
+const LINK = 'self-center text-[13px] font-semibold text-brand-ink hover:underline';
+
+function Alert({ tone = 'error', children }) {
+  if (!children) return null;
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-7 sm:p-9">
-      <div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-2.5 py-1 text-xs font-semibold text-brand-ink">
-          <MailCheck className="size-3.5" aria-hidden="true" />
-          Team invitation
-        </span>
-        <h1 className="mt-3 text-[26px] font-bold tracking-tight">Join Box Theory</h1>
-        <p className="mt-1 text-muted">You&apos;ve been invited to the team. Continue with the Google account for this email to accept.</p>
-      </div>
-      <div className="rounded-xl border border-brand-line bg-brand-soft px-4 py-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-brand-ink">Invited email</p>
-        <p className="mt-0.5 break-all text-[15px] font-semibold">{email}</p>
-      </div>
-      {error && (
-        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2.5 text-[13px] font-medium text-red-700">
-          {error}
-        </p>
-      )}
-      <Button variant="secondary" size="lg" icon={GoogleIcon} fullWidth onClick={onGoogle} disabled={loading}>
-        {loading ? 'Connecting to Google…' : 'Continue with Google'}
-      </Button>
-      <button type="button" onClick={onSwitch} className="self-center text-[13px] font-semibold text-brand-ink hover:underline">
-        Not you? Sign in another way
+    <p
+      role={tone === 'error' ? 'alert' : 'status'}
+      className={
+        tone === 'error'
+          ? 'rounded-lg bg-red-50 px-3 py-2.5 text-[13px] font-medium text-red-700'
+          : 'rounded-lg bg-green-50 px-3 py-2.5 text-[13px] font-medium text-green-800'
+      }
+    >
+      {children}
+    </p>
+  );
+}
+
+/** Password input with a show/hide button. */
+function PasswordField({ label, value, onChange, autoComplete, placeholder = 'At least 6 characters' }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="relative">
+      <TextField
+        label={label}
+        type={visible ? 'text' : 'password'}
+        value={value}
+        onChange={onChange}
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        inputClassName="h-11.5 pr-11"
+        required
+      />
+      <button
+        type="button"
+        onClick={() => setVisible((v) => !v)}
+        className="absolute bottom-1.5 right-1.5 grid size-8.5 place-items-center rounded-lg text-muted hover:bg-slate-100"
+        aria-label={visible ? 'Hide password' : 'Show password'}
+      >
+        {visible ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
       </button>
     </div>
   );
 }
 
+function OrDivider() {
+  return (
+    <div className="flex items-center gap-3 text-[13px] text-muted">
+      <span className="h-px flex-1 bg-line" />
+      or
+      <span className="h-px flex-1 bg-line" />
+    </div>
+  );
+}
+
+function InviteBadge({ children }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft px-2.5 py-1 text-xs font-semibold text-brand-ink">
+      <MailCheck className="size-3.5" aria-hidden="true" />
+      {children}
+    </span>
+  );
+}
+
+/** Email + password sign-in, with Google as an alternative. */
+function SignInPanel({ initialEmail, remember, setRemember, busy, error, onSubmit, onGoogle, onForgot }) {
+  const [email, setEmail] = useState(initialEmail);
+  const [password, setPassword] = useState('');
+  return (
+    <form
+      className={CARD}
+      noValidate
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit({ email, password });
+      }}
+    >
+      <div>
+        <h1 className="text-[26px] font-bold tracking-tight">Sign in</h1>
+        <p className="mt-1 text-muted">Welcome back to Box Theory.</p>
+      </div>
+      <TextField
+        label="Email"
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        autoComplete="username"
+        inputClassName="h-11.5"
+        required
+      />
+      <PasswordField
+        label="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        autoComplete="current-password"
+        placeholder="Your password"
+      />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Checkbox label="Keep me signed in" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+        <button type="button" onClick={() => onForgot(email)} className="text-[13px] font-semibold text-brand-ink hover:underline">
+          Forgot password?
+        </button>
+      </div>
+      <Alert>{error}</Alert>
+      <Button type="submit" variant="primary" size="lg" fullWidth disabled={Boolean(busy)}>
+        {busy === 'password' ? 'Signing in…' : 'Sign in'}
+      </Button>
+      <OrDivider />
+      <Button variant="secondary" size="lg" icon={GoogleIcon} fullWidth onClick={onGoogle} disabled={Boolean(busy)}>
+        {busy === 'google' ? 'Connecting to Google…' : 'Sign in with Google'}
+      </Button>
+      <p className="border-t border-line pt-4 text-[13px] text-muted">
+        New here? Open the invitation email from your admin to create your password.
+      </p>
+    </form>
+  );
+}
+
+/** Opened from an invitation email (/login?invite=person@example.com): create a password. */
+function InvitePanel({ email, remember, setRemember, busy, error, onCreate, onGoogle, onSignIn }) {
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [problem, setProblem] = useState('');
+  const submit = (e) => {
+    e.preventDefault();
+    if (password.length < 6) return setProblem('Use at least 6 characters for your password.');
+    if (password !== confirm) return setProblem('The two passwords don’t match.');
+    setProblem('');
+    return onCreate({ email, password });
+  };
+  return (
+    <form className={CARD} noValidate onSubmit={submit}>
+      <div>
+        <InviteBadge>Team invitation</InviteBadge>
+        <h1 className="mt-3 text-[26px] font-bold tracking-tight">Join Box Theory</h1>
+        <p className="mt-1 text-muted">Create a password for your invited email.</p>
+      </div>
+      <div className="rounded-xl border border-brand-line bg-brand-soft px-4 py-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-brand-ink">Your email</p>
+        <p className="mt-0.5 break-all text-[15px] font-semibold">{email}</p>
+      </div>
+      {/* Lets password managers save the new password against this email. */}
+      <input type="email" name="username" autoComplete="username" value={email} readOnly hidden />
+      <PasswordField label="Create a password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
+      <PasswordField
+        label="Confirm password"
+        value={confirm}
+        onChange={(e) => setConfirm(e.target.value)}
+        autoComplete="new-password"
+        placeholder="Type it again"
+      />
+      <Checkbox label="Keep me signed in" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+      <Alert>{problem || error}</Alert>
+      <Button type="submit" variant="primary" size="lg" fullWidth disabled={Boolean(busy)}>
+        {busy === 'create' ? 'Creating your account…' : 'Create account'}
+      </Button>
+      <OrDivider />
+      <Button variant="secondary" size="lg" icon={GoogleIcon} fullWidth onClick={onGoogle} disabled={Boolean(busy)}>
+        {busy === 'google' ? 'Connecting to Google…' : 'Continue with Google'}
+      </Button>
+      <button type="button" onClick={onSignIn} className={LINK}>
+        Already have a password? Sign in
+      </button>
+    </form>
+  );
+}
+
+/** Password accounts confirm their email once before they can get in. */
+function VerifyPanel({ email, busy, error, notice, onContinue, onResend, onCancel }) {
+  return (
+    <div className={CARD}>
+      <div>
+        <InviteBadge>One more step</InviteBadge>
+        <h1 className="mt-3 text-[26px] font-bold tracking-tight">Confirm your email</h1>
+        <p className="mt-1 text-muted">
+          We sent a link to <b className="break-all text-ink">{email}</b>. Open it to confirm it’s you, then come back and continue.
+        </p>
+      </div>
+      <Alert tone="note">{notice}</Alert>
+      <Alert>{error}</Alert>
+      <Button variant="primary" size="lg" fullWidth onClick={onContinue} disabled={Boolean(busy)}>
+        {busy === 'verify' ? 'Checking…' : 'I’ve confirmed — continue'}
+      </Button>
+      <Button variant="secondary" size="lg" fullWidth onClick={onResend} disabled={Boolean(busy)}>
+        {busy === 'resend' ? 'Sending…' : 'Send the email again'}
+      </Button>
+      <button type="button" onClick={onCancel} className={LINK}>
+        Use a different account
+      </button>
+      <p className="border-t border-line pt-4 text-[13px] text-muted">Can’t find it? Check your spam or promotions folder.</p>
+    </div>
+  );
+}
+
+/** "Forgot password?": Firebase emails a link to choose a new password. */
+function ResetPanel({ initialEmail, busy, error, notice, onSend, onBack }) {
+  const [email, setEmail] = useState(initialEmail);
+  return (
+    <form
+      className={CARD}
+      noValidate
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSend(email);
+      }}
+    >
+      <div>
+        <h1 className="text-[26px] font-bold tracking-tight">Reset your password</h1>
+        <p className="mt-1 text-muted">We’ll email you a link to choose a new password.</p>
+      </div>
+      <TextField
+        label="Email"
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        autoComplete="username"
+        inputClassName="h-11.5"
+        required
+      />
+      <Alert tone="note">{notice}</Alert>
+      <Alert>{error}</Alert>
+      <Button type="submit" variant="primary" size="lg" fullWidth disabled={Boolean(busy)}>
+        {busy === 'reset' ? 'Sending…' : 'Send reset link'}
+      </Button>
+      <button type="button" onClick={onBack} className={LINK}>
+        Back to sign in
+      </button>
+    </form>
+  );
+}
+
 export default function LoginPage() {
-  const { user, login, loginWithGoogle } = useAuth();
-  const { showToast } = useToast();
+  const {
+    user,
+    pendingVerification,
+    loginWithPassword,
+    createAccount,
+    loginWithGoogle,
+    resendVerification,
+    confirmVerified,
+    resetPassword,
+    logout,
+  } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const inviteEmail = (new URLSearchParams(location.search).get('invite') ?? '').trim().toLowerCase();
-  const [identifier, setIdentifier] = useState('anil@piq.in');
-  const [password, setPassword] = useState('');
+  const [mode, setMode] = useState(inviteEmail ? 'invite' : 'signin'); // signin | invite | reset
   const [remember, setRemember] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
+  const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [resetEmail, setResetEmail] = useState('');
 
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to={location.state?.from ?? '/'} replace />;
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
+  const goIn = () => navigate(location.state?.from ?? '/', { replace: true });
+
+  /** Runs one sign-in action with a busy state and shows its error (the confirm screen explains itself). */
+  const run = async (kind, action) => {
+    setBusy(kind);
     setError('');
-    setSubmitting(true);
-    // Small delay so the button's loading state is visible, like a real request.
-    window.setTimeout(() => {
-      const result = login({ identifier, password, remember });
-      setSubmitting(false);
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-      navigate(location.state?.from ?? '/', { replace: true });
-    }, 500);
+    setNotice('');
+    const result = await action();
+    setBusy('');
+    if (!result.ok && !result.needsVerification) setError(result.error);
+    return result;
+  };
+
+  const switchMode = (next, email = '') => {
+    setError('');
+    setNotice('');
+    setResetEmail(email);
+    setMode(next);
+  };
+
+  const handlePassword = async ({ email, password }) => {
+    if (!email.trim() || !password) {
+      setError('Enter your email and password.');
+      return;
+    }
+    if ((await run('password', () => loginWithPassword({ email, password, remember }))).ok) goIn();
+  };
+
+  const handleCreate = async ({ email, password }) => {
+    if ((await run('create', () => createAccount({ email, password, remember }))).ok) goIn();
   };
 
   const handleGoogle = async () => {
-    setError('');
-    setGoogleLoading(true);
-    const result = await loginWithGoogle({ remember, loginHint: inviteEmail || undefined });
-    setGoogleLoading(false);
-    if (!result.ok) {
-      setError(result.error);
+    if ((await run('google', () => loginWithGoogle({ remember, loginHint: inviteEmail || undefined }))).ok) goIn();
+  };
+
+  const handleConfirm = async () => {
+    const result = await run('verify', confirmVerified);
+    if (result.ok) goIn();
+    else if (result.needsVerification) setError(result.error);
+  };
+
+  const handleResend = async () => {
+    if ((await run('resend', resendVerification)).ok) setNotice('Sent again. Check your inbox (and spam folder).');
+  };
+
+  const handleReset = async (email) => {
+    if (!email.trim()) {
+      setError('Enter your email.');
       return;
     }
-    navigate(location.state?.from ?? '/', { replace: true });
+    if ((await run('reset', () => resetPassword(email))).ok) {
+      setNotice(`If ${email.trim()} has a Box Theory password, a reset link is on its way.`);
+    }
   };
 
   return (
@@ -126,86 +362,50 @@ export default function LoginPage() {
       <section className="flex items-center justify-center px-5 py-10">
         <div className="w-full max-w-[420px]">
           <Logo tone="light" size={44} className="mb-6 px-0 lg:hidden" />
-          {inviteEmail ? (
-            <InvitePanel
-              email={inviteEmail}
+          {pendingVerification ? (
+            <VerifyPanel
+              email={pendingVerification}
+              busy={busy}
               error={error}
-              loading={googleLoading}
-              onGoogle={handleGoogle}
-              onSwitch={() => {
-                setError('');
-                navigate('/login', { replace: true });
+              notice={notice}
+              onContinue={handleConfirm}
+              onResend={handleResend}
+              onCancel={() => {
+                logout();
+                switchMode(inviteEmail ? 'invite' : 'signin');
               }}
             />
+          ) : mode === 'reset' ? (
+            <ResetPanel
+              initialEmail={resetEmail}
+              busy={busy}
+              error={error}
+              notice={notice}
+              onSend={handleReset}
+              onBack={() => switchMode('signin')}
+            />
+          ) : mode === 'invite' && inviteEmail ? (
+            <InvitePanel
+              email={inviteEmail}
+              remember={remember}
+              setRemember={setRemember}
+              busy={busy}
+              error={error}
+              onCreate={handleCreate}
+              onGoogle={handleGoogle}
+              onSignIn={() => switchMode('signin')}
+            />
           ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-2xl border border-line bg-white p-7 sm:p-9" noValidate>
-              <div>
-                <h1 className="text-[26px] font-bold tracking-tight">Sign in</h1>
-                <p className="mt-1 text-muted">Welcome back to Box Theory.</p>
-              </div>
-              <TextField
-                label="Email or mobile number"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                autoComplete="username"
-                inputClassName="h-11.5"
-                required
-              />
-              <div className="relative">
-                <TextField
-                  label="Password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                  placeholder="At least 6 characters"
-                  inputClassName="h-11.5 pr-11"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute bottom-1.5 right-1.5 grid size-8.5 place-items-center rounded-lg text-muted hover:bg-slate-100"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
-                </button>
-              </div>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Checkbox label="Keep me signed in" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
-                <button
-                  type="button"
-                  onClick={() => showToast('Password reset link sent to your email.', { tone: 'info' })}
-                  className="text-[13px] font-semibold text-brand-ink hover:underline"
-                >
-                  Forgot password?
-                </button>
-              </div>
-              {error && (
-                <p role="alert" className="rounded-lg bg-red-50 px-3 py-2.5 text-[13px] font-medium text-red-700">
-                  {error}
-                </p>
-              )}
-              <Button type="submit" variant="primary" size="lg" fullWidth disabled={submitting}>
-                {submitting ? 'Signing in…' : 'Sign in'}
-              </Button>
-              <div className="flex items-center gap-3 text-[13px] text-muted">
-                <span className="h-px flex-1 bg-line" />
-                or
-                <span className="h-px flex-1 bg-line" />
-              </div>
-              <Button
-                variant="secondary"
-                size="lg"
-                icon={GoogleIcon}
-                fullWidth
-                onClick={handleGoogle}
-                disabled={googleLoading || submitting}
-              >
-                {googleLoading ? 'Connecting to Google…' : 'Sign in with Google'}
-              </Button>
-
-            </form>
+            <SignInPanel
+              initialEmail={inviteEmail}
+              remember={remember}
+              setRemember={setRemember}
+              busy={busy}
+              error={error}
+              onSubmit={handlePassword}
+              onGoogle={handleGoogle}
+              onForgot={(email) => switchMode('reset', email)}
+            />
           )}
         </div>
       </section>

@@ -16,9 +16,8 @@ npm run build    # production build in dist/
 npm run lint     # ESLint (incl. React hooks rules)
 ```
 
-**Demo login:** any team email from `src/data/teamData.js` (e.g. `anil@piq.in`) with any password of 6+ characters.
-
-**Google sign-in:** admins listed in `VITE_ADMIN_EMAILS`, plus anyone an admin has invited from the Team page.
+**Sign-in:** email + password or Google, through Firebase. Owners are listed in `VITE_ADMIN_EMAILS`;
+everyone else needs an invitation from the Team page.
 
 After pulling these changes run `npm install` once — the invitation email needs `nodemailer` and `jose`.
 
@@ -26,7 +25,7 @@ After pulling these changes run `npm install` once — the invitation email need
 
 | Area | Features |
 | --- | --- |
-| Login | Validation, show/hide password, "keep me signed in", protected routes, sign out |
+| Login | Email + password (created from the invitation link, email confirmation, real "Forgot password") or Google, "keep me signed in", protected routes, sign out |
 | Dashboard | Live stats, status donut (click a slice to filter jobs), jobs by city with period filter, service-scope bars, recent jobs, deadlines, unit workload, activity |
 | Jobs | Status tabs, search, 6 filters with removable chips, sortable columns, pagination, CSV export, loading + empty states |
 | Job detail | Workflow stepper, move to next stage, status/edit modals, per-service progress, media upload, comments with pinned key decisions, activity log |
@@ -70,8 +69,9 @@ with API calls — pages only talk to that context, so no page code needs to cha
 
 An admin opens **Team → Invite member**. The person is saved in Firestore (`members` collection,
 status *Invited*) and gets a Box Theory–branded email from the Snap Infinity Gmail with an
-**Accept invitation** button. That link opens `/login?invite=their@email`, they choose
-**Continue with Google**, and their first sign-in turns them *Active*. Switching someone off on the
+**Accept invitation** button. That link opens `/login?invite=their@email`, where they create
+a password (or choose **Continue with Google**). Password accounts confirm their email once, and the
+first sign-in turns them *Active*. Switching someone off on the
 Team page blocks their sign-in, and a pending invitation can be cancelled. Replies to the email go
 to the admin who sent it.
 
@@ -80,8 +80,7 @@ too. The admins in `VITE_ADMIN_EMAILS` are the owners and can't be switched off 
 
 When you sign in with Google, the Team page and the job owner pickers show the **real team**: admins
 from `VITE_ADMIN_EMAILS` plus everyone in Firestore.
-The dummy team in `src/data/teamData.js` is only used by the demo password login (and to show names on
-the sample jobs, which are still dummy data).
+The sample team in `src/data/teamData.js` only provides names for the sample jobs, which are still dummy data.
 
 One-time setup:
 
@@ -96,6 +95,9 @@ One-time setup:
    The function reuses the `VITE_FIREBASE_PROJECT_ID` and `VITE_ADMIN_EMAILS` values already there.
 5. **Authorised domains** — the production domain must be listed in Firebase → Authentication →
    Settings → Authorised domains (already needed for Google sign-in).
+6. **Email & password** — Firebase → Authentication → Sign-in method → **Email/Password** → Enable.
+   Optional: under Authentication → Templates, set the sender name to "Box Theory" for the
+   confirm-email and reset-password messages.
 
 `npm run dev` serves `/api/send-invite` locally (see `vite.config.js`), so invitations work in
 development too. Gmail allows roughly 500 emails a day from one account.

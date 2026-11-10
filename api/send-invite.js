@@ -95,10 +95,12 @@ function appUrl(req) {
 function createMailer() {
   const user = env('SMTP_USER');
   const pass = env('SMTP_PASS').replace(/\s+/g, ''); // Google shows App Passwords in groups of four
-  if (!user || !pass) {
+  const missing = [!user && 'SMTP_USER', !pass && 'SMTP_PASS'].filter(Boolean);
+  if (missing.length) {
     throw new HttpError(
       500,
-      'Invitation email is not set up yet: add SMTP_USER and SMTP_PASS (a Google App Password) to the server environment.',
+      `Invitation email isn't set up on the server: ${missing.join(' and ')} ${missing.length > 1 ? 'are' : 'is'} missing. ` +
+        'Add it in Vercel → Settings → Environment Variables (Production), then redeploy.',
     );
   }
   const port = Number(env('SMTP_PORT', '465'));

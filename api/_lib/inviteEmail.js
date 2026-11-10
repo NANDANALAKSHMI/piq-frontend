@@ -30,7 +30,7 @@ export function buildInviteEmail({ name, email, title, inviterName, inviteUrl })
   const firstName = name.split(/\s+/)[0] || name;
   const subject = inviterName ? `${inviterName} invited you to join Box Theory` : 'You’re invited to join Box Theory';
   const intro = inviterName ? `${inviterName} has added you to the Box Theory team` : 'You’ve been added to the Box Theory team';
-  const preheader = `Accept your invitation and sign in with Google using ${email}.`;
+  const preheader = `Accept your invitation and set up your Box Theory sign-in for ${email}.`;
 
   const safe = {
     firstName: escapeHtml(firstName),
@@ -43,8 +43,8 @@ export function buildInviteEmail({ name, email, title, inviterName, inviteUrl })
   const strong = (text) => `<strong style="color:${COLOR.ink};font-weight:700;">${text}</strong>`;
   const steps = [
     `Click ${strong('Accept invitation')}.`,
-    `Choose ${strong('Continue with Google')}.`,
-    `Pick ${strong(safe.email)} when Google asks.`,
+    `Create your password — or choose ${strong('Continue with Google')}.`,
+    'Confirm your email when we ask (one click).',
   ];
 
   const html = `<!doctype html>
@@ -98,7 +98,7 @@ export function buildInviteEmail({ name, email, title, inviterName, inviteUrl })
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:26px;background-color:${COLOR.goldSoft};border:1px solid ${COLOR.goldLine};border-radius:12px;">
               <tr>
                 <td style="padding:16px 20px;">
-                  <div style="font-family:${SANS};font-size:12px;line-height:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${COLOR.goldInk};">Sign in with Google as</div>
+                  <div style="font-family:${SANS};font-size:12px;line-height:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${COLOR.goldInk};">Your sign-in email</div>
                   <div style="padding-top:4px;font-family:${SANS};font-size:17px;line-height:24px;font-weight:700;word-break:break-all;"><a href="mailto:${safe.email}" style="color:${COLOR.ink};text-decoration:none;">${safe.email}</a></div>
                 </td>
               </tr>
@@ -159,7 +159,7 @@ export function buildInviteEmail({ name, email, title, inviterName, inviteUrl })
     'Accept your invitation:',
     inviteUrl,
     '',
-    `Choose "Continue with Google" and sign in as ${email} — other Google accounts won't get in.`,
+    `Create your password (or continue with Google) and confirm your email when asked. You sign in with ${email}.`,
     '',
     'Not expecting this? You can safely ignore this email.',
     '',

@@ -20,8 +20,8 @@ import { formatDate } from '../utils/formatters.js';
 const shortDate = (date) => formatDate(date, { withYear: false });
 
 /**
- * `live` = signed in with Google as an admin: the person gets an invitation email and signs in
- * with Google. Otherwise (demo login) the member is only added to the local list.
+ * `live` = signed in with Google: the person gets an invitation email and signs in with Google.
+ * (Without Firebase configured there's no real team, so the member is only added locally.)
  */
 function AddMemberModal({ live, onClose, onSave }) {
   const [form, setForm] = useState({ name: '', email: '', phone: '', title: '' });
@@ -53,7 +53,7 @@ function AddMemberModal({ live, onClose, onSave }) {
       title={live ? 'Invite team member' : 'Add team member'}
       description={
         live
-          ? 'They get an email invitation and sign in with Google. Everyone you invite gets full access.'
+          ? 'They get an email to create their password. Everyone you invite gets full access.'
           : 'Team members can be assigned to jobs.'
       }
       footer={
@@ -77,7 +77,7 @@ function AddMemberModal({ live, onClose, onSave }) {
           value={form.email}
           onChange={update('email')}
           error={errors.email}
-          hint={live ? 'Use the Google account they will sign in with.' : undefined}
+          hint={live ? 'They’ll sign in with this email.' : undefined}
         />
         <TextField label="Mobile number" type="tel" value={form.phone} onChange={update('phone')} />
       </div>
@@ -221,9 +221,9 @@ export default function TeamPage() {
     <div className="flex flex-col gap-5.5">
       <PageHeader
         title="Team"
-        subtitle={live ? 'Everyone who can sign in to Box Theory. Invited people sign in with Google.' : 'The people you assign to jobs.'}
+        subtitle={live ? 'Everyone who can sign in to Box Theory. Invited people create their password from the invitation email.' : 'The people you assign to jobs.'}
         actions={
-          (live || teamMode === 'demo') && (
+          live && (
             <Button variant="primary" icon={UserPlus} onClick={() => setAddOpen(true)}>
               {live ? 'Invite member' : 'Add member'}
             </Button>
@@ -307,8 +307,8 @@ export default function TeamPage() {
         )}
         {nobodyInvited && (
           <p className="border-t border-line px-4 py-3 text-[13px] text-muted sm:px-6">
-            No one has been invited yet. Use <b className="text-ink">Invite member</b> to add your team — they get an email and sign in
-            with Google.
+            No one has been invited yet. Use <b className="text-ink">Invite member</b> to add your team — they get an email to create
+            their password.
           </p>
         )}
       </Card>

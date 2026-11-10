@@ -50,19 +50,16 @@ export function AppDataProvider({ children }) {
   const [clients, setClients] = useState(initialClients);
   const [enquiries, setEnquiries] = useState(initialEnquiries);
   const [vendors, setVendors] = useState(initialVendors);
-  const [localMembers, setLocalMembers] = useState(initialMembers);
+  // Sample team: only used to show names on the sample jobs, enquiries and reports.
+  const localMembers = initialMembers;
   const [notifications, setNotifications] = useState(initialNotifications);
   const [teamSnapshot, setTeamSnapshot] = useState({ key: null, list: NO_MEMBERS, error: null });
 
   /**
-   * Where the team comes from:
-   * live — signed in with Google: the real team in Firestore. There is one role, so everyone on
-   *        the team can invite people and manage access.
-   * demo — demo password login: the dummy team in src/data/teamData.js.
+   * Everyone signs in through Firebase (email + password or Google), so a signed-in user ('live')
+   * always sees the real team from Firestore. There is one role: everyone can invite and manage access.
    */
-  let teamMode = 'none';
-  if (user?.provider === 'google') teamMode = isFirebaseConfigured ? 'live' : 'none';
-  else if (user) teamMode = 'demo';
+  const teamMode = user && isFirebaseConfigured ? 'live' : 'none';
   const realTeam = teamMode === 'live';
   const teamKey = realTeam ? `${teamMode}:${user.email}` : null;
 
@@ -339,27 +336,17 @@ export function AppDataProvider({ children }) {
           return { ok: false, error: describeFirestoreError(err) };
         }
       }
-      const next = member.status === 'Inactive' ? 'Active' : 'Inactive';
-      setLocalMembers((list) => list.map((m) => (m.id === id ? { ...m, status: next } : m)));
-      return { ok: true, status: next };
+      return { ok: false, error: 'This person can’t be changed here.' };
     },
     [members, teamMode],
   );
 
   /**
-   * Adds someone to the team. As a Google-signed-in admin this saves the invitation in Firestore
-   * and emails it from the Snap Infinity mailbox; in demo mode it only updates local state.
-   * Resolves to { ok, emailed, error }.
+   * Adds someone to the team: saves the invitation in Firestore and emails it from the Snap Infinity
+   * mailbox. Resolves to { ok, emailed, error }.
    */
   const inviteMember = useCallback(
     async (draft) => {
-      if (teamMode === 'demo') {
-        setLocalMembers((list) => [
-          ...list,
-          { ...draft, status: 'Active', id: localId('u'), lastActive: '—', color: 'bg-slate-500', phone: draft.phone ?? '' },
-        ]);
-        return { ok: true, emailed: false };
-      }
       if (teamMode !== 'live') return { ok: false, error: 'Only admins can invite people.' };
       const email = normaliseEmail(draft.email);
       if (ADMIN_EMAILS.includes(email)) return { ok: false, error: `${email} is already an admin.` };
