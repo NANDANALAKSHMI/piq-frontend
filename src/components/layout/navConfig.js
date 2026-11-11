@@ -5,10 +5,10 @@ import {
   LayoutDashboard,
   MessageSquareText,
   SlidersHorizontal,
-  Tag,
   Truck,
   UserRound,
   Users,
+  Wrench,
 } from 'lucide-react';
 
 /** Sidebar sections. `countKey` shows a live count from app data. */
@@ -29,7 +29,7 @@ export const NAV_SECTIONS = [
     id: 'setup',
     label: 'Setup',
     items: [
-      { to: '/categories', label: 'Categories & Services', icon: Tag },
+      { to: '/services', label: 'Services', icon: Wrench },
       { to: '/team', label: 'Team', icon: UserRound },
       { to: '/reports', label: 'Reports', icon: ChartColumn },
       { to: '/settings', label: 'Settings', icon: SlidersHorizontal },
@@ -44,10 +44,11 @@ export const PAGE_TITLES = [
   ['/jobs', 'Jobs'],
   ['/clients/new', 'Add client'],
   ['/clients', 'Clients'],
+  ['/enquiries/new', 'New enquiry'],
   ['/enquiries', 'Enquiries'],
   ['/notifications', 'Notifications'],
   ['/vendors', 'Vendors'],
-  ['/categories', 'Categories & Services'],
+  ['/services', 'Services'],
   ['/team', 'Team'],
   ['/reports', 'Reports'],
   ['/settings', 'Settings'],

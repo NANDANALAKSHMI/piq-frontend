@@ -52,6 +52,16 @@ service cloud.firestore {
                  .hasOnly(['status', 'uid', 'acceptedAt', 'lastSignInAt']));
     }
 
+    // Services and their sub-services, managed from the Services page.
+    match /services/{serviceId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Enquiries (leads) and their follow-ups, managed from the Enquiries pages.
+    match /enquiries/{enquiryId} {
+      allow read, write: if isAdmin();
+    }
+
     // Everything else stays closed until more of the app moves to Firestore.
     match /{document=**} {
       allow read, write: if false;

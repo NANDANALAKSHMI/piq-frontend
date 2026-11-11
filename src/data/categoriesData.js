@@ -64,12 +64,3 @@ export const jobCategories = [
     ],
   },
 ];
-
-export const serviceCatalog = [
-  { name: 'Site survey', ownerRole: 'Supervisor' },
-  { name: 'Design', ownerRole: 'Designer' },
-  { name: 'Production', ownerRole: 'Operations manager' },
-  { name: 'Packing', ownerRole: 'Packing supervisor' },
-  { name: 'Delivery', ownerRole: 'Logistics' },
-  { name: 'Installation', ownerRole: 'Operations manager' },
-];

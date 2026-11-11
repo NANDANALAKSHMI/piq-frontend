@@ -115,7 +115,7 @@ export default function DashboardPage() {
               <CalendarDays className="size-4.5 text-muted" aria-hidden="true" />
               <span className="text-[13px] font-semibold">{formatToday()}</span>
             </div>
-            <Button to="/enquiries?new=1" icon={MessageSquareText}>
+            <Button to="/enquiries/new" icon={MessageSquareText}>
               New enquiry
             </Button>
             <Button to="/jobs/new" variant="primary" icon={Plus}>

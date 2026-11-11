@@ -3,15 +3,14 @@ import {
   deleteDoc,
   doc,
   getDoc,
-  getFirestore,
   increment,
-  initializeFirestore,
   onSnapshot,
   serverTimestamp,
   setDoc,
   updateDoc,
 } from 'firebase/firestore';
-import { auth, firebaseApp } from './firebase.js';
+import { auth } from './firebase.js';
+import { db } from './firestore.js';
 import { memberId, normaliseEmail } from './memberUtils.js';
 
 /**
@@ -22,21 +21,6 @@ import { memberId, normaliseEmail } from './memberUtils.js';
  * This module is loaded on demand (dynamic import) so the Firestore SDK stays out of the first page load.
  */
 const MEMBERS = 'members';
-
-/**
- * Firestore with long-polling, which avoids the slow or stuck first load that some networks, VPNs
- * and antivirus tools cause with Firestore's default streaming connection. Each tab keeps its own
- * in-memory cache (a cache shared between tabs broke sign-in when several tabs were open).
- */
-function createDb() {
-  if (!firebaseApp) return null;
-  try {
-    return initializeFirestore(firebaseApp, { experimentalForceLongPolling: true });
-  } catch {
-    return getFirestore(firebaseApp); // already set up (e.g. after a hot reload in dev)
-  }
-}
-const db = createDb();
 
 const memberRef = (email) => doc(db, MEMBERS, normaliseEmail(email));
 

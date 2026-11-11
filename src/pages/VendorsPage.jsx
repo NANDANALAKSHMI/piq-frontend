@@ -66,8 +66,8 @@ export default function VendorsPage() {
         subtitle={`${vendors.length} suppliers across ${vendorCategories.length} categories. Pick them per job, and see who’s preferred in each city.`}
         actions={
           <>
-            <Button to="/categories" icon={Layers}>
-              Job categories
+            <Button to="/services" icon={Layers}>
+              Services
             </Button>
             <Button variant="primary" icon={Plus} onClick={() => setModal('add')}>
               Add vendor

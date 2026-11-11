@@ -12,8 +12,9 @@ const AddJobPage = lazy(() => import('../pages/AddJobPage.jsx'));
 const ClientsPage = lazy(() => import('../pages/ClientsPage.jsx'));
 const AddClientPage = lazy(() => import('../pages/AddClientPage.jsx'));
 const EnquiriesPage = lazy(() => import('../pages/EnquiriesPage.jsx'));
+const AddEnquiryPage = lazy(() => import('../pages/AddEnquiryPage.jsx'));
 const VendorsPage = lazy(() => import('../pages/VendorsPage.jsx'));
-const CategoriesPage = lazy(() => import('../pages/CategoriesPage.jsx'));
+const ServicesPage = lazy(() => import('../pages/ServicesPage.jsx'));
 const NotificationsPage = lazy(() => import('../pages/NotificationsPage.jsx'));
 const TeamPage = lazy(() => import('../pages/TeamPage.jsx'));
 const ReportsPage = lazy(() => import('../pages/ReportsPage.jsx'));
@@ -67,8 +68,10 @@ export default function AppRoutes() {
         <Route path="clients/new" element={page(AddClientPage)} />
         <Route path="clients/:clientId" element={page(ClientsPage)} />
         <Route path="enquiries" element={page(EnquiriesPage)} />
+        <Route path="enquiries/new" element={page(AddEnquiryPage)} />
         <Route path="vendors" element={page(VendorsPage)} />
-        <Route path="categories" element={page(CategoriesPage)} />
+        <Route path="services" element={page(ServicesPage)} />
+        <Route path="categories" element={<Navigate to="/services" replace />} />
         <Route path="notifications" element={page(NotificationsPage)} />
         <Route path="team" element={page(TeamPage)} />
         <Route path="reports" element={page(ReportsPage)} />

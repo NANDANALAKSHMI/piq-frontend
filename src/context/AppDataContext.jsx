@@ -1,7 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { jobs as initialJobs } from '../data/jobsData.js';
 import { clients as initialClients } from '../data/clientsData.js';
-import { enquiries as initialEnquiries } from '../data/enquiriesData.js';
 import { vendors as initialVendors } from '../data/vendorsData.js';
 import { teamMembers as initialMembers } from '../data/teamData.js';
 import { notifications as initialNotifications } from '../data/activityData.js';
@@ -17,9 +16,11 @@ const AppDataContext = createContext(null);
 let uid = 0;
 const localId = (prefix) => `${prefix}-${Date.now().toString(36)}-${(uid += 1)}`;
 const NO_MEMBERS = [];
+const NO_ENQUIRIES = [];
 
 /** Firestore + invitation helpers load on demand, keeping the SDK out of the first page load. */
 const loadMembersApi = () => import('../lib/members.js');
+const loadEnquiriesApi = () => import('../lib/enquiries.js');
 
 /** True when this browser has a saved Google sign-in (Firebase keeps it in localStorage). */
 function hasSavedGoogleSession() {
@@ -38,9 +39,9 @@ function logEntry(type, text, by) {
 }
 
 /**
- * Holds every record the UI can change. Most data is still dummy data, so those actions
- * update local React state and last until the page is reloaded. The exception is team
- * invitations: for a Google-signed-in admin they live in Firestore and are emailed for real.
+ * Holds every record the UI can change. Jobs, clients and vendors are still dummy data, so those
+ * actions update local React state and last until the page is reloaded. The team (invitations) and
+ * enquiries are real: they live in Firestore and update live for everyone signed in.
  */
 export function AppDataProvider({ children }) {
   const { user } = useAuth();
@@ -48,7 +49,7 @@ export function AppDataProvider({ children }) {
 
   const [jobs, setJobs] = useState(initialJobs);
   const [clients, setClients] = useState(initialClients);
-  const [enquiries, setEnquiries] = useState(initialEnquiries);
+  const [enquirySnapshot, setEnquirySnapshot] = useState({ key: null, list: NO_ENQUIRIES, error: null });
   const [vendors, setVendors] = useState(initialVendors);
   // Sample team: only used to show names on the sample jobs, enquiries and reports.
   const localMembers = initialMembers;
@@ -88,6 +89,38 @@ export function AppDataProvider({ children }) {
       unsubscribe?.();
     };
   }, [teamKey]);
+
+  /** Enquiries: a live Firestore subscription for whoever is signed in. */
+  useEffect(() => {
+    if (!teamKey) return undefined;
+    let unsubscribe = null;
+    let cancelled = false;
+    loadEnquiriesApi()
+      .then(({ subscribeToEnquiries }) => {
+        if (cancelled) return;
+        unsubscribe = subscribeToEnquiries(
+          (list) => setEnquirySnapshot({ key: teamKey, list, error: null }),
+          (err) =>
+            setEnquirySnapshot((current) => ({
+              key: teamKey,
+              list: current.key === teamKey ? current.list : NO_ENQUIRIES,
+              error: describeFirestoreError(err),
+            })),
+        );
+      })
+      .catch(() =>
+        setEnquirySnapshot({ key: teamKey, list: NO_ENQUIRIES, error: 'Could not load the enquiries. Refresh the page and try again.' }),
+      );
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [teamKey]);
+
+  const enquiriesSynced = teamKey !== null && enquirySnapshot.key === teamKey;
+  const enquiries = enquiriesSynced ? enquirySnapshot.list : NO_ENQUIRIES;
+  const enquiriesLoading = teamKey !== null && !enquiriesSynced;
+  const enquiriesError = enquiriesSynced ? enquirySnapshot.error : null;
 
   const teamSynced = teamKey !== null && teamSnapshot.key === teamKey;
   const firestoreMembers = teamSynced ? teamSnapshot.list : NO_MEMBERS;
@@ -223,47 +256,56 @@ export function AppDataProvider({ children }) {
     );
   }, []);
 
-  /* ---------- enquiries ---------- */
+  /* ---------- enquiries (Firestore) ---------- */
 
-  const addEnquiry = useCallback(
-    (draft) => {
-      const createdId = nextId('ENQ-', enquiries.map((e) => e.id), 3);
-      setEnquiries((list) => [{ ...draft, id: createdId, status: 'New', receivedOn: daysFromToday(0), followUps: [] }, ...list]);
-      return createdId;
+  /** Runs a lib/enquiries.js function and turns Firestore failures into plain-language errors. */
+  const callEnquiries = useCallback(
+    async (name, ...args) => {
+      if (!teamKey) throw new Error('Sign in to manage enquiries.');
+      try {
+        const api = await loadEnquiriesApi();
+        return await api[name](...args);
+      } catch (err) {
+        throw new Error(describeFirestoreError(err));
+      }
     },
-    [enquiries],
+    [teamKey],
   );
 
-  const updateEnquiry = useCallback((enquiryId, patch) => {
-    setEnquiries((list) => list.map((e) => (e.id === enquiryId ? { ...e, ...patch } : e)));
-  }, []);
+  /** Saves a new enquiry and resolves to its id (ENQ-001…). Rejects with a readable message. */
+  const addEnquiry = useCallback(
+    (draft) =>
+      callEnquiries(
+        'createEnquiry',
+        { ...draft, status: 'New', receivedOn: daysFromToday(0), followUps: [] },
+        enquiries.map((e) => e.id),
+        user?.email ?? '',
+      ),
+    [callEnquiries, enquiries, user],
+  );
+
+  const updateEnquiry = useCallback((enquiryId, patch) => callEnquiries('updateEnquiry', enquiryId, patch), [callEnquiries]);
 
   const addFollowUp = useCallback(
     (enquiryId, followUp) => {
-      setEnquiries((list) =>
-        list.map((e) =>
-          e.id === enquiryId
-            ? {
-                ...e,
-                status: e.status === 'New' ? 'Follow-up' : e.status,
-                followUps: [{ ...followUp, id: localId('f'), ownerId: actorId, done: false }, ...e.followUps],
-              }
-            : e,
-        ),
-      );
+      const enquiry = enquiries.find((e) => e.id === enquiryId);
+      if (!enquiry) return Promise.reject(new Error('That enquiry no longer exists.'));
+      return updateEnquiry(enquiryId, {
+        status: enquiry.status === 'New' ? 'Follow-up' : enquiry.status,
+        followUps: [{ ...followUp, id: localId('f'), ownerId: actorId, done: false }, ...enquiry.followUps],
+      });
     },
-    [actorId],
+    [actorId, enquiries, updateEnquiry],
   );
 
-  const toggleFollowUp = useCallback((enquiryId, followUpId) => {
-    setEnquiries((list) =>
-      list.map((e) =>
-        e.id === enquiryId
-          ? { ...e, followUps: e.followUps.map((f) => (f.id === followUpId ? { ...f, done: !f.done } : f)) }
-          : e,
-      ),
-    );
-  }, []);
+  const toggleFollowUp = useCallback(
+    (enquiryId, followUpId) => {
+      const enquiry = enquiries.find((e) => e.id === enquiryId);
+      if (!enquiry) return Promise.reject(new Error('That enquiry no longer exists.'));
+      return updateEnquiry(enquiryId, { followUps: enquiry.followUps.map((f) => (f.id === followUpId ? { ...f, done: !f.done } : f)) });
+    },
+    [enquiries, updateEnquiry],
+  );
 
   /** Creates (or reuses) the client and a new job from an enquiry — nothing is re-typed. */
   const convertEnquiry = useCallback(
@@ -283,7 +325,7 @@ export function AppDataProvider({ children }) {
           gstin: '',
           type: 'One-time project',
           notes: enquiry.notes,
-          locations: [{ id: locationId, name: enquiry.location, address: enquiry.location, city: enquiry.city, state: '', pin: '', primary: true }],
+          locations: [{ id: locationId, name: enquiry.location, address: enquiry.location, city: enquiry.city, state: enquiry.state ?? '', pin: '', primary: true }],
         });
       }
       const serviceNames = enquiry.scope === 'Custom' ? enquiry.services : SCOPE_SERVICES[enquiry.scope];
@@ -303,7 +345,7 @@ export function AppDataProvider({ children }) {
         createdFrom: enquiry.id,
         services: serviceNames.map((name) => ({ name, ownerId: enquiry.assignedTo ?? actorId, progress: 0 })),
       });
-      updateEnquiry(enquiry.id, { status: 'Converted' });
+      updateEnquiry(enquiry.id, { status: 'Converted' }).catch(() => {});
       return jobId;
     },
     [actorId, addClient, addJob, clients, updateEnquiry],
@@ -402,7 +444,7 @@ export function AppDataProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      jobs, clients, enquiries, vendors, members, knownMembers, notifications,
+      jobs, clients, enquiries, enquiriesLoading, enquiriesError, vendors, members, knownMembers, notifications,
       addJob, updateJob, setJobStatus, setServiceProgress, addComment, addMedia,
       addClient, addLocation,
       addEnquiry, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry,
@@ -411,7 +453,7 @@ export function AppDataProvider({ children }) {
       markNotificationRead, markAllNotificationsRead,
     }),
     [
-      jobs, clients, enquiries, vendors, members, knownMembers, notifications,
+      jobs, clients, enquiries, enquiriesLoading, enquiriesError, vendors, members, knownMembers, notifications,
       addJob, updateJob, setJobStatus, setServiceProgress, addComment, addMedia,
       addClient, addLocation,
       addEnquiry, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry,

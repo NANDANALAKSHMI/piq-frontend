@@ -35,7 +35,7 @@ After pulling these changes run `npm install` once — the invitation email need
 | Enquiries | Pipeline counters, filters, follow-ups (schedule / tick off), status changes, mark lost / reopen, convert to job |
 | Units & Workforce | Unit finder (city + service + staff), unit cards, workforce table, add staff, availability toggling |
 | Vendors | Six vendor categories, vendor list + profile, status changes, add vendor, raise PO |
-| Setup | Categories & services, workflow template editor (reorder/add/remove stages), team invitations by email, reports with CSV downloads, settings |
+| Setup | Services and sub-services (saved in Firestore), workflow template editor (reorder/add/remove stages), team invitations by email, reports with CSV downloads, settings |
 
 Changes are kept in React state, so they reset on page reload.
 
@@ -52,7 +52,7 @@ src/
 ├── data/            Dummy data: jobs, clients, enquiries, units, vendors, categories, workflows, team, reports
 ├── features/        Feature-specific pieces (jobs, clients, enquiries, vendors)
 ├── hooks/           useLookups, usePagination, useClickOutside, useSimulatedLoading
-├── lib/             firebase.js (Auth + Firestore), members.js (team invitations)
+├── lib/             firebase.js (Auth), firestore.js (shared db), members.js (team invitations), services.js (services + sub-services)
 ├── pages/           One file per route
 ├── routes/          AppRoutes (lazy-loaded pages + auth guard)
 └── utils/           formatters, job helpers, CSV export
