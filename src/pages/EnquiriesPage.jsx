@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowRight, CalendarPlus, Check, MessageSquareText, Phone, Plus, RefreshCw, SearchX } from 'lucide-react';
+import { ArrowRight, CalendarPlus, Check, MessageSquareText, Phone, Plus, RefreshCw, SearchX, TriangleAlert } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card from '../components/common/Card.jsx';
@@ -11,10 +11,10 @@ import { StatusBadge, Tag } from '../components/common/Badge.jsx';
 import { Chip } from '../components/common/Tabs.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import { useToast } from '../components/common/Toast.jsx';
-import { ConvertModal, FollowUpModal, NewEnquiryModal } from '../features/enquiries/EnquiryModals.jsx';
+import { ConvertModal, FollowUpModal } from '../features/enquiries/EnquiryModals.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
 import useLookups from '../hooks/useLookups.js';
-import { CITIES, ENQUIRY_STATUSES, SERVICES } from '../data/constants.js';
+import { ENQUIRY_STATUSES } from '../data/constants.js';
 import { cn, daysUntil, formatDate } from '../utils/formatters.js';
 
 const PIPELINE = [
@@ -39,7 +39,7 @@ function followUpLabel(followUp) {
 }
 
 export default function EnquiriesPage() {
-  const { enquiries, addEnquiry, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry } = useAppData();
+  const { enquiries, enquiriesLoading, enquiriesError, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry } = useAppData();
   const lookups = useLookups();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -47,7 +47,22 @@ export default function EnquiriesPage() {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('open');
   const [city, setCity] = useState('');
-  const [modal, setModal] = useState(searchParams.get('new') ? 'new' : null);
+  const [modal, setModal] = useState(null);
+
+  /** Saves a change to Firestore; toasts `message` when it worked and the error when it didn't. */
+  const save = async (action, message, tone) => {
+    try {
+      await action();
+      if (message) showToast(message, tone ? { tone } : undefined);
+      return true;
+    } catch (err) {
+      showToast(err.message, { tone: 'error' });
+      return false;
+    }
+  };
+
+  /** Cities that actually have enquiries, so new cities show up in the filter. */
+  const cityOptions = useMemo(() => [...new Set(enquiries.map((e) => e.city).filter(Boolean))].sort(), [enquiries]);
 
   const selectedId = searchParams.get('selected');
   const selected = enquiries.find((e) => e.id === selectedId) ?? enquiries.find((e) => !['Converted', 'Lost'].includes(e.status)) ?? enquiries[0];
@@ -72,15 +87,6 @@ export default function EnquiriesPage() {
   const decided = counts.Converted + counts.Lost;
   const winRate = decided ? Math.round((counts.Converted / decided) * 100) : 0;
   const dueToday = enquiries.flatMap((e) => e.followUps).filter((f) => !f.done && daysUntil(f.date) <= 0).length;
-
-  const closeModal = () => {
-    setModal(null);
-    if (searchParams.get('new')) {
-      const next = new URLSearchParams(searchParams);
-      next.delete('new');
-      setSearchParams(next, { replace: true });
-    }
-  };
 
   const columns = [
     { key: 'id', header: 'Enquiry', sortable: true, render: (e) => <CellStack primary={<span className="text-brand-ink">{e.id}</span>} secondary={e.company} /> },
@@ -119,11 +125,21 @@ export default function EnquiriesPage() {
         title="Enquiries"
         subtitle="Capture leads before they become jobs. Convert in one click — nothing is re-typed."
         actions={
-          <Button variant="primary" icon={Plus} onClick={() => setModal('new')}>
+          <Button variant="primary" icon={Plus} to="/enquiries/new">
             New enquiry
           </Button>
         }
       />
+
+      {enquiriesError && (
+        <div role="status" className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <TriangleAlert className="mt-0.5 size-5 shrink-0 text-amber-700" aria-hidden="true" />
+          <div className="text-[13px]">
+            <p className="font-semibold text-amber-900">Enquiries aren’t connected yet</p>
+            <p className="mt-0.5 text-amber-800">{enquiriesError}</p>
+          </div>
+        </div>
+      )}
 
       <section className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5" aria-label="Pipeline">
         {PIPELINE.map((stage) => (
@@ -156,7 +172,7 @@ export default function EnquiriesPage() {
               options={[{ value: 'open', label: 'Status: Open' }, { value: 'all', label: 'Status: All' }, ...ENQUIRY_STATUSES]}
               className="w-auto"
             />
-            <SelectControl aria-label="City" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City: All" options={CITIES} className="w-auto" />
+            <SelectControl aria-label="City" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City: All" options={cityOptions} className="w-auto" />
           </div>
           <p className="px-4 pb-2 text-[13px] text-muted">
             <b className="text-ink">{dueToday}</b> follow-ups due today or overdue · <b className="text-ink">{winRate}%</b> win rate
@@ -166,9 +182,16 @@ export default function EnquiriesPage() {
               columns={columns}
               rows={rows}
               pageSize={6}
+              loading={enquiriesLoading}
               minWidth={820}
               rowClassName={(e) => e.id === selected?.id && 'bg-brand-soft/60 hover:bg-brand-soft/60'}
-              emptyState={<EmptyState icon={SearchX} title="No enquiries match" description="Change the filters or add a new enquiry." />}
+              emptyState={
+                enquiries.length === 0 ? (
+                  <EmptyState icon={MessageSquareText} title="No enquiries yet" description="Click “New enquiry” to record your first lead." />
+                ) : (
+                  <EmptyState icon={SearchX} title="No enquiries match" description="Change the filters or add a new enquiry." />
+                )
+              }
             />
           </div>
         </Card>
@@ -201,7 +224,7 @@ export default function EnquiriesPage() {
               </div>
               <div>
                 <dt className="text-xs text-muted">Location</dt>
-                <dd className="font-medium">{selected.location}</dd>
+                <dd className="font-medium">{[selected.location, selected.state].filter(Boolean).join(', ')}</dd>
               </div>
               <div>
                 <dt className="text-xs text-muted">Assigned to</dt>
@@ -211,8 +234,8 @@ export default function EnquiriesPage() {
 
             <p className="mb-2 mt-4 text-xs text-muted">Services required</p>
             <div className="flex flex-wrap gap-2">
-              {SERVICES.map((service) => (
-                <Chip key={service} active={selected.services.includes(service)} className="pointer-events-none">
+              {selected.services.map((service) => (
+                <Chip key={service} active className="pointer-events-none">
                   {service}
                 </Chip>
               ))}
@@ -230,8 +253,8 @@ export default function EnquiriesPage() {
                   id="enquiry-status"
                   value={selected.status}
                   onChange={(e) => {
-                    updateEnquiry(selected.id, { status: e.target.value });
-                    showToast(`${selected.id} moved to ${e.target.value}.`);
+                    const next = e.target.value;
+                    save(() => updateEnquiry(selected.id, { status: next }), `${selected.id} moved to ${next}.`);
                   }}
                   options={ENQUIRY_STATUSES.filter((s) => s !== 'Converted')}
                 />
@@ -255,7 +278,7 @@ export default function EnquiriesPage() {
                     <li key={f.id} className="flex items-center gap-3 border-b border-line py-2.5 last:border-0">
                       <button
                         type="button"
-                        onClick={() => toggleFollowUp(selected.id, f.id)}
+                        onClick={() => save(() => toggleFollowUp(selected.id, f.id))}
                         aria-pressed={f.done}
                         aria-label={f.done ? 'Mark as not done' : 'Mark as done'}
                         className={cn(
@@ -284,7 +307,7 @@ export default function EnquiriesPage() {
                 {selected.status === 'Lost' && (
                   <button
                     type="button"
-                    onClick={() => updateEnquiry(selected.id, { status: 'Follow-up' })}
+                    onClick={() => save(() => updateEnquiry(selected.id, { status: 'Follow-up' }))}
                     className="ml-auto inline-flex items-center gap-1 font-semibold text-brand-ink hover:underline"
                   >
                     <RefreshCw className="size-3.5" aria-hidden="true" /> Reopen
@@ -299,10 +322,7 @@ export default function EnquiriesPage() {
                 <div className="mt-3.5 flex gap-2.5">
                   <Button
                     className="flex-1"
-                    onClick={() => {
-                      updateEnquiry(selected.id, { status: 'Lost' });
-                      showToast(`${selected.id} marked as lost.`, { tone: 'info' });
-                    }}
+                    onClick={() => save(() => updateEnquiry(selected.id, { status: 'Lost' }), `${selected.id} marked as lost.`, 'info')}
                   >
                     Mark as lost
                   </Button>
@@ -316,26 +336,13 @@ export default function EnquiriesPage() {
         )}
       </div>
 
-      <NewEnquiryModal
-        open={modal === 'new'}
-        onClose={closeModal}
-        onSave={(draft) => {
-          const id = addEnquiry(draft);
-          closeModal();
-          setStatus('open');
-          select(id);
-          showToast(`${id} recorded.`);
-        }}
-      />
       {modal === 'followup' && selected && (
         <FollowUpModal
           open
           enquiry={selected}
           onClose={() => setModal(null)}
-          onSave={(followUp) => {
-            addFollowUp(selected.id, followUp);
-            setModal(null);
-            showToast('Follow-up scheduled.');
+          onSave={async (followUp) => {
+            if (await save(() => addFollowUp(selected.id, followUp), 'Follow-up scheduled.')) setModal(null);
           }}
         />
       )}
