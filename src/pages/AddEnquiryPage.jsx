@@ -86,7 +86,7 @@ export default function AddEnquiryPage() {
   };
 
   return (
-    <div className="flex max-w-4xl flex-col gap-5.5">
+    <div className="flex flex-col gap-5.5">
       <PageHeader
         title="New enquiry"
         breadcrumbs={[{ label: 'Enquiries', to: '/enquiries' }, { label: 'New enquiry' }]}

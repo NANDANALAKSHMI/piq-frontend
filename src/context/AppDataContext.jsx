@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { jobs as initialJobs } from '../data/jobsData.js';
-import { clients as initialClients } from '../data/clientsData.js';
 import { vendors as initialVendors } from '../data/vendorsData.js';
 import { teamMembers as initialMembers } from '../data/teamData.js';
 import { notifications as initialNotifications } from '../data/activityData.js';
@@ -17,10 +16,12 @@ let uid = 0;
 const localId = (prefix) => `${prefix}-${Date.now().toString(36)}-${(uid += 1)}`;
 const NO_MEMBERS = [];
 const NO_ENQUIRIES = [];
+const NO_CLIENTS = [];
 
 /** Firestore + invitation helpers load on demand, keeping the SDK out of the first page load. */
 const loadMembersApi = () => import('../lib/members.js');
 const loadEnquiriesApi = () => import('../lib/enquiries.js');
+const loadClientsApi = () => import('../lib/clients.js');
 
 /** True when this browser has a saved Google sign-in (Firebase keeps it in localStorage). */
 function hasSavedGoogleSession() {
@@ -39,8 +40,8 @@ function logEntry(type, text, by) {
 }
 
 /**
- * Holds every record the UI can change. Jobs, clients and vendors are still dummy data, so those
- * actions update local React state and last until the page is reloaded. The team (invitations) and
+ * Holds every record the UI can change. Jobs and vendors are still dummy data, so those
+ * actions update local React state and last until the page is reloaded. The team (invitations), clients and
  * enquiries are real: they live in Firestore and update live for everyone signed in.
  */
 export function AppDataProvider({ children }) {
@@ -48,7 +49,7 @@ export function AppDataProvider({ children }) {
   const actorId = user?.id ?? 'u1';
 
   const [jobs, setJobs] = useState(initialJobs);
-  const [clients, setClients] = useState(initialClients);
+  const [clientSnapshot, setClientSnapshot] = useState({ key: null, list: NO_CLIENTS, error: null });
   const [enquirySnapshot, setEnquirySnapshot] = useState({ key: null, list: NO_ENQUIRIES, error: null });
   const [vendors, setVendors] = useState(initialVendors);
   // Sample team: only used to show names on the sample jobs, enquiries and reports.
@@ -116,6 +117,38 @@ export function AppDataProvider({ children }) {
       unsubscribe?.();
     };
   }, [teamKey]);
+
+  /** Clients: a live Firestore subscription for whoever is signed in. */
+  useEffect(() => {
+    if (!teamKey) return undefined;
+    let unsubscribe = null;
+    let cancelled = false;
+    loadClientsApi()
+      .then(({ subscribeToClients }) => {
+        if (cancelled) return;
+        unsubscribe = subscribeToClients(
+          (list) => setClientSnapshot({ key: teamKey, list, error: null }),
+          (err) =>
+            setClientSnapshot((current) => ({
+              key: teamKey,
+              list: current.key === teamKey ? current.list : NO_CLIENTS,
+              error: describeFirestoreError(err),
+            })),
+        );
+      })
+      .catch(() =>
+        setClientSnapshot({ key: teamKey, list: NO_CLIENTS, error: 'Could not load the clients. Refresh the page and try again.' }),
+      );
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [teamKey]);
+
+  const clientsSynced = teamKey !== null && clientSnapshot.key === teamKey;
+  const clients = clientsSynced ? clientSnapshot.list : NO_CLIENTS;
+  const clientsLoading = teamKey !== null && !clientsSynced;
+  const clientsError = clientsSynced ? clientSnapshot.error : null;
 
   const enquiriesSynced = teamKey !== null && enquirySnapshot.key === teamKey;
   const enquiries = enquiriesSynced ? enquirySnapshot.list : NO_ENQUIRIES;
@@ -240,21 +273,37 @@ export function AppDataProvider({ children }) {
 
   /* ---------- clients ---------- */
 
-  const addClient = useCallback((draft) => {
-    const id = localId('c');
-    setClients((list) => [{ ...draft, id, since: daysFromToday(0) }, ...list]);
-    return id;
-  }, []);
+  /** Runs a lib/clients.js function and turns Firestore failures into plain-language errors. */
+  const callClients = useCallback(
+    async (name, ...args) => {
+      if (!teamKey) throw new Error('Sign in to manage clients.');
+      try {
+        const api = await loadClientsApi();
+        return await api[name](...args);
+      } catch (err) {
+        throw new Error(describeFirestoreError(err));
+      }
+    },
+    [teamKey],
+  );
 
-  const addLocation = useCallback((clientId, location) => {
-    setClients((list) =>
-      list.map((client) =>
-        client.id === clientId
-          ? { ...client, locations: [...client.locations, { ...location, id: localId('loc'), primary: false }] }
-          : client,
-      ),
-    );
-  }, []);
+  /** Saves a new client and resolves to its id. Rejects with a readable message. */
+  const addClient = useCallback(
+    (draft) => callClients('createClient', { ...draft, since: daysFromToday(0) }, user?.email ?? ''),
+    [callClients, user],
+  );
+
+  /** Adds a site to a client (saved to Firestore). Resolves to the new location's id. */
+  const addLocation = useCallback(
+    async (clientId, location) => {
+      const client = clients.find((c) => c.id === clientId);
+      if (!client) throw new Error('That client no longer exists.');
+      const id = localId('loc');
+      await callClients('updateClient', clientId, { locations: [...client.locations, { ...location, id, primary: false }] });
+      return id;
+    },
+    [callClients, clients],
+  );
 
   /* ---------- enquiries (Firestore) ---------- */
 
@@ -309,13 +358,13 @@ export function AppDataProvider({ children }) {
 
   /** Creates (or reuses) the client and a new job from an enquiry — nothing is re-typed. */
   const convertEnquiry = useCallback(
-    (enquiry, { categoryId, dueInDays = 14 }) => {
+    async (enquiry, { categoryId, dueInDays = 14 }) => {
       const existing = clients.find((c) => c.name.toLowerCase() === enquiry.company.toLowerCase());
       let clientId = existing?.id;
       let locationId = existing?.locations[0]?.id;
       if (!existing) {
         locationId = localId('loc');
-        clientId = addClient({
+        clientId = await addClient({
           name: enquiry.company,
           industry: 'Industrial manufacturing',
           contactName: enquiry.contactName,
@@ -444,7 +493,7 @@ export function AppDataProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      jobs, clients, enquiries, enquiriesLoading, enquiriesError, vendors, members, knownMembers, notifications,
+      jobs, clients, clientsLoading, clientsError, enquiries, enquiriesLoading, enquiriesError, vendors, members, knownMembers, notifications,
       addJob, updateJob, setJobStatus, setServiceProgress, addComment, addMedia,
       addClient, addLocation,
       addEnquiry, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry,
@@ -453,7 +502,7 @@ export function AppDataProvider({ children }) {
       markNotificationRead, markAllNotificationsRead,
     }),
     [
-      jobs, clients, enquiries, enquiriesLoading, enquiriesError, vendors, members, knownMembers, notifications,
+      jobs, clients, clientsLoading, clientsError, enquiries, enquiriesLoading, enquiriesError, vendors, members, knownMembers, notifications,
       addJob, updateJob, setJobStatus, setServiceProgress, addComment, addMedia,
       addClient, addLocation,
       addEnquiry, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry,

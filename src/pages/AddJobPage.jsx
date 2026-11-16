@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, Plus } from 'lucide-react';
+import { Check, Plus, Users } from 'lucide-react';
+import EmptyState from '../components/common/EmptyState.jsx';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
@@ -41,7 +42,7 @@ function SectionTitle({ number, title, subtitle, action }) {
   );
 }
 
-export default function AddJobPage() {
+function AddJobForm() {
   const { clients, members, vendors, addJob } = useAppData();
   const lookups = useLookups();
   const { showToast } = useToast();
@@ -367,4 +368,20 @@ export default function AddJobPage() {
       </div>
     </div>
   );
+}
+
+export default function AddJobPage() {
+  const { clients, clientsLoading } = useAppData();
+  if (clientsLoading) return <p className="py-10 text-center text-[13px] text-muted">Loading clients…</p>;
+  if (!clients.length) {
+    return (
+      <EmptyState
+        icon={Users}
+        title="Add a client first"
+        description="Every job belongs to a client and one of its locations."
+        action={<Button to="/clients/new" variant="primary">Add client</Button>}
+      />
+    );
+  }
+  return <AddJobForm />;
 }

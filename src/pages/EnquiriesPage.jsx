@@ -181,7 +181,7 @@ export default function EnquiriesPage() {
           <DataTable
             columns={columns}
             rows={rows}
-            pageSize={6}
+            pageSize={8}
             loading={enquiriesLoading}
             minWidth={820}
             rowClassName={(e) => e.id === selected?.id && 'bg-brand-soft/60 hover:bg-brand-soft/60'}
@@ -371,11 +371,15 @@ export default function EnquiriesPage() {
           open
           enquiry={selected}
           onClose={() => setModal(null)}
-          onConvert={(options) => {
-            const jobId = convertEnquiry(selected, options);
-            setModal(null);
-            showToast(`${selected.id} converted into ${jobId}.`);
-            navigate(`/jobs/${jobId}`);
+          onConvert={async (options) => {
+            try {
+              const jobId = await convertEnquiry(selected, options);
+              setModal(null);
+              showToast(`${selected.id} converted into ${jobId}.`);
+              navigate(`/jobs/${jobId}`);
+            } catch (err) {
+              showToast(err.message, { tone: 'error' });
+            }
           }}
         />
       )}

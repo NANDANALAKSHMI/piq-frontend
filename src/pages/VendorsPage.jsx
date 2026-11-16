@@ -122,7 +122,7 @@ export default function VendorsPage() {
               key={categoryId}
               rows={rows}
               minWidth={820}
-              pageSize={6}
+              pageSize={8}
               rowClassName={(v) => v.id === selected?.id && 'bg-brand-soft/60 hover:bg-brand-soft/60'}
               emptyState={<EmptyState icon={SearchX} title="No vendors here yet" action={<Button size="sm" icon={Plus} onClick={() => setModal('add')}>Add vendor</Button>} />}
               columns={[

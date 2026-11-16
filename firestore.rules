@@ -62,6 +62,11 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Clients and their locations, managed from the Clients pages.
+    match /clients/{clientId} {
+      allow read, write: if isAdmin();
+    }
+
     // Everything else stays closed until more of the app moves to Firestore.
     match /{document=**} {
       allow read, write: if false;

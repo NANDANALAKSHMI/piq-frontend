@@ -4,6 +4,9 @@ import Pagination from './Pagination.jsx';
 import usePagination from '../../hooks/usePagination.js';
 import { cn } from '../../utils/formatters.js';
 
+/** Every body row is this tall, so a paged table keeps the same height and the pagination bar never moves. */
+const ROW_HEIGHT = 56;
+
 function compare(a, b) {
   if (a === b) return 0;
   if (a === undefined || a === null) return 1;
@@ -84,10 +87,10 @@ export default function DataTable({
           </thead>
           <tbody>
             {loading &&
-              Array.from({ length: Math.min(pageSize ?? 5, 6) }, (_, index) => (
-                <tr key={`skeleton-${index}`}>
+              Array.from({ length: pageSize ?? 5 }, (_, index) => (
+                <tr key={`skeleton-${index}`} style={{ height: ROW_HEIGHT }}>
                   {columns.map((column) => (
-                    <td key={column.key} className="border-b border-line px-3 py-4">
+                    <td key={column.key} className="px-3 py-4">
                       <div className="h-3.5 w-full max-w-28 animate-pulse rounded bg-slate-100" />
                     </td>
                   ))}
@@ -95,18 +98,30 @@ export default function DataTable({
               ))}
             {!loading &&
               visibleRows.map((row) => (
-                <tr key={rowKey(row)} className={cn('transition-colors hover:bg-slate-50/70', rowClassName?.(row))}>
+                <tr key={rowKey(row)} style={{ height: ROW_HEIGHT }} className={cn('transition-colors hover:bg-slate-50/70', rowClassName?.(row))}>
                   {columns.map((column) => (
-                    <td key={column.key} className={cn('whitespace-nowrap border-b border-line px-3 py-3 align-middle', column.className)}>
+                    <td key={column.key} className={cn('whitespace-nowrap px-3 py-2 align-middle', column.className)}>
                       {column.render ? column.render(row) : row[column.key]}
                     </td>
                   ))}
                 </tr>
               ))}
+            {!loading &&
+              pageSize &&
+              visibleRows.length > 0 &&
+              Array.from({ length: Math.max(pageSize - visibleRows.length, 0) }, (_, index) => (
+                <tr key={`filler-${index}`} aria-hidden="true" style={{ height: ROW_HEIGHT }}>
+                  <td colSpan={columns.length} />
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>
-      {!loading && rows.length === 0 && <div className="pt-4">{emptyState}</div>}
+      {!loading && rows.length === 0 && (
+        <div className="pt-4" style={pageSize ? { minHeight: ROW_HEIGHT * pageSize } : undefined}>
+          {emptyState}
+        </div>
+      )}
       {!loading && pageSize && rows.length > 0 && (
         <Pagination
           className="mt-4"

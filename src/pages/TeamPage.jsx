@@ -250,7 +250,7 @@ export default function TeamPage() {
             rows={rows}
             loading={teamLoading && rows.length === 0}
             minWidth={820}
-            pageSize={10}
+            pageSize={8}
             emptyState={<EmptyState icon={SearchX} title="No team members match" />}
             columns={[
               {

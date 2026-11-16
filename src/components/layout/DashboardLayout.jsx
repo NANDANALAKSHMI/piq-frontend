@@ -44,7 +44,7 @@ export default function DashboardLayout() {
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header title={titleFor(pathname)} onOpenMenu={() => setMobileOpen(true)} />
-        <main className="mx-auto w-full max-w-[1480px] flex-1 px-4 pb-28 pt-5 md:px-7 md:pb-10 md:pt-7">
+        <main className="w-full flex-1 px-4 pb-28 pt-5 md:px-7 md:pb-10 md:pt-7">
           <Outlet />
         </main>
       </div>

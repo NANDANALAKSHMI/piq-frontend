@@ -187,7 +187,7 @@ export default function ServicesPage() {
   };
 
   return (
-    <div className="flex max-w-3xl flex-col gap-5.5">
+    <div className="flex flex-col gap-5.5">
       <PageHeader
         title="Services"
         subtitle="Add a service, then open it to add its sub-services."
