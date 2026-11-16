@@ -10,6 +10,7 @@ const JobsPage = lazy(() => import('../pages/JobsPage.jsx'));
 const JobDetailPage = lazy(() => import('../pages/JobDetailPage.jsx'));
 const AddJobPage = lazy(() => import('../pages/AddJobPage.jsx'));
 const ClientsPage = lazy(() => import('../pages/ClientsPage.jsx'));
+const ClientDetailPage = lazy(() => import('../pages/ClientDetailPage.jsx'));
 const AddClientPage = lazy(() => import('../pages/AddClientPage.jsx'));
 const EnquiriesPage = lazy(() => import('../pages/EnquiriesPage.jsx'));
 const AddEnquiryPage = lazy(() => import('../pages/AddEnquiryPage.jsx'));
@@ -66,7 +67,7 @@ export default function AppRoutes() {
         <Route path="jobs/:jobId" element={page(JobDetailPage)} />
         <Route path="clients" element={page(ClientsPage)} />
         <Route path="clients/new" element={page(AddClientPage)} />
-        <Route path="clients/:clientId" element={page(ClientsPage)} />
+        <Route path="clients/:clientId" element={page(ClientDetailPage)} />
         <Route path="enquiries" element={page(EnquiriesPage)} />
         <Route path="enquiries/new" element={page(AddEnquiryPage)} />
         <Route path="vendors" element={page(VendorsPage)} />
