@@ -9,7 +9,7 @@ import { useAppData } from '../../context/AppDataContext.jsx';
 
 function titleFor(pathname) {
   const match = PAGE_TITLES.find(([prefix]) => (prefix === '/' ? pathname === '/' : pathname.startsWith(prefix)));
-  return match?.[1] ?? 'Box Theory';
+  return match?.[1] ?? 'PIQ';
 }
 
 export default function DashboardLayout() {

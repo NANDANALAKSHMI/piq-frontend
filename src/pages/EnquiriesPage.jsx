@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowRight, CalendarPlus, Check, MessageSquareText, Phone, Plus, RefreshCw, SearchX, TriangleAlert } from 'lucide-react';
+import { ArrowRight, CalendarPlus, Check, Eye, Mail, MessageSquareText, Phone, Plus, RefreshCw, SearchX, TriangleAlert } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card from '../components/common/Card.jsx';
+import Modal from '../components/common/Modal.jsx';
 import SearchInput from '../components/common/SearchInput.jsx';
 import { SelectControl } from '../components/common/FormFields.jsx';
 import DataTable, { CellStack } from '../components/common/DataTable.jsx';
@@ -22,7 +23,6 @@ const PIPELINE = [
   { status: 'Follow-up', helper: 'Calls & visits' },
   { status: 'Quotation sent', helper: 'Awaiting reply' },
   { status: 'Negotiation', helper: 'Closing soon' },
-  { status: 'Converted', helper: 'Became jobs' },
 ];
 
 function nextFollowUp(enquiry) {
@@ -65,11 +65,12 @@ export default function EnquiriesPage() {
   const cityOptions = useMemo(() => [...new Set(enquiries.map((e) => e.city).filter(Boolean))].sort(), [enquiries]);
 
   const selectedId = searchParams.get('selected');
-  const selected = enquiries.find((e) => e.id === selectedId) ?? enquiries.find((e) => !['Converted', 'Lost'].includes(e.status)) ?? enquiries[0];
+  /** The details popup only opens when someone clicks View (or lands here from a saved enquiry). */
+  const selected = enquiries.find((e) => e.id === selectedId);
+  const closeDetails = useCallback(() => setSearchParams({}, { replace: true }), [setSearchParams]);
 
   const select = (id) => {
     setSearchParams({ selected: id }, { replace: true });
-    if (window.innerWidth < 1280) window.setTimeout(() => document.getElementById('enquiry-detail')?.scrollIntoView({ behavior: 'smooth' }), 0);
   };
 
   const rows = useMemo(() => {
@@ -110,9 +111,9 @@ export default function EnquiriesPage() {
       key: 'open',
       header: <span className="sr-only">Open</span>,
       render: (e) => (
-        <button type="button" onClick={() => select(e.id)} className="text-[13px] font-semibold text-brand-ink hover:underline">
+        <Button size="sm" variant={e.id === selectedId ? 'dark' : 'secondary'} icon={Eye} onClick={() => select(e.id)} aria-label={`View ${e.id}`}>
           View
-        </button>
+        </Button>
       ),
     },
   ];
@@ -141,7 +142,7 @@ export default function EnquiriesPage() {
         </div>
       )}
 
-      <section className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5" aria-label="Pipeline">
+      <section className="grid grid-cols-2 gap-4 md:grid-cols-4" aria-label="Pipeline">
         {PIPELINE.map((stage) => (
           <button
             key={stage.status}
@@ -161,180 +162,199 @@ export default function EnquiriesPage() {
         ))}
       </section>
 
-      <div className="grid grid-cols-1 gap-5.5 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
-        <Card padded={false}>
-          <div className="flex flex-wrap items-center gap-2.5 p-4">
-            <SearchInput value={query} onChange={setQuery} placeholder="Name, company or phone" className="min-w-52 flex-1" />
-            <SelectControl
-              aria-label="Status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              options={[{ value: 'open', label: 'Status: Open' }, { value: 'all', label: 'Status: All' }, ...ENQUIRY_STATUSES]}
-              className="w-auto"
-            />
-            <SelectControl aria-label="City" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City: All" options={cityOptions} className="w-auto" />
-          </div>
-          <p className="px-4 pb-2 text-[13px] text-muted">
-            <b className="text-ink">{dueToday}</b> follow-ups due today or overdue · <b className="text-ink">{winRate}%</b> win rate
-          </p>
-          <div className="px-2 pb-4 sm:px-4">
-            <DataTable
-              columns={columns}
-              rows={rows}
-              pageSize={6}
-              loading={enquiriesLoading}
-              minWidth={820}
-              rowClassName={(e) => e.id === selected?.id && 'bg-brand-soft/60 hover:bg-brand-soft/60'}
-              emptyState={
-                enquiries.length === 0 ? (
-                  <EmptyState icon={MessageSquareText} title="No enquiries yet" description="Click “New enquiry” to record your first lead." />
-                ) : (
-                  <EmptyState icon={SearchX} title="No enquiries match" description="Change the filters or add a new enquiry." />
-                )
-              }
-            />
-          </div>
-        </Card>
-
-        {selected && (
-          <Card id="enquiry-detail" className="scroll-mt-24 self-start">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[13px] text-muted">
-                  {selected.id} · received {formatDate(selected.receivedOn, { withYear: false })} · {selected.source}
-                </p>
-                <h2 className="mt-0.5 text-[19px] font-semibold">{selected.company}</h2>
-              </div>
-              <StatusBadge value={selected.status} />
-            </div>
-            <div className="my-4 h-px bg-line" />
-            <dl className="grid grid-cols-2 gap-4">
-              <div>
-                <dt className="text-xs text-muted">Contact</dt>
-                <dd className="font-medium">{selected.contactName}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted">Phone</dt>
-                <dd>
-                  <a href={`tel:${selected.phone.replace(/\s/g, '')}`} className="inline-flex items-center gap-1.5 font-medium hover:text-brand-ink">
-                    <Phone className="size-3.5" aria-hidden="true" />
-                    {selected.phone}
-                  </a>
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted">Location</dt>
-                <dd className="font-medium">{[selected.location, selected.state].filter(Boolean).join(', ')}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted">Assigned to</dt>
-                <dd className="font-medium">{lookups.getMember(selected.assignedTo)?.name ?? 'Unassigned'}</dd>
-              </div>
-            </dl>
-
-            <p className="mb-2 mt-4 text-xs text-muted">Services required</p>
-            <div className="flex flex-wrap gap-2">
-              {selected.services.map((service) => (
-                <Chip key={service} active className="pointer-events-none">
-                  {service}
-                </Chip>
-              ))}
-            </div>
-
-            <p className="mb-1 mt-4 text-xs text-muted">Project notes</p>
-            <p>{selected.notes || '—'}</p>
-
-            {!closed && (
-              <div className="mt-4 flex flex-col gap-1.5">
-                <label htmlFor="enquiry-status" className="text-xs font-semibold text-muted">
-                  Status
-                </label>
-                <SelectControl
-                  id="enquiry-status"
-                  value={selected.status}
-                  onChange={(e) => {
-                    const next = e.target.value;
-                    save(() => updateEnquiry(selected.id, { status: next }), `${selected.id} moved to ${next}.`);
-                  }}
-                  options={ENQUIRY_STATUSES.filter((s) => s !== 'Converted')}
-                />
-              </div>
-            )}
-
-            <div className="mt-4 rounded-xl bg-slate-50 p-3.5">
-              <div className="flex items-center justify-between">
-                <b>Follow-ups</b>
-                {!closed && (
-                  <button type="button" onClick={() => setModal('followup')} className="inline-flex items-center gap-1 text-[13px] font-semibold text-brand-ink hover:underline">
-                    <CalendarPlus className="size-3.5" aria-hidden="true" /> Schedule
-                  </button>
-                )}
-              </div>
-              {selected.followUps.length === 0 ? (
-                <p className="mt-2 text-[13px] text-muted">No follow-ups yet.</p>
+      <Card padded={false}>
+        <div className="flex flex-wrap items-center gap-2.5 p-4">
+          <SearchInput value={query} onChange={setQuery} placeholder="Name, company or phone" className="min-w-52 flex-1" />
+          <SelectControl
+            aria-label="Status"
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            options={[{ value: 'open', label: 'Status: Open' }, { value: 'all', label: 'Status: All' }, ...ENQUIRY_STATUSES]}
+            className="w-auto"
+          />
+          <SelectControl aria-label="City" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City: All" options={cityOptions} className="w-auto" />
+        </div>
+        <p className="px-4 pb-2 text-[13px] text-muted">
+          <b className="text-ink">{dueToday}</b> follow-ups due today or overdue · <b className="text-ink">{winRate}%</b> win rate
+        </p>
+        <div className="px-2 pb-4 sm:px-4">
+          <DataTable
+            columns={columns}
+            rows={rows}
+            pageSize={6}
+            loading={enquiriesLoading}
+            minWidth={820}
+            rowClassName={(e) => e.id === selected?.id && 'bg-brand-soft/60 hover:bg-brand-soft/60'}
+            emptyState={
+              enquiries.length === 0 ? (
+                <EmptyState icon={MessageSquareText} title="No enquiries yet" description="Click “New enquiry” to record your first lead." />
               ) : (
-                <ul className="mt-1.5 flex flex-col">
-                  {selected.followUps.map((f) => (
-                    <li key={f.id} className="flex items-center gap-3 border-b border-line py-2.5 last:border-0">
-                      <button
-                        type="button"
-                        onClick={() => save(() => toggleFollowUp(selected.id, f.id))}
-                        aria-pressed={f.done}
-                        aria-label={f.done ? 'Mark as not done' : 'Mark as done'}
-                        className={cn(
-                          'grid size-7 shrink-0 place-items-center rounded-lg border transition-colors',
-                          f.done ? 'border-green-700 bg-green-700 text-white' : 'border-slate-300 bg-white text-transparent hover:text-slate-400',
-                        )}
-                      >
-                        <Check className="size-4" aria-hidden="true" />
-                      </button>
-                      <div className="min-w-0">
-                        <p className={cn('text-[13px] font-semibold', f.done && 'text-muted line-through')}>{f.title}</p>
-                        <p className="text-xs text-muted">
-                          {formatDate(f.date, { withYear: false })}, {f.time} · {lookups.getMember(f.ownerId)?.name}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+                <EmptyState icon={SearchX} title="No enquiries match" description="Change the filters or add a new enquiry." />
+              )
+            }
+          />
+        </div>
+      </Card>
 
-            {closed ? (
-              <div className="mt-4 flex items-center gap-2.5 rounded-xl bg-slate-50 p-3.5 text-[13px]">
-                <MessageSquareText className="size-4 text-muted" aria-hidden="true" />
-                {selected.status === 'Converted' ? 'This enquiry has been converted into a job.' : 'This enquiry was marked as lost.'}
+      {/* Hidden while the follow-up or convert popup is open, so only one popup shows at a time. */}
+      {selected && !modal && (
+        <Modal
+          open
+          onClose={closeDetails}
+          size="lg"
+          title={selected.company}
+          description={`${selected.id} · received ${formatDate(selected.receivedOn)}`}
+          footer={
+            closed ? (
+              <>
                 {selected.status === 'Lost' && (
-                  <button
-                    type="button"
-                    onClick={() => save(() => updateEnquiry(selected.id, { status: 'Follow-up' }))}
-                    className="ml-auto inline-flex items-center gap-1 font-semibold text-brand-ink hover:underline"
-                  >
-                    <RefreshCw className="size-3.5" aria-hidden="true" /> Reopen
-                  </button>
+                  <Button icon={RefreshCw} onClick={() => save(() => updateEnquiry(selected.id, { status: 'Follow-up' }), `${selected.id} reopened.`)}>
+                    Reopen
+                  </Button>
                 )}
-              </div>
+                <Button onClick={closeDetails}>Close</Button>
+              </>
             ) : (
               <>
-                <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-3.5 text-[13px] text-green-900">
-                  Converting carries over client, contact, location, services and notes. You just pick a job category.
-                </div>
-                <div className="mt-3.5 flex gap-2.5">
-                  <Button
-                    className="flex-1"
-                    onClick={() => save(() => updateEnquiry(selected.id, { status: 'Lost' }), `${selected.id} marked as lost.`, 'info')}
-                  >
-                    Mark as lost
-                  </Button>
-                  <Button variant="primary" className="flex-[2]" iconRight={ArrowRight} onClick={() => setModal('convert')}>
-                    Convert to job
-                  </Button>
-                </div>
+                <Button onClick={() => save(() => updateEnquiry(selected.id, { status: 'Lost' }), `${selected.id} marked as lost.`, 'info')}>Mark as lost</Button>
+                <Button variant="primary" iconRight={ArrowRight} onClick={() => setModal('convert')}>
+                  Convert to job
+                </Button>
               </>
+            )
+          }
+        >
+          <div className="mb-4 flex items-center gap-2.5">
+            <StatusBadge value={selected.status} />
+            {closed && (
+              <span className="inline-flex items-center gap-1.5 text-[13px] text-muted">
+                <MessageSquareText className="size-4" aria-hidden="true" />
+                {selected.status === 'Converted' ? 'Converted into a job.' : 'Marked as lost.'}
+              </span>
             )}
-          </Card>
-        )}
-      </div>
+          </div>
+          <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <div>
+              <dt className="text-xs text-muted">Contact</dt>
+              <dd className="font-medium">{selected.contactName}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted">Phone</dt>
+              <dd>
+                <a href={`tel:${selected.phone.replace(/\s/g, '')}`} className="inline-flex items-center gap-1.5 font-medium hover:text-brand-ink">
+                  <Phone className="size-3.5" aria-hidden="true" />
+                  {selected.phone}
+                </a>
+              </dd>
+            </div>
+            <div className="col-span-2">
+              <dt className="text-xs text-muted">Email</dt>
+              <dd>
+                {selected.email ? (
+                  <a href={`mailto:${selected.email}`} className="inline-flex items-center gap-1.5 break-all font-medium hover:text-brand-ink">
+                    <Mail className="size-3.5 shrink-0" aria-hidden="true" />
+                    {selected.email}
+                  </a>
+                ) : (
+                  <span className="font-medium">—</span>
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted">State</dt>
+              <dd className="font-medium">{selected.state || '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted">City</dt>
+              <dd className="font-medium">{selected.city || '—'}</dd>
+            </div>
+            <div className="col-span-2">
+              <dt className="text-xs text-muted">Area / address</dt>
+              <dd className="font-medium">{selected.location || '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted">Source</dt>
+              <dd className="font-medium">{selected.source || '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted">Received on</dt>
+              <dd className="font-medium">{formatDate(selected.receivedOn)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted">Assigned to</dt>
+              <dd className="font-medium">{lookups.getMember(selected.assignedTo)?.name ?? 'Unassigned'}</dd>
+            </div>
+          </dl>
+
+          <p className="mb-2 mt-4 text-xs text-muted">Services required</p>
+          <div className="flex flex-wrap gap-2">
+            {selected.services.map((service) => (
+              <Chip key={service} active className="pointer-events-none">
+                {service}
+              </Chip>
+            ))}
+          </div>
+
+          <p className="mb-1 mt-4 text-xs text-muted">Project notes</p>
+          <p>{selected.notes || '—'}</p>
+
+          {!closed && (
+            <div className="mt-4 flex flex-col gap-1.5">
+              <label htmlFor="enquiry-status" className="text-xs font-semibold text-muted">
+                Status
+              </label>
+              <SelectControl
+                id="enquiry-status"
+                value={selected.status}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  save(() => updateEnquiry(selected.id, { status: next }), `${selected.id} moved to ${next}.`);
+                }}
+                options={ENQUIRY_STATUSES.filter((s) => s !== 'Converted')}
+              />
+            </div>
+          )}
+
+          <div className="mt-4 rounded-xl bg-slate-50 p-3.5">
+            <div className="flex items-center justify-between">
+              <b>Follow-ups</b>
+              {!closed && (
+                <button type="button" onClick={() => setModal('followup')} className="inline-flex items-center gap-1 text-[13px] font-semibold text-brand-ink hover:underline">
+                  <CalendarPlus className="size-3.5" aria-hidden="true" /> Schedule
+                </button>
+              )}
+            </div>
+            {selected.followUps.length === 0 ? (
+              <p className="mt-2 text-[13px] text-muted">No follow-ups yet.</p>
+            ) : (
+              <ul className="mt-1.5 flex flex-col">
+                {selected.followUps.map((f) => (
+                  <li key={f.id} className="flex items-center gap-3 border-b border-line py-2.5 last:border-0">
+                    <button
+                      type="button"
+                      onClick={() => save(() => toggleFollowUp(selected.id, f.id))}
+                      aria-pressed={f.done}
+                      aria-label={f.done ? 'Mark as not done' : 'Mark as done'}
+                      className={cn(
+                        'grid size-7 shrink-0 place-items-center rounded-lg border transition-colors',
+                        f.done ? 'border-green-700 bg-green-700 text-white' : 'border-slate-300 bg-white text-transparent hover:text-slate-400',
+                      )}
+                    >
+                      <Check className="size-4" aria-hidden="true" />
+                    </button>
+                    <div className="min-w-0">
+                      <p className={cn('text-[13px] font-semibold', f.done && 'text-muted line-through')}>{f.title}</p>
+                      <p className="text-xs text-muted">
+                        {formatDate(f.date, { withYear: false })}, {f.time} · {lookups.getMember(f.ownerId)?.name}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </Modal>
+      )}
 
       {modal === 'followup' && selected && (
         <FollowUpModal

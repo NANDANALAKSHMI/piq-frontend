@@ -18,18 +18,18 @@ export function LogoMark({ size = 38, color = '#b99a60', className }) {
   );
 }
 
-/** Logo lockup: mark + "Box Theory" wordmark + tagline. `tone` is the background it sits on. */
+/** Logo lockup: mark + "PIQ" wordmark with "Box Theory" beneath it. `tone` is the background it sits on. */
 export default function Logo({ tone = 'dark', size = 40, className }) {
   const dark = tone === 'dark';
   return (
     <div className={cn('flex items-center gap-3 px-2', className)}>
       <LogoMark size={size} />
       <div>
-        <span className={cn('block font-display text-[21px] font-bold leading-[0.95]', dark ? 'text-white' : 'text-navy')}>
-          Box Theory
+        <span className={cn('block font-display text-[24px] font-bold leading-[0.95] tracking-wide', dark ? 'text-white' : 'text-navy')}>
+          PIQ
         </span>
-        <span className={cn('mt-1 block text-[11px] font-medium', dark ? 'text-navy-muted' : 'text-muted')}>
-          Packaging Intelligence
+        <span className={cn('mt-1 block text-[12px] font-medium', dark ? 'text-navy-muted' : 'text-muted')}>
+          Box Theory
         </span>
       </div>
     </div>
