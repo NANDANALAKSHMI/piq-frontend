@@ -47,6 +47,8 @@ export const PAGE_TITLES = [
   ['/enquiries/new', 'New enquiry'],
   ['/enquiries', 'Enquiries'],
   ['/notifications', 'Notifications'],
+  ['/vendors/new', 'Add vendor'],
+  ['/vendors/', 'Vendor'],
   ['/vendors', 'Vendors'],
   ['/services', 'Services'],
   ['/team', 'Team'],

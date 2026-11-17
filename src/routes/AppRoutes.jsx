@@ -15,6 +15,8 @@ const AddClientPage = lazy(() => import('../pages/AddClientPage.jsx'));
 const EnquiriesPage = lazy(() => import('../pages/EnquiriesPage.jsx'));
 const AddEnquiryPage = lazy(() => import('../pages/AddEnquiryPage.jsx'));
 const VendorsPage = lazy(() => import('../pages/VendorsPage.jsx'));
+const VendorFormPage = lazy(() => import('../pages/VendorFormPage.jsx'));
+const VendorDetailPage = lazy(() => import('../pages/VendorDetailPage.jsx'));
 const ServicesPage = lazy(() => import('../pages/ServicesPage.jsx'));
 const NotificationsPage = lazy(() => import('../pages/NotificationsPage.jsx'));
 const TeamPage = lazy(() => import('../pages/TeamPage.jsx'));
@@ -71,6 +73,10 @@ export default function AppRoutes() {
         <Route path="enquiries" element={page(EnquiriesPage)} />
         <Route path="enquiries/new" element={page(AddEnquiryPage)} />
         <Route path="vendors" element={page(VendorsPage)} />
+        <Route path="vendors/new" element={page(VendorFormPage)} />
+        <Route path="vendors/:vendorId" element={page(VendorDetailPage)} />
+        <Route path="vendors/:vendorId/edit" element={page(VendorFormPage)} />
+        <Route path="vendor-categories" element={<Navigate to="/services" replace />} />
         <Route path="services" element={page(ServicesPage)} />
         <Route path="categories" element={<Navigate to="/services" replace />} />
         <Route path="notifications" element={page(NotificationsPage)} />

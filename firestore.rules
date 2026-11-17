@@ -67,6 +67,14 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Vendors and the cities the team has entered (Vendors pages).
+    match /vendors/{vendorId} {
+      allow read, write: if isAdmin();
+    }
+    match /locations/{stateId} {
+      allow read, write: if isAdmin();
+    }
+
     // Everything else stays closed until more of the app moves to Firestore.
     match /{document=**} {
       allow read, write: if false;

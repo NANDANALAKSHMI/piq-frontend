@@ -34,7 +34,7 @@ After pulling these changes run `npm install` once — the invitation email need
 | Add client | Company, contact, repeatable locations with nearest unit, validation |
 | Enquiries | Pipeline counters, filters, follow-ups (schedule / tick off), status changes, mark lost / reopen, convert to job |
 | Units & Workforce | Unit finder (city + service + staff), unit cards, workforce table, add staff, availability toggling |
-| Vendors | Six vendor categories, vendor list + profile, status changes, add vendor, raise PO |
+| Vendors | Firestore-backed vendor list with search + State/District/City/Category/Status filters, add/edit pages (dependent location dropdowns, multi-category, services + sub-services), details page with delete; categories = services and services = sub-services from the Services page |
 | Setup | Services and sub-services (saved in Firestore), workflow template editor (reorder/add/remove stages), team invitations by email, reports with CSV downloads, settings |
 
 Changes are kept in React state, so they reset on page reload.
@@ -49,10 +49,10 @@ src/
 │   ├── dashboard/   StatCard, StatusDonut, HorizontalBars, RecentActivity, ChartTooltip
 │   └── layout/      DashboardLayout, Sidebar (desktop + drawer), Header, GlobalSearch, MobileTabBar
 ├── context/         AuthContext (session), AppDataContext (all editable records + actions)
-├── data/            Dummy data: jobs, clients, enquiries, units, vendors, categories, workflows, team, reports
+├── data/            Dummy jobs/team/reports data, plus reference lists (states & districts, enquiry sources)
 ├── features/        Feature-specific pieces (jobs, clients, enquiries, vendors)
 ├── hooks/           useLookups, usePagination, useClickOutside, useSimulatedLoading
-├── lib/             firebase.js (Auth), firestore.js (shared db), members.js (team invitations), services.js (services + sub-services)
+├── lib/             firebase.js (Auth), firestore.js (shared db), members.js (team invitations), services.js (services + sub-services), vendors.js, locations.js (saved cities)
 ├── pages/           One file per route
 ├── routes/          AppRoutes (lazy-loaded pages + auth guard)
 └── utils/           formatters, job helpers, CSV export

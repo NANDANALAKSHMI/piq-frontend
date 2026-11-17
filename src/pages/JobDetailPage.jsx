@@ -17,7 +17,7 @@ import ProgressRing from '../features/jobs/ProgressRing.jsx';
 import { EditJobModal, StatusModal } from '../features/jobs/JobModals.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
 import useLookups from '../hooks/useLookups.js';
-import { vendors as allVendors, getVendorCategory } from '../data/vendorsData.js';
+import useServices from '../hooks/useServices.js';
 import { displayStatus, isOverdue, jobProgress } from '../utils/jobs.js';
 import { cn, dueLabel, formatDate } from '../utils/formatters.js';
 
@@ -33,6 +33,7 @@ function InfoItem({ label, children }) {
 export default function JobDetailPage() {
   const { jobId } = useParams();
   const { jobs, vendors, setJobStatus, setServiceProgress, addComment, addMedia, updateJob } = useAppData();
+  const { services: vendorCategories } = useServices();
   const lookups = useLookups();
   const { showToast } = useToast();
   const [tab, setTab] = useState('overview');
@@ -59,7 +60,7 @@ export default function JobDetailPage() {
   const category = lookups.getCategory(job.categoryId);
   const progress = jobProgress(job);
   const team = lookups.membersFor(job.teamIds);
-  const jobVendors = job.vendorIds.map((id) => vendors.find((v) => v.id === id) ?? allVendors.find((v) => v.id === id)).filter(Boolean);
+  const jobVendors = job.vendorIds.map((id) => vendors.find((v) => v.id === id)).filter(Boolean);
   const closed = job.status === 'Completed' || job.status === 'Cancelled';
 
   const handleComplete = () => {
@@ -260,10 +261,10 @@ export default function JobDetailPage() {
                     {jobVendors.map((vendor) => (
                       <li key={vendor.id} className="flex items-center justify-between gap-3 border-b border-line py-2.5 last:border-0">
                         <div className="min-w-0">
-                          <p className="truncate font-semibold">{vendor.name}</p>
-                          <p className="text-[12.5px] text-muted">{getVendorCategory(vendor.categoryIds[0])?.name}</p>
+                          <Link to={`/vendors/${vendor.id}`} className="block truncate font-semibold hover:text-brand-ink">{vendor.name}</Link>
+                          <p className="text-[12.5px] text-muted">{vendorCategories.find((vc) => vc.id === vendor.serviceIds[0])?.name ?? '—'}</p>
                         </div>
-                        <span className="text-[12.5px] text-muted">{vendor.leadDays} d lead</span>
+                        <span className="text-[12.5px] text-muted">{vendor.city}</span>
                       </li>
                     ))}
                   </ul>

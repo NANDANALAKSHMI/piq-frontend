@@ -13,7 +13,7 @@ import { useToast } from '../components/common/Toast.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
 import useLookups from '../hooks/useLookups.js';
 import { jobCategories } from '../data/categoriesData.js';
-import { vendorCategories } from '../data/vendorsData.js';
+import useServices from '../hooks/useServices.js';
 import { PRIORITIES, SCOPE_SERVICES, SERVICES, SERVICE_SCOPES } from '../data/constants.js';
 import { suggestVendors } from '../features/jobs/jobFormHelpers.js';
 import { cn, daysFromToday } from '../utils/formatters.js';
@@ -45,6 +45,7 @@ function SectionTitle({ number, title, subtitle, action }) {
 function AddJobForm() {
   const { clients, members, vendors, addJob } = useAppData();
   const lookups = useLookups();
+  const { services: vendorCategories } = useServices();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -84,10 +85,10 @@ function AddJobForm() {
     return (activeMembers.find((m) => m.title === title) ?? activeMembers[0])?.id ?? '';
   };
 
-  const vendorRows = (category?.vendorCategoryIds ?? []).map((vcId) => {
-    const options = suggestVendors(vendors, vcId);
-    return { category: vendorCategories.find((vc) => vc.id === vcId), options, chosen: form.vendorChoices[vcId] ?? options[0]?.id ?? '' };
-  });
+  /** One row per vendor category that has active vendors; nothing is pre-chosen. */
+  const vendorRows = vendorCategories
+    .map((vc) => ({ category: vc, options: suggestVendors(vendors, vc.id), chosen: form.vendorChoices[vc.id] ?? '' }))
+    .filter((row) => row.options.length);
 
   const teamIds = [...new Set(form.services.map(ownerFor))].filter(Boolean);
 
@@ -128,7 +129,7 @@ function AddJobForm() {
     { label: 'Client & location', done: Boolean(form.clientId && form.locationId) },
     { label: 'Job details', done: Boolean(form.name.trim()) },
     { label: 'Service scope', done: form.services.length > 0 },
-    { label: 'Vendors', done: vendorRows.every((r) => r.chosen || !r.options.length) },
+    { label: 'Vendors', done: vendorRows.some((r) => r.chosen) },
   ];
 
   const handleCreate = () => {
@@ -290,10 +291,11 @@ function AddJobForm() {
             <SectionTitle
               number={4}
               title="Vendors for this job"
-              subtitle="Suggested by category."
+              subtitle="Optional. Preferred vendors are listed first."
               action={<Link to="/vendors" className="text-[13px] font-semibold text-brand-ink hover:underline">Open vendor list</Link>}
             />
             <div className="flex flex-col gap-3">
+              {vendorRows.length === 0 && <p className="text-[13px] text-muted">No active vendors yet. Add them on the Vendors page.</p>}
               {vendorRows.map(({ category: vc, options, chosen }) => {
                 const vendor = options.find((o) => o.id === chosen);
                 return (
@@ -309,7 +311,7 @@ function AddJobForm() {
                     ) : (
                       <span className="text-[13px] text-muted">No active vendors in this category</span>
                     )}
-                    <span className="text-[12.5px] text-muted">{vendor ? `${vendor.leadDays} day lead time` : '—'}</span>
+                    <span className="text-[12.5px] text-muted">{vendor ? [vendor.city, vendor.phone].filter(Boolean).join(' · ') : '—'}</span>
                   </div>
                 );
               })}
@@ -339,7 +341,7 @@ function AddJobForm() {
                 ['Job', form.name || '—'],
                 ['Dates', `${form.startDate} → ${form.dueDate} · ${form.priority}`],
                 ['Scope', `${form.scope} · ${form.services.length} service${form.services.length === 1 ? '' : 's'}`],
-                ['Vendors', `${vendorRows.filter((r) => r.chosen).length} of ${vendorRows.length} categories chosen`],
+                ['Vendors', `${vendorRows.filter((r) => r.chosen).length} chosen`],
               ].map(([label, value]) => (
                 <div key={label}>
                   <dt className="text-xs text-muted">{label}</dt>

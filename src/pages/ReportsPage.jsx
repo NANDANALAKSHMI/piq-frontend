@@ -79,7 +79,7 @@ export default function ReportsPage() {
         { header: 'Vendor', value: (v) => v.name },
         { header: 'City', value: (v) => v.city },
         { header: 'Status', value: (v) => v.status },
-        { header: 'Jobs used', value: (v) => v.jobsUsed },
+        { header: 'Jobs used', value: (v) => jobs.filter((j) => j.vendorIds.includes(v.id)).length },
       ], vendors),
       r5: () => exportCsv('enquiry-pipeline.csv', [
         { header: 'Enquiry', value: (e) => e.id },

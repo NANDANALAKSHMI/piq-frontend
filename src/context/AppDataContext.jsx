@@ -1,12 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { jobs as initialJobs } from '../data/jobsData.js';
-import { vendors as initialVendors } from '../data/vendorsData.js';
 import { teamMembers as initialMembers } from '../data/teamData.js';
 import { notifications as initialNotifications } from '../data/activityData.js';
 import { SCOPE_SERVICES } from '../data/constants.js';
 import { nextId } from '../utils/jobs.js';
 import { daysFromToday } from '../utils/formatters.js';
 import { useAuth } from './AuthContext.jsx';
+import useFirestoreList, { firestoreAction } from '../hooks/useFirestoreList.js';
 import { isFirebaseConfigured } from '../lib/firebase.js';
 import { ADMIN_EMAILS, describeFirestoreError, memberId, normaliseEmail } from '../lib/memberUtils.js';
 
@@ -22,6 +22,10 @@ const NO_CLIENTS = [];
 const loadMembersApi = () => import('../lib/members.js');
 const loadEnquiriesApi = () => import('../lib/enquiries.js');
 const loadClientsApi = () => import('../lib/clients.js');
+const loadVendorsApi = () => import('../lib/vendors.js');
+const createVendor = firestoreAction(loadVendorsApi, 'createVendor');
+const saveVendor = firestoreAction(loadVendorsApi, 'updateVendor');
+const deleteVendor = firestoreAction(loadVendorsApi, 'deleteVendor');
 
 /** True when this browser has a saved Google sign-in (Firebase keeps it in localStorage). */
 function hasSavedGoogleSession() {
@@ -40,9 +44,9 @@ function logEntry(type, text, by) {
 }
 
 /**
- * Holds every record the UI can change. Jobs and vendors are still dummy data, so those
- * actions update local React state and last until the page is reloaded. The team (invitations), clients and
- * enquiries are real: they live in Firestore and update live for everyone signed in.
+ * Holds every record the UI can change. Jobs are still dummy data, so those actions update local
+ * React state and last until the page is reloaded. The team (invitations), clients, enquiries and
+ * vendors are real: they live in Firestore and update live for everyone signed in.
  */
 export function AppDataProvider({ children }) {
   const { user } = useAuth();
@@ -51,7 +55,7 @@ export function AppDataProvider({ children }) {
   const [jobs, setJobs] = useState(initialJobs);
   const [clientSnapshot, setClientSnapshot] = useState({ key: null, list: NO_CLIENTS, error: null });
   const [enquirySnapshot, setEnquirySnapshot] = useState({ key: null, list: NO_ENQUIRIES, error: null });
-  const [vendors, setVendors] = useState(initialVendors);
+  const { list: vendors, loading: vendorsLoading, error: vendorsError } = useFirestoreList(loadVendorsApi, 'subscribeToVendors', 'vendors');
   // Sample team: only used to show names on the sample jobs, enquiries and reports.
   const localMembers = initialMembers;
   const [notifications, setNotifications] = useState(initialNotifications);
@@ -402,13 +406,10 @@ export function AppDataProvider({ children }) {
 
   /* ---------- vendors, team, notifications ---------- */
 
-  const addVendor = useCallback((draft) => {
-    setVendors((list) => [{ ...draft, id: localId('v'), jobsUsed: 0, rating: 0 }, ...list]);
-  }, []);
-
-  const updateVendor = useCallback((vendorId, patch) => {
-    setVendors((list) => list.map((v) => (v.id === vendorId ? { ...v, ...patch } : v)));
-  }, []);
+  /** Saves a new vendor to Firestore and resolves to its id. Rejects with a readable message. */
+  const addVendor = useCallback((draft) => createVendor(draft, user?.email ?? ''), [user]);
+  const updateVendor = useCallback((vendorId, patch) => saveVendor(vendorId, patch), []);
+  const removeVendor = useCallback((vendorId) => deleteVendor(vendorId), []);
 
   /** Switches someone's access off/on. For the real team this is saved in Firestore and blocks sign-in. */
   const toggleMemberAccess = useCallback(
@@ -493,20 +494,20 @@ export function AppDataProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      jobs, clients, clientsLoading, clientsError, enquiries, enquiriesLoading, enquiriesError, vendors, members, knownMembers, notifications,
+      jobs, clients, clientsLoading, clientsError, enquiries, enquiriesLoading, enquiriesError, vendors, vendorsLoading, vendorsError, members, knownMembers, notifications,
       addJob, updateJob, setJobStatus, setServiceProgress, addComment, addMedia,
       addClient, addLocation,
       addEnquiry, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry,
-      addVendor, updateVendor,
+      addVendor, updateVendor, removeVendor,
       toggleMemberAccess, inviteMember, resendInvite, removeInvite, teamMode, teamLoading, teamError,
       markNotificationRead, markAllNotificationsRead,
     }),
     [
-      jobs, clients, clientsLoading, clientsError, enquiries, enquiriesLoading, enquiriesError, vendors, members, knownMembers, notifications,
+      jobs, clients, clientsLoading, clientsError, enquiries, enquiriesLoading, enquiriesError, vendors, vendorsLoading, vendorsError, members, knownMembers, notifications,
       addJob, updateJob, setJobStatus, setServiceProgress, addComment, addMedia,
       addClient, addLocation,
       addEnquiry, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry,
-      addVendor, updateVendor,
+      addVendor, updateVendor, removeVendor,
       toggleMemberAccess, inviteMember, resendInvite, removeInvite, teamMode, teamLoading, teamError,
       markNotificationRead, markAllNotificationsRead,
     ],
