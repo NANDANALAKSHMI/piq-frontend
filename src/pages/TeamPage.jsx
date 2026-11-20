@@ -54,7 +54,7 @@ function AddMemberModal({ live, onClose, onSave }) {
       description={
         live
           ? 'They get an email to create their password. Everyone you invite gets full access.'
-          : 'Team members can be assigned to jobs.'
+          : 'Team members can be assigned to projects.'
       }
       footer={
         <>
@@ -221,7 +221,7 @@ export default function TeamPage() {
     <div className="flex flex-col gap-5.5">
       <PageHeader
         title="Team"
-        subtitle={live ? 'Everyone who can sign in to Box Theory. Invited people create their password from the invitation email.' : 'The people you assign to jobs.'}
+        subtitle={live ? 'Everyone who can sign in to Box Theory. Invited people create their password from the invitation email.' : 'The people you assign to projects.'}
         actions={
           live && (
             <Button variant="primary" icon={UserPlus} onClick={() => setAddOpen(true)}>

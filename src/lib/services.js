@@ -3,7 +3,7 @@ import { db } from './firestore.js';
 
 /**
  * The services Box Theory offers live in the Firestore `services` collection — one document per
- * service, with its sub-services kept as an array on the document. Anyone on the team can manage
+ * service, with its sub-services and its questions kept as arrays on the document. Anyone on the team can manage
  * them (see firestore.rules).
  *
  * This module is loaded on demand (dynamic import) so the Firestore SDK stays out of the first page load.
@@ -21,6 +21,10 @@ function toSubService(raw) {
   };
 }
 
+function toQuestion(raw) {
+  return { id: raw.id, text: raw.text ?? '', active: raw.active !== false };
+}
+
 /** Firestore document → the service shape the Services page uses. */
 function toService(snapshot) {
   const data = snapshot.data();
@@ -32,6 +36,7 @@ function toService(snapshot) {
     active: data.active !== false,
     order: data.order ?? 0,
     subServices: Array.isArray(data.subServices) ? data.subServices.filter((s) => s?.id).map(toSubService) : [],
+    questions: Array.isArray(data.questions) ? data.questions.filter((q) => q?.id).map(toQuestion) : [],
   };
 }
 
@@ -43,7 +48,7 @@ export function subscribeToServices(onChange, onError) {
 }
 
 /** Adds a service and resolves to its new id. */
-export async function createService({ name, description = '', ownerRole = '' }) {
+export async function createService({ name, description = '', ownerRole = '', questions = [] }) {
   const ref = doc(collection(db, SERVICES));
   await setDoc(ref, {
     name: name.trim(),
@@ -52,18 +57,19 @@ export async function createService({ name, description = '', ownerRole = '' }) 
     active: true,
     order: Date.now(),
     subServices: [],
+    questions,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
   return ref.id;
 }
 
-/** Saves changes to a service. Pass `subServices` (the whole array) to change its sub-services. */
+/** Saves changes to a service. Pass `subServices` or `questions` (the whole array) to change them. */
 export function updateService(id, changes) {
   return updateDoc(serviceRef(id), { ...changes, updatedAt: serverTimestamp() });
 }
 
-/** Removes a service together with its sub-services. */
+/** Removes a service together with its sub-services and questions. */
 export function deleteService(id) {
   return deleteDoc(serviceRef(id));
 }

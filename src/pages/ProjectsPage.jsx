@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Download, Plus, SearchX, X } from 'lucide-react';
+import { Briefcase, Download, Plus, SearchX, TriangleAlert, X } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card from '../components/common/Card.jsx';
@@ -10,24 +10,22 @@ import { SelectControl } from '../components/common/FormFields.jsx';
 import DataTable from '../components/common/DataTable.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import { useToast } from '../components/common/Toast.jsx';
-import { buildJobColumns } from '../features/jobs/jobColumns.jsx';
+import { buildProjectColumns } from '../features/projects/projectColumns.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
 import useLookups from '../hooks/useLookups.js';
-import useSimulatedLoading from '../hooks/useSimulatedLoading.js';
-import { jobCategories } from '../data/categoriesData.js';
-import { CITIES, SERVICE_SCOPES } from '../data/constants.js';
-import { displayStatus, isOverdue, jobProgress } from '../utils/jobs.js';
+import useServices from '../hooks/useServices.js';
+import { displayStatus, isOverdue, projectProgress, serviceNames } from '../utils/projects.js';
 import { daysUntil } from '../utils/formatters.js';
 import { exportCsv } from '../utils/exportCsv.js';
 
 const STATUS_TABS = [
-  { id: 'all', label: 'All jobs', match: () => true },
-  { id: 'Upcoming', label: 'Upcoming', match: (j) => j.status === 'Upcoming' },
-  { id: 'In progress', label: 'Ongoing', match: (j) => j.status === 'In progress' },
-  { id: 'Completed', label: 'Completed', match: (j) => j.status === 'Completed' },
-  { id: 'On hold', label: 'On hold', match: (j) => j.status === 'On hold' },
+  { id: 'all', label: 'All projects', match: () => true },
+  { id: 'Upcoming', label: 'Upcoming', match: (p) => p.status === 'Upcoming' },
+  { id: 'In progress', label: 'Ongoing', match: (p) => p.status === 'In progress' },
+  { id: 'Completed', label: 'Completed', match: (p) => p.status === 'Completed' },
+  { id: 'On hold', label: 'On hold', match: (p) => p.status === 'On hold' },
   { id: 'Overdue', label: 'Overdue', match: isOverdue },
-  { id: 'Cancelled', label: 'Cancelled', match: (j) => j.status === 'Cancelled' },
+  { id: 'Cancelled', label: 'Cancelled', match: (p) => p.status === 'Cancelled' },
 ];
 
 const DUE_FILTERS = [
@@ -37,10 +35,11 @@ const DUE_FILTERS = [
   { value: 'past', label: 'Past due date' },
 ];
 
-const EMPTY_FILTERS = { city: '', category: '', scope: '', staff: '', due: '' };
+const EMPTY_FILTERS = { city: '', service: '', staff: '', due: '' };
 
-export default function JobsPage() {
-  const { jobs, members } = useAppData();
+export default function ProjectsPage() {
+  const { projects, projectsLoading, projectsError, members } = useAppData();
+  const { services } = useServices();
   const lookups = useLookups();
   const { showToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -60,35 +59,38 @@ export default function JobsPage() {
 
   const setFilter = (key, value) => setFilters((current) => ({ ...current, [key]: value }));
 
+  /** Only cities that projects are actually in. */
+  const cityOptions = useMemo(
+    () => [...new Set(projects.map((p) => lookups.projectCity(p)).filter((c) => c && c !== '—'))].sort((a, b) => a.localeCompare(b)),
+    [projects, lookups],
+  );
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return jobs.filter((job) => {
+    return projects.filter((project) => {
       if (q) {
-        const haystack = `${job.id} ${job.name} ${lookups.getClient(job.clientId)?.name} ${lookups.jobCity(job)}`.toLowerCase();
+        const haystack = `${project.id} ${project.name} ${lookups.getClient(project.clientId)?.name} ${lookups.projectCity(project)}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
-      if (filters.city && lookups.jobCity(job) !== filters.city) return false;
-      if (filters.category && job.categoryId !== filters.category) return false;
-      if (filters.scope && job.scope !== filters.scope) return false;
-      if (filters.staff && !job.teamIds.includes(filters.staff)) return false;
+      if (filters.city && lookups.projectCity(project) !== filters.city) return false;
+      if (filters.service && !project.services.some((s) => s.serviceId === filters.service)) return false;
+      if (filters.staff && !project.teamIds.includes(filters.staff)) return false;
       if (filters.due) {
-        const days = daysUntil(job.dueDate);
+        const days = daysUntil(project.dueDate);
         if (filters.due === 'week' && !(days >= 0 && days <= 7)) return false;
         if (filters.due === 'month' && !(days >= 0 && days <= 30)) return false;
         if (filters.due === 'past' && days >= 0) return false;
       }
       return true;
     });
-  }, [jobs, query, filters, lookups]);
+  }, [projects, query, filters, lookups]);
 
   const tabs = STATUS_TABS.map((tab) => ({ ...tab, count: filtered.filter(tab.match).length }));
   const tabRows = filtered.filter(STATUS_TABS.find((t) => t.id === activeTab).match);
-  const loading = useSimulatedLoading(JSON.stringify([activeTab, filters]), 350);
 
   const activeFilterChips = [
     filters.city && { key: 'city', label: `City: ${filters.city}` },
-    filters.category && { key: 'category', label: `Category: ${lookups.getCategory(filters.category)?.name}` },
-    filters.scope && { key: 'scope', label: `Scope: ${filters.scope}` },
+    filters.service && { key: 'service', label: `Service: ${services.find((s) => s.id === filters.service)?.name ?? '—'}` },
     filters.staff && { key: 'staff', label: `Staff: ${lookups.getMember(filters.staff)?.name}` },
     filters.due && { key: 'due', label: DUE_FILTERS.find((d) => d.value === filters.due)?.label },
   ].filter(Boolean);
@@ -100,50 +102,59 @@ export default function JobsPage() {
 
   const handleExport = () => {
     exportCsv(
-      'piq-jobs.csv',
+      'piq-projects.csv',
       [
-        { header: 'Job ID', value: (j) => j.id },
-        { header: 'Job', value: (j) => j.name },
-        { header: 'Client', value: (j) => lookups.getClient(j.clientId)?.name },
-        { header: 'City', value: (j) => lookups.jobCity(j) },
-        { header: 'Scope', value: (j) => j.scope },
-        { header: 'Progress', value: (j) => `${jobProgress(j).percent}%` },
-        { header: 'Priority', value: (j) => j.priority },
-        { header: 'Status', value: (j) => displayStatus(j) },
-        { header: 'Start', value: (j) => j.startDate },
-        { header: 'Due', value: (j) => j.dueDate },
+        { header: 'Project ID', value: (p) => p.id },
+        { header: 'Project', value: (p) => p.name },
+        { header: 'Client', value: (p) => lookups.getClient(p.clientId)?.name },
+        { header: 'City', value: (p) => lookups.projectCity(p) },
+        { header: 'Services', value: serviceNames },
+        { header: 'Progress', value: (p) => `${projectProgress(p).percent}%` },
+        { header: 'Priority', value: (p) => p.priority },
+        { header: 'Status', value: (p) => displayStatus(p) },
+        { header: 'Start', value: (p) => p.startDate },
+        { header: 'Due', value: (p) => p.dueDate },
       ],
       tabRows,
     );
-    showToast(`Exported ${tabRows.length} jobs to CSV.`);
+    showToast(`Exported ${tabRows.length} projects to CSV.`);
   };
 
   return (
     <div className="flex flex-col gap-5.5">
       <PageHeader
-        title="Jobs"
-        subtitle="Every company job in one searchable list — from onboarding to delivery."
+        title="Projects"
+        subtitle="Every project in one searchable list — from onboarding to delivery."
         actions={
           <>
             <Button icon={Download} onClick={handleExport} disabled={!tabRows.length}>
               Export
             </Button>
-            <Button to="/jobs/new" variant="primary" icon={Plus}>
-              New job
+            <Button to="/projects/new" variant="primary" icon={Plus}>
+              New project
             </Button>
           </>
         }
       />
 
+      {projectsError && (
+        <div role="status" className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <TriangleAlert className="mt-0.5 size-5 shrink-0 text-amber-700" aria-hidden="true" />
+          <div className="text-[13px]">
+            <p className="font-semibold text-amber-900">Projects aren’t connected yet</p>
+            <p className="mt-0.5 text-amber-800">{projectsError}</p>
+          </div>
+        </div>
+      )}
+
       <Card padded={false}>
-        <Tabs tabs={tabs} active={activeTab} onChange={setTab} label="Job status" className="px-4" />
+        <Tabs tabs={tabs} active={activeTab} onChange={setTab} label="Project status" className="px-4" />
 
         <div className="flex flex-col gap-3.5 border-b border-line px-5 py-4.5">
-          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-            <SearchInput value={query} onChange={setQuery} placeholder="Job name, ID or client" className="sm:col-span-2 lg:col-span-1 2xl:col-span-1" />
-            <SelectControl aria-label="City" value={filters.city} onChange={(e) => setFilter('city', e.target.value)} placeholder="City: All" options={CITIES} />
-            <SelectControl aria-label="Category" value={filters.category} onChange={(e) => setFilter('category', e.target.value)} placeholder="Category: All" options={jobCategories.map((c) => ({ value: c.id, label: c.name }))} />
-            <SelectControl aria-label="Service scope" value={filters.scope} onChange={(e) => setFilter('scope', e.target.value)} placeholder="Scope: All" options={SERVICE_SCOPES} />
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
+            <SearchInput value={query} onChange={setQuery} placeholder="Project name, ID or client" className="sm:col-span-2 lg:col-span-1" />
+            <SelectControl aria-label="City" value={filters.city} onChange={(e) => setFilter('city', e.target.value)} placeholder="City: All" options={cityOptions} />
+            <SelectControl aria-label="Service" value={filters.service} onChange={(e) => setFilter('service', e.target.value)} placeholder="Service: All" options={services.map((s) => ({ value: s.id, label: s.name }))} />
             <SelectControl aria-label="Assigned staff" value={filters.staff} onChange={(e) => setFilter('staff', e.target.value)} placeholder="Staff: Anyone" options={members.map((m) => ({ value: m.id, label: m.name }))} />
             <SelectControl aria-label="Due date" value={filters.due} onChange={(e) => setFilter('due', e.target.value)} options={DUE_FILTERS} />
           </div>
@@ -171,19 +182,23 @@ export default function JobsPage() {
         <div className="px-2 pb-4 pt-1 sm:px-4">
           <DataTable
             key={activeTab}
-            columns={buildJobColumns(lookups, ['id', 'name', 'category', 'scope', 'progress', 'team', 'priority', 'status', 'due'])}
+            columns={buildProjectColumns(lookups, ['id', 'name', 'city', 'services', 'progress', 'team', 'priority', 'status', 'due', 'view'])}
             rows={tabRows}
-            pageSize={8}
-            loading={loading}
-            minWidth={1120}
+            pageSize={10}
+            loading={projectsLoading}
+            minWidth={1260}
             initialSort={initialSort}
             emptyState={
-              <EmptyState
-                icon={SearchX}
-                title="No jobs match these filters"
-                description="Try a different search or clear the filters to see every job."
-                action={<Button onClick={clearAll}>Clear filters</Button>}
-              />
+              projects.length === 0 ? (
+                <EmptyState icon={Briefcase} title="No projects yet" description="Click “New project” to create the first one." />
+              ) : (
+                <EmptyState
+                  icon={SearchX}
+                  title="No projects match these filters"
+                  description="Try a different search or clear the filters to see every project."
+                  action={<Button onClick={clearAll}>Clear filters</Button>}
+                />
+              )
             }
           />
         </div>

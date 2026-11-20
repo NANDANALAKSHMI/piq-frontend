@@ -100,8 +100,8 @@ export default function VendorsPage() {
     { key: 'state', header: 'State', sortable: true, render: (v) => v.state || <span className="text-muted">—</span> },
     { key: 'district', header: 'District', sortable: true, render: (v) => v.district || <span className="text-muted">—</span> },
     { key: 'city', header: 'City', sortable: true, render: (v) => v.city || <span className="text-muted">—</span> },
-    { key: 'categories', header: 'Categories', render: (v) => <TagList names={lookups.categoryNames(v)} /> },
-    { key: 'services', header: 'Services', render: (v) => <TagList names={lookups.serviceNames(v)} /> },
+    { key: 'categories', header: 'Services', render: (v) => <TagList names={lookups.categoryNames(v)} /> },
+    { key: 'services', header: 'Sub-services', render: (v) => <TagList names={lookups.serviceNames(v)} /> },
     { key: 'status', header: 'Status', sortable: true, render: (v) => <StatusBadge value={v.status} /> },
     {
       key: 'actions',
@@ -153,10 +153,10 @@ export default function VendorsPage() {
             <SelectControl aria-label="District" value={filters.district} onChange={setFilter('district')} placeholder="District: All" options={districtOptions} />
             <SelectControl aria-label="City" value={filters.city} onChange={setFilter('city')} placeholder="City: All" options={cityOptions} />
             <SelectControl
-              aria-label="Category"
+              aria-label="Service"
               value={filters.categoryId}
               onChange={setFilter('categoryId')}
-              placeholder="Category: All"
+              placeholder="Service: All"
               options={services.map((c) => ({ value: c.id, label: c.name }))}
             />
             <SelectControl aria-label="Status" value={filters.status} onChange={setFilter('status')} placeholder="Status: All" options={VENDOR_STATUSES.map((s) => s.value)} />

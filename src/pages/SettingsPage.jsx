@@ -18,9 +18,9 @@ const SECTIONS = [
 ];
 
 const NOTIFICATION_EVENTS = [
-  { id: 'dueSoon', label: 'A job is due in 2 days' },
-  { id: 'overdue', label: 'A job becomes overdue' },
-  { id: 'stage', label: 'A job moves to a new stage' },
+  { id: 'dueSoon', label: 'A project is due in 2 days' },
+  { id: 'overdue', label: 'A project becomes overdue' },
+  { id: 'stage', label: 'A project moves to a new stage' },
   { id: 'mention', label: 'I’m mentioned in a comment' },
   { id: 'enquiry', label: 'A new enquiry is assigned to me' },
   { id: 'summary', label: 'Daily summary at 9:00 AM' },

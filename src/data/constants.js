@@ -1,4 +1,4 @@
-export const JOB_STATUSES = ['Upcoming', 'In progress', 'On hold', 'Completed', 'Cancelled'];
+export const PROJECT_STATUSES = ['Upcoming', 'In progress', 'On hold', 'Completed', 'Cancelled'];
 
 export const PRIORITIES = ['Low', 'Medium', 'High'];
 

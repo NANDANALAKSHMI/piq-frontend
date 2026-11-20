@@ -74,3 +74,10 @@ export function relativeTime(minutesAgo) {
   const days = Math.round(hours / 24);
   return days === 1 ? 'Yesterday' : `${days} days ago`;
 }
+
+/** "Just now", "12 min ago", "3 h ago", "Yesterday" for an ISO timestamp. */
+export function timeAgo(iso) {
+  if (!iso) return '';
+  const minutes = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  return minutes < 1 ? 'Just now' : relativeTime(minutes);
+}

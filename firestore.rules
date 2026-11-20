@@ -75,6 +75,11 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Projects (with their services, comments and activity), managed from the Projects pages.
+    match /projects/{projectId} {
+      allow read, write: if isAdmin();
+    }
+
     // Everything else stays closed until more of the app moves to Firestore.
     match /{document=**} {
       allow read, write: if false;

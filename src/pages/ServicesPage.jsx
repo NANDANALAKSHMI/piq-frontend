@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, Pencil, Plus, Trash2, TriangleAlert } from 'lucide-react';
+import { ChevronDown, Pencil, Plus, Trash2, TriangleAlert, X } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button, { IconButton } from '../components/common/Button.jsx';
 import Card from '../components/common/Card.jsx';
@@ -12,7 +12,13 @@ import useServices from '../hooks/useServices.js';
 import { cn } from '../utils/formatters.js';
 
 const sameName = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
-const newSubServiceId = () => `sub-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+const newId = (prefix) => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+
+/** The two lists inside a service: field on the service document, its label, and how an item is named. */
+const LISTS = {
+  subServices: { label: 'sub-service', title: (s) => `Sub-services of ${s.name}`, nameOf: (item) => item.name, prefix: 'sub' },
+  questions: { label: 'question', title: (s) => `Questions for ${s.name}`, nameOf: (item) => item.text, prefix: 'q' },
+};
 const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
 /** One text box + Add button. Type a name, press Enter, keep typing the next one. */
@@ -49,9 +55,19 @@ function QuickAdd({ label, placeholder, takenNames, disabled, onAdd }) {
 }
 
 /** Add or edit popup: a name, plus a description when `withDescription` is set (services). */
-function DetailsModal({ title, saveLabel = 'Save', initialName = '', initialDescription = '', withDescription = false, takenNames, onClose, onSave }) {
+function DetailsModal({ title, saveLabel = 'Save', nameLabel, initialName = '', initialDescription = '', initialQuestions, withDescription = false, takenNames, onClose, onSave }) {
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription);
+  /** Only services have questions; `undefined` hides the section (sub-services, questions). */
+  const [questions, setQuestions] = useState(initialQuestions);
+  const [draftQuestion, setDraftQuestion] = useState('');
+  const duplicateQuestion = Boolean(questions?.some((q) => sameName(q.text, draftQuestion)));
+
+  const addQuestion = () => {
+    if (!draftQuestion.trim() || duplicateQuestion) return;
+    setQuestions((list) => [...list, { id: newId('q'), text: draftQuestion.trim(), active: true }]);
+    setDraftQuestion('');
+  };
   const [saving, setSaving] = useState(false);
   const duplicate = takenNames.some((taken) => sameName(taken, name));
 
@@ -59,7 +75,7 @@ function DetailsModal({ title, saveLabel = 'Save', initialName = '', initialDesc
     event.preventDefault();
     if (!name.trim() || duplicate || saving) return;
     setSaving(true);
-    const saved = await onSave({ name: name.trim(), description: description.trim() });
+    const saved = await onSave({ name: name.trim(), description: description.trim(), ...(questions ? { questions } : {}) });
     if (!saved) setSaving(false);
   };
 
@@ -79,7 +95,7 @@ function DetailsModal({ title, saveLabel = 'Save', initialName = '', initialDesc
     >
       <form id="details-form" onSubmit={submit} className="grid gap-4">
         <TextField
-          label={withDescription ? 'Service name' : 'Name'}
+          label={nameLabel ?? (withDescription ? 'Service name' : 'Name')}
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -88,6 +104,47 @@ function DetailsModal({ title, saveLabel = 'Save', initialName = '', initialDesc
         />
         {withDescription && (
           <TextArea label="Description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What this service covers" />
+        )}
+        {questions && (
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-semibold text-muted">Questions (optional)</span>
+            {questions.length > 0 && (
+              <ol className="flex flex-col gap-1.5">
+                {questions.map((q, index) => (
+                  <li key={q.id} className="flex items-center gap-2 rounded-[10px] border border-line py-1 pl-3 pr-1">
+                    <span className="shrink-0 text-[12.5px] font-semibold text-muted">Q{index + 1}.</span>
+                    <span className="min-w-0 flex-1 break-words py-1 text-sm">{q.text}</span>
+                    <IconButton
+                      icon={X}
+                      label={`Remove question ${index + 1}`}
+                      className="size-8 border-transparent bg-transparent"
+                      onClick={() => setQuestions((list) => list.filter((x) => x.id !== q.id))}
+                    />
+                  </li>
+                ))}
+              </ol>
+            )}
+            <div className="flex items-start gap-2">
+              <TextField
+                aria-label="New question"
+                value={draftQuestion}
+                onChange={(e) => setDraftQuestion(e.target.value)}
+                onKeyDown={(e) => {
+                  // Enter adds the question instead of submitting the whole form.
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addQuestion();
+                  }
+                }}
+                placeholder="Type a question, then press Enter"
+                error={duplicateQuestion ? 'This question is already in the list.' : undefined}
+                className="flex-1"
+              />
+              <Button icon={Plus} disabled={!draftQuestion.trim() || duplicateQuestion} onClick={addQuestion}>
+                Add
+              </Button>
+            </div>
+          </div>
         )}
       </form>
     </Modal>
@@ -135,7 +192,7 @@ export default function ServicesPage() {
   const { services, loading, error, addService, updateService, removeService } = useServices();
   const { showToast } = useToast();
   const [openId, setOpenId] = useState(null);
-  /** { type: 'add' } or { type: 'edit' | 'delete', service, subService? } */
+  /** { type: 'add' } or { type: 'edit' | 'delete', service, list?, item? } — `list` is 'subServices' or 'questions'. */
   const [modal, setModal] = useState(null);
   const closeModal = () => setModal(null);
 
@@ -157,30 +214,31 @@ export default function ServicesPage() {
     return true;
   };
 
-  const saveSubServices = (service, subServices) => run(() => updateService(service.id, { subServices }));
+  /** Saves a whole list (sub-services or questions) on a service. */
+  const saveList = (service, list, items) => run(() => updateService(service.id, { [list]: items }));
 
   /** Modals work on the live record, so a change from another tab can't be overwritten by stale data. */
   const modalService = modal?.service && services.find((s) => s.id === modal.service.id);
-  const modalTarget = modal?.subService ?? modal?.service;
+  const modalItem = modal?.item;
+  const modalName = modalItem ? LISTS[modal.list].nameOf(modalItem) : modal?.service?.name;
 
-  const saveEdit = async ({ name, description }) => {
-    const { subService } = modal;
+  const saveEdit = async ({ name, description, questions }) => {
+    const { list, item } = modal;
     const service = modalService;
-    const saved = subService
-      ? await saveSubServices(service, service.subServices.map((s) => (s.id === subService.id ? { ...s, name } : s)))
-      : await run(() => updateService(service.id, { name, description }));
+    const field = list === 'questions' ? 'text' : 'name';
+    const saved = item
+      ? await saveList(service, list, service[list].map((x) => (x.id === item.id ? { ...x, [field]: name } : x)))
+      : await run(() => updateService(service.id, { name, description, questions }));
     if (saved) closeModal();
     return saved;
   };
 
   const confirmDelete = async () => {
-    const { subService } = modal;
+    const { list, item } = modal;
     const service = modalService;
-    const done = subService
-      ? await saveSubServices(service, service.subServices.filter((s) => s.id !== subService.id))
-      : await run(() => removeService(service.id));
+    const done = item ? await saveList(service, list, service[list].filter((x) => x.id !== item.id)) : await run(() => removeService(service.id));
     if (done) {
-      showToast(`${(subService ?? service).name} deleted.`);
+      showToast(item ? `${LISTS[list].label[0].toUpperCase()}${LISTS[list].label.slice(1)} deleted.` : `${service.name} deleted.`);
       closeModal();
     }
     return done;
@@ -190,7 +248,7 @@ export default function ServicesPage() {
     <div className="flex flex-col gap-5.5">
       <PageHeader
         title="Services"
-        subtitle="Add a service, then open it to add its sub-services."
+        subtitle="Add a service, then open it to add its sub-services and questions."
         actions={
           <Button variant="primary" icon={Plus} disabled={loading} onClick={() => setModal({ type: 'add' })}>
             Add service
@@ -238,7 +296,9 @@ export default function ServicesPage() {
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2.5">
                           <span className="truncate font-semibold">{service.name}</span>
-                          <span className="shrink-0 text-[12.5px] text-muted">{plural(service.subServices.length, 'sub-service')}</span>
+                          <span className="shrink-0 text-[12.5px] text-muted">
+                            {plural(service.subServices.length, 'sub-service')} · {plural(service.questions.length, 'question')}
+                          </span>
                           {!service.active && <Tag>Inactive</Tag>}
                         </span>
                         {service.description && <span className="block truncate text-[12.5px] text-muted">{service.description}</span>}
@@ -254,32 +314,46 @@ export default function ServicesPage() {
                   </div>
 
                   {open && (
-                    <div className="bg-slate-50/70 px-4 pb-4 pl-10.5 pt-3">
-                      <h3 className="text-xs font-semibold text-muted">Sub-services of {service.name}</h3>
-                      {service.subServices.length > 0 && (
-                        <ul className="mt-2 flex flex-col gap-1.5">
-                          {service.subServices.map((sub) => (
-                            <li key={sub.id} className="flex items-center gap-2 rounded-[10px] border border-line bg-white py-1 pl-3.5 pr-1.5">
-                              <span className={cn('min-w-0 flex-1 truncate', !sub.active && 'text-muted')}>{sub.name}</span>
-                              <RowActions
-                                name={sub.name}
-                                active={sub.active}
-                                onToggle={(active) => saveSubServices(service, service.subServices.map((s) => (s.id === sub.id ? { ...s, active } : s)))}
-                                onRename={() => setModal({ type: 'edit', service, subService: sub })}
-                                onDelete={() => setModal({ type: 'delete', service, subService: sub })}
+                    <div className="grid grid-cols-1 gap-5 bg-slate-50/70 px-4 pb-4 pl-10.5 pt-3 lg:grid-cols-2">
+                      {['subServices', 'questions'].map((list) => {
+                        const { label, title, nameOf, prefix } = LISTS[list];
+                        const items = service[list];
+                        return (
+                          <section key={list} aria-label={title(service)}>
+                            <h3 className="text-xs font-semibold text-muted">{title(service)}</h3>
+                            {items.length > 0 && (
+                              <ul className="mt-2 flex flex-col gap-1.5">
+                                {items.map((item, index) => (
+                                  <li key={item.id} className="flex items-center gap-2 rounded-[10px] border border-line bg-white py-1 pl-3.5 pr-1.5">
+                                    {list === 'questions' && <span className="shrink-0 text-[12.5px] font-semibold text-muted">Q{index + 1}.</span>}
+                                    <span className={cn('min-w-0 flex-1', list === 'questions' ? 'break-words py-1' : 'truncate', !item.active && 'text-muted')}>{nameOf(item)}</span>
+                                    <RowActions
+                                      name={nameOf(item)}
+                                      active={item.active}
+                                      onToggle={(active) => saveList(service, list, items.map((x) => (x.id === item.id ? { ...x, active } : x)))}
+                                      onRename={() => setModal({ type: 'edit', service, list, item })}
+                                      onDelete={() => setModal({ type: 'delete', service, list, item })}
+                                    />
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                            <div className="mt-2.5">
+                              <QuickAdd
+                                label={`New ${label} for ${service.name}`}
+                                placeholder={list === 'questions' ? 'Type a question, e.g. What are the item dimensions?' : 'New sub-service name'}
+                                takenNames={items.map(nameOf)}
+                                onAdd={(text) =>
+                                  saveList(service, list, [
+                                    ...items,
+                                    list === 'questions' ? { id: newId(prefix), text, active: true } : { id: newId(prefix), name: text, description: '', active: true },
+                                  ])
+                                }
                               />
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      <div className="mt-2.5">
-                        <QuickAdd
-                          label={`New sub-service for ${service.name}`}
-                          placeholder="New sub-service name"
-                          takenNames={service.subServices.map((s) => s.name)}
-                          onAdd={(name) => saveSubServices(service, [...service.subServices, { id: newSubServiceId(), name, description: '', active: true }])}
-                        />
-                      </div>
+                            </div>
+                          </section>
+                        );
+                      })}
                     </div>
                   )}
                 </li>
@@ -290,16 +364,18 @@ export default function ServicesPage() {
       </Card>
 
       {modal?.type === 'add' && (
-        <DetailsModal title="Add service" saveLabel="Add service" withDescription takenNames={services.map((x) => x.name)} onClose={closeModal} onSave={createService} />
+        <DetailsModal title="Add service" saveLabel="Add service" withDescription initialQuestions={[]} takenNames={services.map((x) => x.name)} onClose={closeModal} onSave={createService} />
       )}
 
       {modal?.type === 'edit' && modalService && (
         <DetailsModal
-          title={`Edit ${modalTarget.name}`}
-          initialName={modalTarget.name}
-          initialDescription={modalTarget.description}
-          withDescription={!modal.subService}
-          takenNames={(modal.subService ? modalService.subServices : services).filter((x) => x.id !== modalTarget.id).map((x) => x.name)}
+          title={modalItem ? `Edit ${LISTS[modal.list].label}` : `Edit ${modalName}`}
+          nameLabel={modal.list === 'questions' ? 'Question' : undefined}
+          initialName={modalName}
+          initialDescription={modalItem ? '' : modalService.description}
+          initialQuestions={modalItem ? undefined : modalService.questions}
+          withDescription={!modalItem}
+          takenNames={(modalItem ? modalService[modal.list].map(LISTS[modal.list].nameOf) : services.map((x) => x.name)).filter((n) => n !== modalName)}
           onClose={closeModal}
           onSave={saveEdit}
         />
@@ -307,12 +383,12 @@ export default function ServicesPage() {
 
       {modal?.type === 'delete' && modalService && (
         <ConfirmDeleteModal
-          title={`Delete ${modalTarget.name}?`}
+          title={modalItem ? `Delete this ${LISTS[modal.list].label}?` : `Delete ${modalName}?`}
           message={
-            modal.subService
-              ? `It will be removed from ${modalService.name}. This can’t be undone.`
-              : modalService.subServices.length
-                ? `This also deletes its ${plural(modalService.subServices.length, 'sub-service')}. It can’t be undone.`
+            modalItem
+              ? `“${modalName}” will be removed from ${modalService.name}. This can’t be undone.`
+              : modalService.subServices.length || modalService.questions.length
+                ? `This also deletes its ${plural(modalService.subServices.length, 'sub-service')} and ${plural(modalService.questions.length, 'question')}. It can’t be undone.`
                 : 'This can’t be undone.'
           }
           onClose={closeModal}

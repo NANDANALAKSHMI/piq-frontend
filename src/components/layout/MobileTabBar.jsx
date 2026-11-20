@@ -19,13 +19,13 @@ export default function MobileTabBar({ onOpenMenu }) {
         <LayoutDashboard className="size-[22px]" aria-hidden="true" />
         Home
       </NavLink>
-      <NavLink to="/jobs" end className={tabClass}>
+      <NavLink to="/projects" end className={tabClass}>
         <Briefcase className="size-[22px]" aria-hidden="true" />
-        Jobs
+        Projects
       </NavLink>
       <NavLink
-        to="/jobs/new"
-        aria-label="Create new job"
+        to="/projects/new"
+        aria-label="Create new project"
         className="-mt-7 grid size-14 place-items-center rounded-2xl bg-brand text-navy shadow-[0_8px_18px_rgba(185,154,96,0.38)]"
       >
         <Plus className="size-6" aria-hidden="true" />

@@ -19,7 +19,7 @@ export const NAV_SECTIONS = [
     items: [
       { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
       { to: '/clients', label: 'Clients', icon: Users },
-      { to: '/jobs', label: 'Jobs', icon: Briefcase, countKey: 'activeJobs' },
+      { to: '/projects', label: 'Projects', icon: Briefcase, countKey: 'activeProjects' },
       { to: '/enquiries', label: 'Enquiries', icon: MessageSquareText, countKey: 'openEnquiries' },
       { to: '/notifications', label: 'Notifications', icon: Bell, countKey: 'unreadNotifications', alert: true },
       { to: '/vendors', label: 'Vendors', icon: Truck },
@@ -39,9 +39,9 @@ export const NAV_SECTIONS = [
 
 /** Page titles for the header, matched by path prefix (longest first). */
 export const PAGE_TITLES = [
-  ['/jobs/new', 'New job'],
-  ['/jobs/', 'Job detail'],
-  ['/jobs', 'Jobs'],
+  ['/projects/new', 'New project'],
+  ['/projects/', 'Project detail'],
+  ['/projects', 'Projects'],
   ['/clients/new', 'Add client'],
   ['/clients', 'Clients'],
   ['/enquiries/new', 'New enquiry'],

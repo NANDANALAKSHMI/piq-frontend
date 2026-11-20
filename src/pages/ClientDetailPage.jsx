@@ -7,7 +7,7 @@ import Card, { CardHeader } from '../components/common/Card.jsx';
 import SearchInput from '../components/common/SearchInput.jsx';
 import DataTable from '../components/common/DataTable.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
-import { buildJobColumns } from '../features/jobs/jobColumns.jsx';
+import { buildProjectColumns } from '../features/projects/projectColumns.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
 import useLookups from '../hooks/useLookups.js';
 import { formatDate } from '../utils/formatters.js';
@@ -23,14 +23,14 @@ function Detail({ label, children }) {
 
 export default function ClientDetailPage() {
   const { clientId } = useParams();
-  const { clients, clientsLoading, jobs } = useAppData();
+  const { clients, clientsLoading, projects } = useAppData();
   const lookups = useLookups();
   const [query, setQuery] = useState('');
 
   const client = clients.find((c) => c.id === clientId);
   const location = client?.locations[0];
 
-  const clientJobs = useMemo(() => jobs.filter((j) => j.clientId === clientId), [jobs, clientId]);
+  const clientJobs = useMemo(() => projects.filter((p) => p.clientId === clientId), [projects, clientId]);
   const visibleJobs = useMemo(() => {
     const q = query.trim().toLowerCase();
     return q ? clientJobs.filter((j) => `${j.id} ${j.name} ${j.status}`.toLowerCase().includes(q)) : clientJobs;
@@ -58,8 +58,8 @@ export default function ClientDetailPage() {
         actions={
           <>
             <Button to="/clients">Back</Button>
-            <Button to={`/jobs/new?client=${client.id}`} variant="primary" icon={Plus}>
-              New job
+            <Button to={`/projects/new?client=${client.id}`} variant="primary" icon={Plus}>
+              New project
             </Button>
           </>
         }
@@ -104,19 +104,19 @@ export default function ClientDetailPage() {
       </Card>
 
       <Card>
-        <CardHeader title={`Jobs (${clientJobs.length})`} />
-        <SearchInput value={query} onChange={setQuery} placeholder="Search by job ID, name or status" className="mb-4 max-w-md" />
+        <CardHeader title={`Projects (${clientJobs.length})`} />
+        <SearchInput value={query} onChange={setQuery} placeholder="Search by project ID, name or status" className="mb-4 max-w-md" />
         <DataTable
           key={`${client.id}-${query}`}
-          columns={buildJobColumns(lookups, ['id', 'jobName', 'scope', 'progress', 'status', 'due'])}
+          columns={buildProjectColumns(lookups, ['id', 'projectName', 'services', 'progress', 'status', 'due'])}
           rows={visibleJobs}
           pageSize={8}
           minWidth={760}
           emptyState={
             clientJobs.length ? (
-              <EmptyState icon={SearchX} title="No match" description="Try another job ID, name or status." />
+              <EmptyState icon={SearchX} title="No match" description="Try another project ID, name or status." />
             ) : (
-              <EmptyState icon={Briefcase} title="No jobs yet" />
+              <EmptyState icon={Briefcase} title="No projects yet" />
             )
           }
         />

@@ -1,6 +1,6 @@
-# PIQ — Packaging & Job Management (frontend)
+# PIQ — Packaging & Project Management (frontend)
 
-Internal dashboard for managing clients, jobs, workflows, units, vendors and enquiries.
+Internal dashboard for managing clients, projects, services, vendors and enquiries. All business data lives in Firestore.
 Built with **React 19 + Vite + Tailwind CSS v4**, React Router, Recharts and Lucide icons.
 Most screens run on local dummy data. Sign-in (Google via Firebase) and team invitations are real:
 invited people are stored in Firestore and emailed from the Snap Infinity mailbox by a Vercel function.
@@ -26,13 +26,13 @@ After pulling these changes run `npm install` once — the invitation email need
 | Area | Features |
 | --- | --- |
 | Login | Email + password (created from the invitation link, email confirmation, real "Forgot password") or Google, "keep me signed in", protected routes, sign out |
-| Dashboard | Live stats, status donut (click a slice to filter jobs), jobs by city with period filter, service-scope bars, recent jobs, deadlines, unit workload, activity |
-| Jobs | Status tabs, search, 6 filters with removable chips, sortable columns, pagination, CSV export, loading + empty states |
-| Job detail | Workflow stepper, move to next stage, status/edit modals, per-service progress, media upload, comments with pinned key decisions, activity log |
-| New job | Client + location picker, scope presets, service owners, vendor suggestions by category/unit, nearest-unit suggestion, validation |
-| Clients | Search/filter list, profile, multiple locations (add location modal), job tabs, project history |
+| Dashboard | Live stats, status donut (click a slice to filter projects), projects by city with period filter, projects by service, recent projects, deadlines, activity across projects |
+| Projects | Firestore-backed list: status tabs, search, City/Service/Staff/Due filters with removable chips, sortable columns, pagination, CSV export |
+| Project detail | Status/edit modals, per-service progress (with sub-services and owners), comments with pinned key decisions, activity log |
+| New project | Client + location picker, services and sub-services from the Services page, service owners, vendor suggestions per service, validation |
+| Clients | Search/filter list, profile, multiple locations (add location modal), project list |
 | Add client | Company, contact, repeatable locations with nearest unit, validation |
-| Enquiries | Pipeline counters, filters, follow-ups (schedule / tick off), status changes, mark lost / reopen, convert to job |
+| Enquiries | Pipeline counters, filters, follow-ups (schedule / tick off), status changes, mark lost / reopen, convert to project |
 | Units & Workforce | Unit finder (city + service + staff), unit cards, workforce table, add staff, availability toggling |
 | Vendors | Firestore-backed vendor list with search + State/District/City/Category/Status filters, add/edit pages (dependent location dropdowns, multi-category, services + sub-services), details page with delete; categories = services and services = sub-services from the Services page |
 | Setup | Services and sub-services (saved in Firestore), workflow template editor (reorder/add/remove stages), team invitations by email, reports with CSV downloads, settings |
@@ -49,13 +49,13 @@ src/
 │   ├── dashboard/   StatCard, StatusDonut, HorizontalBars, RecentActivity, ChartTooltip
 │   └── layout/      DashboardLayout, Sidebar (desktop + drawer), Header, GlobalSearch, MobileTabBar
 ├── context/         AuthContext (session), AppDataContext (all editable records + actions)
-├── data/            Dummy jobs/team/reports data, plus reference lists (states & districts, enquiry sources)
-├── features/        Feature-specific pieces (jobs, clients, enquiries, vendors)
+├── data/            Reference lists (states & districts, enquiry sources, statuses, saved reports) and a sample team for setups without Firebase
+├── features/        Feature-specific pieces (projects, clients, enquiries, vendors)
 ├── hooks/           useLookups, usePagination, useClickOutside, useSimulatedLoading
-├── lib/             firebase.js (Auth), firestore.js (shared db), members.js (team invitations), services.js (services + sub-services), vendors.js, locations.js (saved cities)
+├── lib/             firebase.js (Auth), firestore.js (shared db), members.js (team invitations), services.js (services + sub-services), vendors.js, locations.js, projects.js (saved cities)
 ├── pages/           One file per route
 ├── routes/          AppRoutes (lazy-loaded pages + auth guard)
-└── utils/           formatters, job helpers, CSV export
+└── utils/           formatters, project helpers, CSV export
 ```
 
 Dummy dates are generated relative to today (`daysFromToday`), so "due in 2 days" and "overdue" stay meaningful whenever you run it.
@@ -78,9 +78,9 @@ to the admin who sent it.
 There is one role: everyone you invite gets full access, so they can invite people and manage the team
 too. The admins in `VITE_ADMIN_EMAILS` are the owners and can't be switched off in the app.
 
-When you sign in with Google, the Team page and the job owner pickers show the **real team**: admins
+When you sign in with Google, the Team page and the project owner pickers show the **real team**: admins
 from `VITE_ADMIN_EMAILS` plus everyone in Firestore.
-The sample team in `src/data/teamData.js` only provides names for the sample jobs, which are still dummy data.
+The sample team in `src/data/teamData.js` is only used when Firebase isn't configured.
 
 One-time setup:
 

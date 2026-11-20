@@ -15,6 +15,7 @@ import { useToast } from '../components/common/Toast.jsx';
 import { ConvertModal, FollowUpModal } from '../features/enquiries/EnquiryModals.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
 import useLookups from '../hooks/useLookups.js';
+import useServices from '../hooks/useServices.js';
 import { ENQUIRY_STATUSES } from '../data/constants.js';
 import { cn, daysUntil, formatDate } from '../utils/formatters.js';
 
@@ -41,6 +42,7 @@ function followUpLabel(followUp) {
 export default function EnquiriesPage() {
   const { enquiries, enquiriesLoading, enquiriesError, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry } = useAppData();
   const lookups = useLookups();
+  const { services } = useServices();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -124,7 +126,7 @@ export default function EnquiriesPage() {
     <div className="flex flex-col gap-5.5">
       <PageHeader
         title="Enquiries"
-        subtitle="Capture leads before they become jobs. Convert in one click — nothing is re-typed."
+        subtitle="Capture leads before they become projects. Convert in one click — nothing is re-typed."
         actions={
           <Button variant="primary" icon={Plus} to="/enquiries/new">
             New enquiry
@@ -218,7 +220,7 @@ export default function EnquiriesPage() {
               <>
                 <Button onClick={() => save(() => updateEnquiry(selected.id, { status: 'Lost' }), `${selected.id} marked as lost.`, 'info')}>Mark as lost</Button>
                 <Button variant="primary" iconRight={ArrowRight} onClick={() => setModal('convert')}>
-                  Convert to job
+                  Convert to project
                 </Button>
               </>
             )
@@ -229,7 +231,7 @@ export default function EnquiriesPage() {
             {closed && (
               <span className="inline-flex items-center gap-1.5 text-[13px] text-muted">
                 <MessageSquareText className="size-4" aria-hidden="true" />
-                {selected.status === 'Converted' ? 'Converted into a job.' : 'Marked as lost.'}
+                {selected.status === 'Converted' ? 'Converted into a project.' : 'Marked as lost.'}
               </span>
             )}
           </div>
@@ -373,10 +375,10 @@ export default function EnquiriesPage() {
           onClose={() => setModal(null)}
           onConvert={async (options) => {
             try {
-              const jobId = await convertEnquiry(selected, options);
+              const projectId = await convertEnquiry(selected, { ...options, services });
               setModal(null);
-              showToast(`${selected.id} converted into ${jobId}.`);
-              navigate(`/jobs/${jobId}`);
+              showToast(`${selected.id} converted into ${projectId}.`);
+              navigate(`/projects/${projectId}`);
             } catch (err) {
               showToast(err.message, { tone: 'error' });
             }

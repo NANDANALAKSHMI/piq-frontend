@@ -9,7 +9,7 @@ function SidebarContent({ counts, user, onNavigate, onLogout }) {
   return (
     <div className="flex h-full flex-col gap-5 px-3.5 py-5">
       <Logo />
-      <nav aria-label="Main" className="scrollbar-thin -mx-1 flex-1 overflow-y-auto px-1">
+      <nav aria-label="Main" className="scrollbar-sidebar -mx-1 flex-1 overflow-y-auto px-1">
         {NAV_SECTIONS.map((section) => (
           <div key={section.id} className="flex flex-col gap-0.5">
             {section.label && (

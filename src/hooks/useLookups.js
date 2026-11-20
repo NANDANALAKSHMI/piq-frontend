@@ -1,15 +1,13 @@
 import { useMemo } from 'react';
 import { useAppData } from '../context/AppDataContext.jsx';
-import { jobCategories } from '../data/categoriesData.js';
 
-/** Id → record lookups shared by pages that render jobs. */
+/** Id → record lookups shared by pages that render projects. */
 export default function useLookups() {
   const { clients, knownMembers } = useAppData();
 
   return useMemo(() => {
     const clientMap = new Map(clients.map((c) => [c.id, c]));
     const memberMap = new Map(knownMembers.map((m) => [m.id, m]));
-    const categoryMap = new Map(jobCategories.map((c) => [c.id, c]));
 
     const getClient = (id) => clientMap.get(id);
     const getLocation = (clientId, locationId) => clientMap.get(clientId)?.locations.find((l) => l.id === locationId);
@@ -18,9 +16,8 @@ export default function useLookups() {
       getClient,
       getLocation,
       getMember: (id) => memberMap.get(id),
-      getCategory: (id) => categoryMap.get(id),
       membersFor: (ids = []) => ids.map((id) => memberMap.get(id)).filter(Boolean),
-      jobCity: (job) => getLocation(job.clientId, job.locationId)?.city ?? '—',
+      projectCity: (project) => getLocation(project.clientId, project.locationId)?.city || '—',
     };
   }, [clients, knownMembers]);
 }

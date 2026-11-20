@@ -44,8 +44,66 @@
   }
 }
 
+/*
+ * Custom scrollbars: a slim rounded thumb with no arrow buttons, everywhere in the app.
+ * Chrome, Edge and Safari use the ::-webkit-scrollbar rules; Firefox uses scrollbar-color.
+ * (Chrome ignores ::-webkit-scrollbar once scrollbar-color is set, so that is Firefox-only.)
+ */
+@layer base {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background-color: rgb(110 98 91 / 0.35);
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(110 98 91 / 0.6);
+  }
+  ::-webkit-scrollbar-button,
+  ::-webkit-scrollbar-corner {
+    display: none;
+    background: transparent;
+  }
+
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgb(110 98 91 / 0.4) transparent;
+    }
+  }
+}
+
 @layer utilities {
-  .scrollbar-thin {
-    scrollbar-width: thin;
+  /* Kept for existing markup; the slim style above already applies everywhere. */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  /* Sidebar (dark background): champagne thumb that only stands out on hover. */
+  .scrollbar-sidebar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scrollbar-sidebar::-webkit-scrollbar-thumb {
+    border: 0;
+    background-color: rgb(203 188 174 / 0.25);
+  }
+  .scrollbar-sidebar:hover::-webkit-scrollbar-thumb {
+    background-color: rgb(185 154 96 / 0.7);
+  }
+  .scrollbar-sidebar::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(185 154 96 / 0.95);
+  }
+  @supports not selector(::-webkit-scrollbar) {
+    .scrollbar-sidebar {
+      scrollbar-color: rgb(185 154 96 / 0.6) transparent;
+    }
   }
 }

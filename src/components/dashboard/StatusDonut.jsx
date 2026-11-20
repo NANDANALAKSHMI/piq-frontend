@@ -30,7 +30,7 @@ export default function StatusDonut({ data, total, onSelect }) {
         <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
           <div>
             <p className="text-[30px] font-bold leading-none">{total}</p>
-            <p className="mt-1 text-xs text-muted">Total jobs</p>
+            <p className="mt-1 text-xs text-muted">Total projects</p>
           </div>
         </div>
       </div>

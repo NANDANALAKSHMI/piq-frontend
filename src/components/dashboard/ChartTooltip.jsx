@@ -1,5 +1,5 @@
 /** Shared Recharts tooltip so every chart looks the same. */
-export default function ChartTooltip({ active, payload, label, unit = 'jobs' }) {
+export default function ChartTooltip({ active, payload, label, unit = 'projects' }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-line bg-white px-3 py-2 text-xs shadow-md">

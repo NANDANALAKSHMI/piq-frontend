@@ -90,7 +90,7 @@ export default function AddEnquiryPage() {
       <PageHeader
         title="New enquiry"
         breadcrumbs={[{ label: 'Enquiries', to: '/enquiries' }, { label: 'New enquiry' }]}
-        subtitle="Record a lead before it becomes a job."
+        subtitle="Record a lead before it becomes a project."
         actions={
           <>
             <Button to="/enquiries">Cancel</Button>

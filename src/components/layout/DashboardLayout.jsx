@@ -14,18 +14,18 @@ function titleFor(pathname) {
 
 export default function DashboardLayout() {
   const { user, logout } = useAuth();
-  const { jobs, enquiries, notifications } = useAppData();
+  const { projects, enquiries, notifications } = useAppData();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const counts = useMemo(
     () => ({
-      activeJobs: jobs.filter((j) => j.status === 'In progress' || j.status === 'Upcoming').length,
+      activeProjects: projects.filter((p) => p.status === 'In progress' || p.status === 'Upcoming').length,
       openEnquiries: enquiries.filter((e) => !['Converted', 'Lost'].includes(e.status)).length,
       unreadNotifications: notifications.filter((n) => !n.read).length,
     }),
-    [jobs, enquiries, notifications],
+    [projects, enquiries, notifications],
   );
 
   const handleLogout = () => {
@@ -44,7 +44,7 @@ export default function DashboardLayout() {
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header title={titleFor(pathname)} onOpenMenu={() => setMobileOpen(true)} />
-        <main className="w-full flex-1 px-4 pb-28 pt-5 md:px-7 md:pb-10 md:pt-7">
+        <main className="w-full flex-1 px-4  pt-5 md:px-7  md:pt-7">
           <Outlet />
         </main>
       </div>

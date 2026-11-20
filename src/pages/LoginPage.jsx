@@ -7,9 +7,9 @@ import { Checkbox, TextField } from '../components/common/FormFields.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const HIGHLIGHTS = [
-  { icon: Briefcase, text: 'Track every job stage by stage' },
-  { icon: Users, text: 'Assign the right team to every job' },
-  { icon: MessageSquare, text: 'Photos, comments and decisions on every job' },
+  { icon: Briefcase, text: 'Track every project stage by stage' },
+  { icon: Users, text: 'Assign the right team to every project' },
+  { icon: MessageSquare, text: 'Comments and decisions on every project' },
 ];
 
 function GoogleIcon({ className }) {
@@ -341,9 +341,9 @@ export default function LoginPage() {
         <LogoMark size={520} color="#5a463d" className="pointer-events-none absolute -bottom-28 -right-28 opacity-60" />
         <Logo tone="dark" size={52} className="relative px-0" />
         <div className="relative max-w-md">
-          <h2 className="text-4xl font-bold leading-tight tracking-tight">Every job, from enquiry to delivery.</h2>
+          <h2 className="text-4xl font-bold leading-tight tracking-tight">Every project, from enquiry to delivery.</h2>
           <p className="mt-3.5 text-base text-[#e6ddd3]">
-            One place for clients, jobs, team and vendors across every city you work in.
+            One place for clients, projects, team and vendors across every city you work in.
           </p>
           <ul className="mt-8 flex flex-col gap-3.5">
             {HIGHLIGHTS.map(({ icon: Icon, text }) => (

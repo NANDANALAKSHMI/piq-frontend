@@ -71,7 +71,7 @@ export default function AddClientPage() {
         ],
       });
       showToast(`${form.name.trim()} added.`);
-      navigate(createJobAfter ? `/jobs/new?client=${id}` : `/clients/${id}`);
+      navigate(createJobAfter ? `/projects/new?client=${id}` : `/clients/${id}`);
     } catch (err) {
       showToast(err.message, { tone: 'error' });
       setSaving(false);
@@ -126,7 +126,7 @@ export default function AddClientPage() {
         </Card>
 
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <Checkbox label="Create the first job for this client" checked={createJobAfter} onChange={(e) => setCreateJobAfter(e.target.checked)} />
+          <Checkbox label="Create the first project for this client" checked={createJobAfter} onChange={(e) => setCreateJobAfter(e.target.checked)} />
           <Button variant="primary" icon={Check} onClick={handleSave} disabled={saving}>
             Save client
           </Button>

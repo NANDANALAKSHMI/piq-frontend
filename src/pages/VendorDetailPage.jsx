@@ -151,7 +151,7 @@ export default function VendorDetailPage() {
       </div>
 
       <Card>
-        <CardHeader title={`Categories · ${categoryNames.length}`} />
+        <CardHeader title={`Services · ${categoryNames.length}`} />
         {categoryNames.length ? (
           <div className="flex flex-wrap gap-2">
             {categoryNames.map((name) => (
@@ -161,12 +161,12 @@ export default function VendorDetailPage() {
             ))}
           </div>
         ) : (
-          <p className="text-[13px] text-muted">No categories selected.</p>
+          <p className="text-[13px] text-muted">No services selected.</p>
         )}
       </Card>
 
       <Card>
-        <CardHeader title={`Services · ${subCount}`} subtitle="Grouped by category" />
+        <CardHeader title={`Sub-services · ${subCount}`} subtitle="Grouped by service" />
         {serviceRows.length ? (
           <ul className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
             {serviceRows.map(({ category, services: names }) => (
@@ -179,13 +179,13 @@ export default function VendorDetailPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-1 text-[13px] text-muted">No services selected in this category.</p>
+                  <p className="mt-1 text-[13px] text-muted">No sub-services selected for this service.</p>
                 )}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-[13px] text-muted">No categories or services selected.</p>
+          <p className="text-[13px] text-muted">No services or sub-services selected.</p>
         )}
       </Card>
 

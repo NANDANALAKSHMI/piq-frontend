@@ -2,7 +2,6 @@ import { useState } from 'react';
 import Modal from '../../components/common/Modal.jsx';
 import Button from '../../components/common/Button.jsx';
 import { SelectField, TextField } from '../../components/common/FormFields.jsx';
-import { jobCategories } from '../../data/categoriesData.js';
 import { daysFromToday } from '../../utils/formatters.js';
 
 export function FollowUpModal({ open, enquiry, onClose, onSave }) {
@@ -41,19 +40,28 @@ export function FollowUpModal({ open, enquiry, onClose, onSave }) {
 }
 
 export function ConvertModal({ open, enquiry, onClose, onConvert }) {
-  const [categoryId, setCategoryId] = useState(jobCategories[0].id);
+  const [dueDate, setDueDate] = useState(daysFromToday(14));
+  const [saving, setSaving] = useState(false);
 
   return (
     <Modal
       open={open}
       onClose={onClose}
-      title="Convert to job"
+      title="Convert to project"
       description="Client, contact, location, services and notes carry over automatically."
       footer={
         <>
           <Button onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={() => onConvert({ categoryId })}>
-            Create job
+          <Button
+            variant="primary"
+            disabled={saving || !dueDate}
+            onClick={async () => {
+              setSaving(true);
+              await onConvert({ dueDate });
+              setSaving(false);
+            }}
+          >
+            {saving ? 'Creating…' : 'Create project'}
           </Button>
         </>
       }
@@ -63,14 +71,7 @@ export function ConvertModal({ open, enquiry, onClose, onConvert }) {
         <br />
         <span className="text-muted">Services: {enquiry.services.join(', ')}</span>
       </div>
-      <div className="grid gap-4">
-        <SelectField
-          label="Job category"
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          options={jobCategories.map((c) => ({ value: c.id, label: c.name }))}
-        />
-      </div>
+      <TextField label="Due date" type="date" required value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="sm:max-w-xs" />
     </Modal>
   );
 }

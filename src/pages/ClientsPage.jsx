@@ -70,8 +70,8 @@ export default function ClientsPage() {
         subtitle={clientsLoading ? 'Loading…' : `${clients.length} client${clients.length === 1 ? '' : 's'}`}
         actions={
           <>
-            <Button to="/jobs/new" icon={Briefcase}>
-              Add job
+            <Button to="/projects/new" icon={Briefcase}>
+              Add project
             </Button>
             <Button to="/clients/new" variant="primary" icon={Plus}>
               Add client

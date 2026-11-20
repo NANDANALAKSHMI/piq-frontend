@@ -123,7 +123,7 @@ function VendorForm({ initial, vendorId }) {
       <PageHeader
         title={title}
         breadcrumbs={[{ label: 'Vendors', to: '/vendors' }, ...(editing ? [{ label: initial.name, to: `/vendors/${vendorId}` }] : []), { label: editing ? 'Edit' : 'Add vendor' }]}
-        subtitle={editing ? 'Update this vendor’s details, categories and services.' : 'Supplier details, what they provide, and where they are.'}
+        subtitle={editing ? 'Update this vendor’s details, services and sub-services.' : 'Supplier details, what they provide, and where they are.'}
       />
 
       <Card>
@@ -146,8 +146,8 @@ function VendorForm({ initial, vendorId }) {
 
       <Card>
         <CardHeader
-          title="Categories"
-          subtitle="What this vendor supplies. Categories come from the Services page — pick as many as apply."
+          title="Services"
+          subtitle="What this vendor supplies. Services come from the Services page — pick as many as apply."
           action={
             <Link to="/services" className="text-[13px] font-semibold text-brand-ink hover:underline">
               Manage on Services page
@@ -155,11 +155,11 @@ function VendorForm({ initial, vendorId }) {
           }
         />
         <MultiSelect
-          label="Categories"
+          label="Services"
           options={categories.map((s) => ({ value: s.id, label: s.name, hint: s.description }))}
           value={form.serviceIds}
           onChange={changeCategories}
-          placeholder={servicesLoading ? 'Loading categories…' : 'Select categories'}
+          placeholder={servicesLoading ? 'Loading services…' : 'Select services'}
           disabled={servicesLoading}
           emptyText="No services yet — add them on the Services page."
           className="lg:max-w-2xl"
@@ -167,9 +167,9 @@ function VendorForm({ initial, vendorId }) {
       </Card>
 
       <Card>
-        <CardHeader title="Services" subtitle="The services this vendor offers under each chosen category." />
+        <CardHeader title="Sub-services" subtitle="The sub-services this vendor offers under each chosen service." />
         {!chosen.length ? (
-          <p className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-[13px] text-muted">Choose at least one category to see its services.</p>
+          <p className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-[13px] text-muted">Choose at least one service to see its sub-services.</p>
         ) : (
           <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
             {chosen.map((category) => {
@@ -193,7 +193,7 @@ function VendorForm({ initial, vendorId }) {
                     </div>
                   ) : (
                     <p className="text-[13px] text-muted">
-                      No services under {category.name} yet.{' '}
+                      No sub-services under {category.name} yet.{' '}
                       <Link to="/services" className="font-semibold text-brand-ink hover:underline">
                         Add them
                       </Link>

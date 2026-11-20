@@ -6,9 +6,9 @@ import LoginPage from '../pages/LoginPage.jsx';
 
 // Pages are loaded on demand so the first screen stays fast.
 const DashboardPage = lazy(() => import('../pages/DashboardPage.jsx'));
-const JobsPage = lazy(() => import('../pages/JobsPage.jsx'));
-const JobDetailPage = lazy(() => import('../pages/JobDetailPage.jsx'));
-const AddJobPage = lazy(() => import('../pages/AddJobPage.jsx'));
+const ProjectsPage = lazy(() => import('../pages/ProjectsPage.jsx'));
+const ProjectDetailPage = lazy(() => import('../pages/ProjectDetailPage.jsx'));
+const AddProjectPage = lazy(() => import('../pages/AddProjectPage.jsx'));
 const ClientsPage = lazy(() => import('../pages/ClientsPage.jsx'));
 const ClientDetailPage = lazy(() => import('../pages/ClientDetailPage.jsx'));
 const AddClientPage = lazy(() => import('../pages/AddClientPage.jsx'));
@@ -64,9 +64,10 @@ export default function AppRoutes() {
         }
       >
         <Route index element={page(DashboardPage)} />
-        <Route path="jobs" element={page(JobsPage)} />
-        <Route path="jobs/new" element={page(AddJobPage)} />
-        <Route path="jobs/:jobId" element={page(JobDetailPage)} />
+        <Route path="projects" element={page(ProjectsPage)} />
+        <Route path="projects/new" element={page(AddProjectPage)} />
+        <Route path="projects/:projectId" element={page(ProjectDetailPage)} />
+        <Route path="jobs/*" element={<Navigate to="/projects" replace />} />
         <Route path="clients" element={page(ClientsPage)} />
         <Route path="clients/new" element={page(AddClientPage)} />
         <Route path="clients/:clientId" element={page(ClientDetailPage)} />

@@ -32,7 +32,7 @@ export default function NotificationsPage() {
       />
       <Card padded={false}>
         {notifications.length === 0 ? (
-          <EmptyState icon={Bell} title="No notifications" description="Updates on jobs and enquiries will show up here." />
+          <EmptyState icon={Bell} title="No notifications" description="Updates on projects and enquiries will show up here." />
         ) : (
           <ul className="divide-y divide-line">
             {notifications.map((notification) => {

@@ -1,9 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { jobs as initialJobs } from '../data/jobsData.js';
 import { teamMembers as initialMembers } from '../data/teamData.js';
 import { notifications as initialNotifications } from '../data/activityData.js';
-import { SCOPE_SERVICES } from '../data/constants.js';
-import { nextId } from '../utils/jobs.js';
 import { daysFromToday } from '../utils/formatters.js';
 import { useAuth } from './AuthContext.jsx';
 import useFirestoreList, { firestoreAction } from '../hooks/useFirestoreList.js';
@@ -26,6 +23,9 @@ const loadVendorsApi = () => import('../lib/vendors.js');
 const createVendor = firestoreAction(loadVendorsApi, 'createVendor');
 const saveVendor = firestoreAction(loadVendorsApi, 'updateVendor');
 const deleteVendor = firestoreAction(loadVendorsApi, 'deleteVendor');
+const loadProjectsApi = () => import('../lib/projects.js');
+const createProject = firestoreAction(loadProjectsApi, 'createProject');
+const saveProject = firestoreAction(loadProjectsApi, 'updateProject');
 
 /** True when this browser has a saved Google sign-in (Firebase keeps it in localStorage). */
 function hasSavedGoogleSession() {
@@ -39,24 +39,24 @@ function hasSavedGoogleSession() {
 // Returning Google users: download Firestore while the sign-in is still being restored.
 if (isFirebaseConfigured && hasSavedGoogleSession()) loadMembersApi().catch(() => {});
 
-function logEntry(type, text, by) {
-  return { id: localId('a'), type, text, by, when: 'Just now' };
+/** One line of a project's activity log. `at` is an ISO time, so it sorts and shows "3 h ago". */
+function logEntry(type, text, by, byName) {
+  return { id: localId('a'), type, text, by, byName, at: new Date().toISOString() };
 }
 
 /**
- * Holds every record the UI can change. Jobs are still dummy data, so those actions update local
- * React state and last until the page is reloaded. The team (invitations), clients, enquiries and
- * vendors are real: they live in Firestore and update live for everyone signed in.
+ * Holds every record the UI can change. The team (invitations), clients, enquiries, vendors and
+ * projects live in Firestore and update live for everyone signed in.
  */
 export function AppDataProvider({ children }) {
   const { user } = useAuth();
   const actorId = user?.id ?? 'u1';
 
-  const [jobs, setJobs] = useState(initialJobs);
+  const { list: projects, loading: projectsLoading, error: projectsError } = useFirestoreList(loadProjectsApi, 'subscribeToProjects', 'projects');
   const [clientSnapshot, setClientSnapshot] = useState({ key: null, list: NO_CLIENTS, error: null });
   const [enquirySnapshot, setEnquirySnapshot] = useState({ key: null, list: NO_ENQUIRIES, error: null });
   const { list: vendors, loading: vendorsLoading, error: vendorsError } = useFirestoreList(loadVendorsApi, 'subscribeToVendors', 'vendors');
-  // Sample team: only used to show names on the sample jobs, enquiries and reports.
+  // Sample team: only used when Firebase isn't set up (nobody signs in with these).
   const localMembers = initialMembers;
   const [notifications, setNotifications] = useState(initialNotifications);
   const [teamSnapshot, setTeamSnapshot] = useState({ key: null, list: NO_MEMBERS, error: null });
@@ -185,94 +185,91 @@ export function AppDataProvider({ children }) {
     });
   }, [realTeam, user, firestoreMembers]);
 
-  /** The team shown on the Team page and in the job pickers: real people when signed in with Google. */
+  /** The team shown on the Team page and in the project pickers: real people when signed in. */
   const members = useMemo(
     () => (realTeam ? [...adminRows, ...firestoreMembers.filter((m) => !ADMIN_EMAILS.includes(m.email))] : localMembers),
     [realTeam, adminRows, firestoreMembers, localMembers],
   );
 
-  /** For name lookups only: the team plus the dummy people still referenced by the dummy jobs. */
+  /** For name lookups only: the team plus the sample people (used when Firebase isn't set up). */
   const knownMembers = useMemo(() => {
     if (!realTeam) return localMembers;
     const ids = new Set(members.map((m) => m.id));
     return [...members, ...localMembers.filter((m) => !ids.has(m.id))];
   }, [realTeam, members, localMembers]);
 
-  /* ---------- jobs ---------- */
+  /* ---------- projects (Firestore) ---------- */
 
-  const updateJob = useCallback((jobId, updater) => {
-    setJobs((list) => list.map((job) => (job.id === jobId ? { ...job, ...updater(job) } : job)));
-  }, []);
-
-  const addJob = useCallback(
-    (draft) => {
-      const createdId = nextId('JOB-', jobs.map((job) => job.id));
-      const job = {
-        vendorIds: [],
-        media: [],
-        comments: [],
-        keyDecision: null,
-        createdFrom: null,
-        ...draft,
-        id: createdId,
-        activity: [logEntry('created', draft.createdFrom ? `Created from enquiry ${draft.createdFrom}` : 'Job created', actorId)],
-      };
-      setJobs((list) => [job, ...list]);
-      return createdId;
+  const actorName = user?.name ?? 'Someone';
+  const entry = useCallback((type, text) => logEntry(type, text, actorId, actorName), [actorId, actorName]);
+  const findProject = useCallback(
+    (projectId) => {
+      const project = projects.find((p) => p.id === projectId);
+      if (!project) throw new Error('That project no longer exists.');
+      return project;
     },
-    [actorId, jobs],
+    [projects],
   );
 
-  const setJobStatus = useCallback(
-    (jobId, status) => {
-      updateJob(jobId, (job) => ({
-        status,
-        activity: [logEntry('status', `Status changed to ${status}`, actorId), ...job.activity],
-      }));
-    },
-    [actorId, updateJob],
+  /** Saves a new project and resolves to its id (PRJ-0001…). Rejects with a readable message. */
+  const addProject = useCallback(
+    (draft) =>
+      createProject(
+        {
+          vendorIds: [],
+          comments: [],
+          keyDecision: null,
+          createdFrom: null,
+          completedOn: null,
+          ...draft,
+          activity: [entry('created', draft.createdFrom ? `Created from enquiry ${draft.createdFrom}` : 'Project created')],
+        },
+        projects.map((p) => p.id),
+        user?.email ?? '',
+      ),
+    [entry, projects, user],
+  );
+
+  /** Saves edited project details (name, dates, priority, description…). */
+  const updateProject = useCallback((projectId, patch) => saveProject(projectId, patch, { entry: entry('edit', 'Project details updated') }), [entry]);
+
+  const setProjectStatus = useCallback(
+    (projectId, status) =>
+      saveProject(
+        projectId,
+        { status, completedOn: status === 'Completed' ? daysFromToday(0) : null },
+        { entry: entry('status', `Status changed to ${status}`) },
+      ),
+    [entry],
   );
 
   const setServiceProgress = useCallback(
-    (jobId, serviceName, progress) => {
-      updateJob(jobId, (job) => ({
-        services: job.services.map((s) => (s.name === serviceName ? { ...s, progress } : s)),
-        activity:
-          progress >= 100
-            ? [logEntry('done', `${serviceName} service marked complete`, actorId), ...job.activity]
-            : job.activity,
-      }));
+    async (projectId, serviceId, progress) => {
+      const project = findProject(projectId);
+      const service = project.services.find((s) => s.serviceId === serviceId);
+      return saveProject(
+        projectId,
+        { services: project.services.map((s) => (s.serviceId === serviceId ? { ...s, progress } : s)) },
+        progress >= 100 ? { entry: entry('done', `${service?.name ?? 'Service'} marked complete`) } : {},
+      );
     },
-    [actorId, updateJob],
+    [entry, findProject],
   );
 
   const addComment = useCallback(
-    (jobId, text, { isDecision = false } = {}) => {
+    (projectId, text, { isDecision = false } = {}) => {
       const member = members.find((m) => m.id === actorId);
-      updateJob(jobId, (job) => ({
-        comments: [...job.comments, { id: localId('cm'), authorId: actorId, role: member?.title ?? '', minutesAgo: 0, text }],
-        keyDecision: isDecision ? { text, by: member?.name ?? 'You', when: 'Just now' } : job.keyDecision,
-        activity: [logEntry('comment', isDecision ? 'Key decision recorded' : 'Comment added', actorId), ...job.activity],
-      }));
+      const at = new Date().toISOString();
+      return saveProject(
+        projectId,
+        isDecision ? { keyDecision: { text, by: actorName, at } } : {},
+        {
+          comment: { id: localId('cm'), authorId: actorId, authorName: actorName, role: member?.title ?? '', text, at },
+          entry: entry('comment', isDecision ? 'Key decision recorded' : 'Comment added'),
+        },
+      );
     },
-    [actorId, members, updateJob],
-  );
-
-  const addMedia = useCallback(
-    (jobId, files) => {
-      const items = files.map((file) => ({
-        id: localId('m'),
-        type: file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'document',
-        title: file.name,
-        uploadedBy: actorId,
-        when: 'Just now',
-      }));
-      updateJob(jobId, (job) => ({
-        media: [...items, ...job.media],
-        activity: [logEntry('media', `${items.length} file${items.length === 1 ? '' : 's'} uploaded`, actorId), ...job.activity],
-      }));
-    },
-    [actorId, updateJob],
+    [actorId, actorName, entry, members],
   );
 
   /* ---------- clients ---------- */
@@ -360,17 +357,20 @@ export function AppDataProvider({ children }) {
     [enquiries, updateEnquiry],
   );
 
-  /** Creates (or reuses) the client and a new job from an enquiry — nothing is re-typed. */
+  /**
+   * Creates (or reuses) the client and a new project from an enquiry — nothing is re-typed.
+   * `services` is the Services-page list, used to match the enquiry's service names.
+   */
   const convertEnquiry = useCallback(
-    async (enquiry, { categoryId, dueInDays = 14 }) => {
+    async (enquiry, { services = [], dueDate = daysFromToday(14) } = {}) => {
       const existing = clients.find((c) => c.name.toLowerCase() === enquiry.company.toLowerCase());
       let clientId = existing?.id;
-      let locationId = existing?.locations[0]?.id;
+      let locationId = existing?.locations.find((l) => l.primary)?.id ?? existing?.locations[0]?.id ?? '';
       if (!existing) {
         locationId = localId('loc');
         clientId = await addClient({
           name: enquiry.company,
-          industry: 'Industrial manufacturing',
+          industry: '',
           contactName: enquiry.contactName,
           designation: '',
           phone: enquiry.phone,
@@ -378,30 +378,33 @@ export function AppDataProvider({ children }) {
           gstin: '',
           type: 'One-time project',
           notes: enquiry.notes,
-          locations: [{ id: locationId, name: enquiry.location, address: enquiry.location, city: enquiry.city, state: enquiry.state ?? '', pin: '', primary: true }],
+          locations: [{ id: locationId, name: enquiry.location || enquiry.city, address: enquiry.location, city: enquiry.city, state: enquiry.state ?? '', district: '', pin: '', primary: true }],
         });
       }
-      const serviceNames = enquiry.scope === 'Custom' ? enquiry.services : SCOPE_SERVICES[enquiry.scope];
-      const jobId = addJob({
+      const owner = enquiry.assignedTo ?? actorId;
+      const projectServices = enquiry.services.map((name) => {
+        const match = services.find((s) => s.name.toLowerCase() === name.toLowerCase());
+        return { serviceId: match?.id ?? `name:${name}`, name: match?.name ?? name, subServiceIds: [], ownerId: owner, progress: 0 };
+      });
+      const projectId = await addProject({
         name: `${enquiry.company} — ${enquiry.services.join(' + ')}`,
         clientId,
         locationId,
-        categoryId,
-        subcategory: '',
-        scope: enquiry.scope,
         status: 'Upcoming',
         priority: 'Medium',
         startDate: daysFromToday(2),
-        dueDate: daysFromToday(dueInDays),
-        teamIds: enquiry.assignedTo ? [enquiry.assignedTo] : [],
+        dueDate,
+        quantity: '',
         description: enquiry.notes,
+        notes: '',
+        teamIds: [owner],
         createdFrom: enquiry.id,
-        services: serviceNames.map((name) => ({ name, ownerId: enquiry.assignedTo ?? actorId, progress: 0 })),
+        services: projectServices,
       });
       updateEnquiry(enquiry.id, { status: 'Converted' }).catch(() => {});
-      return jobId;
+      return projectId;
     },
-    [actorId, addClient, addJob, clients, updateEnquiry],
+    [actorId, addClient, addProject, clients, updateEnquiry],
   );
 
   /* ---------- vendors, team, notifications ---------- */
@@ -494,8 +497,8 @@ export function AppDataProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      jobs, clients, clientsLoading, clientsError, enquiries, enquiriesLoading, enquiriesError, vendors, vendorsLoading, vendorsError, members, knownMembers, notifications,
-      addJob, updateJob, setJobStatus, setServiceProgress, addComment, addMedia,
+      projects, projectsLoading, projectsError, clients, clientsLoading, clientsError, enquiries, enquiriesLoading, enquiriesError, vendors, vendorsLoading, vendorsError, members, knownMembers, notifications,
+      addProject, updateProject, setProjectStatus, setServiceProgress, addComment,
       addClient, addLocation,
       addEnquiry, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry,
       addVendor, updateVendor, removeVendor,
@@ -503,8 +506,8 @@ export function AppDataProvider({ children }) {
       markNotificationRead, markAllNotificationsRead,
     }),
     [
-      jobs, clients, clientsLoading, clientsError, enquiries, enquiriesLoading, enquiriesError, vendors, vendorsLoading, vendorsError, members, knownMembers, notifications,
-      addJob, updateJob, setJobStatus, setServiceProgress, addComment, addMedia,
+      projects, projectsLoading, projectsError, clients, clientsLoading, clientsError, enquiries, enquiriesLoading, enquiriesError, vendors, vendorsLoading, vendorsError, members, knownMembers, notifications,
+      addProject, updateProject, setProjectStatus, setServiceProgress, addComment,
       addClient, addLocation,
       addEnquiry, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry,
       addVendor, updateVendor, removeVendor,

@@ -4,18 +4,24 @@ import Avatar from '../../components/common/Avatar.jsx';
 import Button from '../../components/common/Button.jsx';
 import { Checkbox } from '../../components/common/FormFields.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
-import { relativeTime } from '../../utils/formatters.js';
+import { timeAgo } from '../../utils/formatters.js';
 
+/** `onAdd(text, { isDecision })` returns a promise resolving to true once saved. */
 export default function CommentsPanel({ comments, getMember, onAdd, textareaRef }) {
   const [text, setText] = useState('');
   const [isDecision, setIsDecision] = useState(false);
+  const [posting, setPosting] = useState(false);
 
-  const submit = (event) => {
+  const submit = async (event) => {
     event.preventDefault();
-    if (!text.trim()) return;
-    onAdd(text.trim(), { isDecision });
-    setText('');
-    setIsDecision(false);
+    if (!text.trim() || posting) return;
+    setPosting(true);
+    const saved = await onAdd(text.trim(), { isDecision });
+    setPosting(false);
+    if (saved) {
+      setText('');
+      setIsDecision(false);
+    }
   };
 
   return (
@@ -26,14 +32,15 @@ export default function CommentsPanel({ comments, getMember, onAdd, textareaRef 
         <ul className="flex flex-col">
           {comments.map((comment) => {
             const author = getMember(comment.authorId);
+            const name = comment.authorName || author?.name || 'Unknown';
             return (
               <li key={comment.id} className="flex gap-3 border-b border-line py-3 first:pt-0 last:border-0">
-                <Avatar name={author?.name ?? 'Unknown'} color={author?.color} size="sm" />
+                <Avatar name={name} color={author?.color} size="sm" />
                 <div className="min-w-0">
                   <p className="text-sm font-semibold">
-                    {author?.name ?? 'Unknown'}{' '}
+                    {name}{' '}
                     <span className="text-[12.5px] font-normal text-muted">
-                      · {comment.role} · {comment.minutesAgo === 0 ? 'Just now' : relativeTime(comment.minutesAgo)}
+                      {comment.role && `· ${comment.role} `}· {timeAgo(comment.at)}
                     </span>
                   </p>
                   <p className="mt-1 whitespace-pre-line">{comment.text}</p>
@@ -44,11 +51,11 @@ export default function CommentsPanel({ comments, getMember, onAdd, textareaRef 
         </ul>
       )}
       <form onSubmit={submit} className="flex flex-col gap-2.5">
-        <label htmlFor="job-comment" className="sr-only">
+        <label htmlFor="project-comment" className="sr-only">
           Add a comment
         </label>
         <textarea
-          id="job-comment"
+          id="project-comment"
           ref={textareaRef}
           rows={3}
           value={text}
@@ -58,8 +65,8 @@ export default function CommentsPanel({ comments, getMember, onAdd, textareaRef 
         />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Checkbox label="Mark as key decision" checked={isDecision} onChange={(e) => setIsDecision(e.target.checked)} />
-          <Button type="submit" variant="primary" size="sm" icon={Send} disabled={!text.trim()}>
-            Post comment
+          <Button type="submit" variant="primary" size="sm" icon={Send} disabled={!text.trim() || posting}>
+            {posting ? 'Posting…' : 'Post comment'}
           </Button>
         </div>
       </form>

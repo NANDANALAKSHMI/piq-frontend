@@ -1,6 +1,6 @@
-import { Check, ChevronRight, FileText, MessageSquare, Plus, RefreshCw } from 'lucide-react';
+import { Check, ChevronRight, FileText, MessageSquare, Pencil, Plus, RefreshCw } from 'lucide-react';
 import EmptyState from '../../components/common/EmptyState.jsx';
-import { cn } from '../../utils/formatters.js';
+import { cn, timeAgo } from '../../utils/formatters.js';
 
 const TYPE_STYLES = {
   stage: { icon: ChevronRight, className: 'bg-blue-50 text-blue-700' },
@@ -9,11 +9,12 @@ const TYPE_STYLES = {
   comment: { icon: MessageSquare, className: 'bg-violet-50 text-violet-700' },
   status: { icon: RefreshCw, className: 'bg-amber-50 text-amber-700' },
   created: { icon: Plus, className: 'bg-brand-soft text-brand-ink' },
+  edit: { icon: Pencil, className: 'bg-slate-100 text-slate-600' },
 };
 
 export default function ActivityTimeline({ items, getMember, limit }) {
   const visible = limit ? items.slice(0, limit) : items;
-  if (!visible.length) return <EmptyState title="No activity yet" description="Status changes, uploads and comments will appear here." />;
+  if (!visible.length) return <EmptyState title="No activity yet" description="Status changes, progress and comments will appear here." />;
 
   return (
     <ol className="flex flex-col">
@@ -29,7 +30,7 @@ export default function ActivityTimeline({ items, getMember, limit }) {
             <div className="pt-1">
               <p className="text-[13px] font-medium">{item.text}</p>
               <p className="text-xs text-muted">
-                {item.when} · {getMember(item.by)?.name ?? 'System'}
+                {timeAgo(item.at)} · {item.byName || getMember(item.by)?.name || 'System'}
               </p>
             </div>
           </li>

@@ -13,14 +13,11 @@ import StatusDonut from '../components/dashboard/StatusDonut.jsx';
 import HorizontalBars from '../components/dashboard/HorizontalBars.jsx';
 import RecentActivity from '../components/dashboard/RecentActivity.jsx';
 import ChartTooltip from '../components/dashboard/ChartTooltip.jsx';
-import { buildJobColumns } from '../features/jobs/jobColumns.jsx';
+import { buildProjectColumns } from '../features/projects/projectColumns.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import useLookups from '../hooks/useLookups.js';
-import useSimulatedLoading from '../hooks/useSimulatedLoading.js';
-import { recentActivities } from '../data/activityData.js';
-import { CITIES, SERVICE_SCOPES } from '../data/constants.js';
-import { isOverdue } from '../utils/jobs.js';
+import { isOverdue } from '../utils/projects.js';
 import { cn, daysUntil, dueLabel, formatDate, formatToday } from '../utils/formatters.js';
 
 const STATUS_COLORS = {
@@ -45,15 +42,14 @@ function deadlineTone(days) {
 }
 
 export default function DashboardPage() {
-  const { jobs, clients, enquiries } = useAppData();
+  const { projects, projectsLoading, clients, enquiries } = useAppData();
   const { user } = useAuth();
   const lookups = useLookups();
   const navigate = useNavigate();
   const [period, setPeriod] = useState('90');
-  const loading = useSimulatedLoading('dashboard');
 
   const stats = useMemo(() => {
-    const count = (status) => jobs.filter((j) => j.status === status).length;
+    const count = (status) => projects.filter((p) => p.status === status).length;
     const openEnquiries = enquiries.filter((e) => !['Converted', 'Lost'].includes(e.status));
     const followUpsToday = enquiries.flatMap((e) => e.followUps).filter((f) => !f.done && daysUntil(f.date) === 0).length;
     return {
@@ -61,54 +57,68 @@ export default function DashboardPage() {
       locations: clients.reduce((sum, c) => sum + c.locations.length, 0),
       cities: new Set(clients.flatMap((c) => c.locations.map((l) => l.city))).size,
       ongoing: count('In progress'),
-      dueThisWeek: jobs.filter((j) => j.status === 'In progress' && daysUntil(j.dueDate) >= 0 && daysUntil(j.dueDate) <= 7).length,
+      dueThisWeek: projects.filter((p) => p.status === 'In progress' && p.dueDate && daysUntil(p.dueDate) >= 0 && daysUntil(p.dueDate) <= 7).length,
       upcoming: count('Upcoming'),
       completed: count('Completed'),
-      completedRecently: jobs.filter((j) => j.status === 'Completed' && daysUntil(j.dueDate) >= -30).length,
-      overdue: jobs.filter(isOverdue).length,
+      completedRecently: projects.filter((p) => p.status === 'Completed' && p.completedOn && daysUntil(p.completedOn) >= -30).length,
+      overdue: projects.filter(isOverdue).length,
       openEnquiries: openEnquiries.length,
       followUpsToday,
       statusData: Object.entries(STATUS_COLORS).map(([name, color]) => ({ name, value: count(name), color })),
     };
-  }, [jobs, clients, enquiries]);
+  }, [projects, clients, enquiries]);
 
-  const periodJobs = useMemo(() => {
-    if (period === 'all') return jobs;
-    return jobs.filter((j) => daysUntil(j.startDate) >= -Number(period));
-  }, [jobs, period]);
+  const periodProjects = useMemo(() => {
+    if (period === 'all') return projects;
+    return projects.filter((p) => !p.startDate || daysUntil(p.startDate) >= -Number(period));
+  }, [projects, period]);
 
+  /** The five busiest cities, then everything else as "Others". */
   const cityData = useMemo(() => {
-    const counts = Object.fromEntries([...CITIES, 'Others'].map((city) => [city, 0]));
-    periodJobs.forEach((job) => {
-      const city = lookups.jobCity(job);
-      counts[CITIES.includes(city) ? city : 'Others'] += 1;
+    const counts = new Map();
+    periodProjects.forEach((project) => {
+      const city = lookups.projectCity(project);
+      counts.set(city, (counts.get(city) ?? 0) + 1);
     });
-    return Object.entries(counts).map(([city, value]) => ({ city, value }));
-  }, [periodJobs, lookups]);
+    const sorted = [...counts.entries()].filter(([city]) => city !== '—').sort((a, b) => b[1] - a[1]);
+    const top = sorted.slice(0, 5).map(([city, value]) => ({ city, value }));
+    const others = sorted.slice(5).reduce((sum, [, value]) => sum + value, 0) + (counts.get('—') ?? 0);
+    return others ? [...top, { city: 'Others', value: others }] : top;
+  }, [periodProjects, lookups]);
 
-  const scopeData = useMemo(
-    () => SERVICE_SCOPES.map((scope) => ({ label: scope, value: periodJobs.filter((j) => j.scope === scope).length })),
-    [periodJobs],
-  );
+  /** Projects per service, most used first. */
+  const serviceData = useMemo(() => {
+    const counts = new Map();
+    periodProjects.forEach((p) => p.services.forEach((s) => counts.set(s.name, (counts.get(s.name) ?? 0) + 1)));
+    return [...counts.entries()].map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value).slice(0, 6);
+  }, [periodProjects]);
 
-  const recentJobs = useMemo(() => jobs.filter((j) => j.status !== 'Cancelled').slice(0, 6), [jobs]);
+  const recentProjects = useMemo(() => projects.filter((p) => p.status !== 'Cancelled').slice(0, 6), [projects]);
 
   const deadlines = useMemo(
     () =>
-      jobs
-        .filter((j) => ['In progress', 'On hold', 'Upcoming'].includes(j.status))
+      projects
+        .filter((p) => ['In progress', 'On hold', 'Upcoming'].includes(p.status) && p.dueDate)
         .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
         .slice(0, 5),
-    [jobs],
+    [projects],
   );
 
-  const activity = recentActivities.map((a) => ({ ...a, actorName: lookups.getMember(a.actorId)?.name ?? 'Someone' }));
+  /** Latest activity across every project. */
+  const activity = useMemo(
+    () =>
+      projects
+        .flatMap((p) => p.activity.map((item) => ({ ...item, projectId: p.id, projectName: p.name })))
+        .sort((a, b) => String(b.at ?? '').localeCompare(String(a.at ?? '')))
+        .slice(0, 8),
+    [projects],
+  );
 
   return (
     <div className="flex flex-col gap-5.5">
       <PageHeader
         title="Dashboard"
-        subtitle={`Welcome back, ${user?.name.split(' ')[0]} — here’s where every job stands today.`}
+        subtitle={`Welcome back, ${user?.name.split(' ')[0]} — here’s where every project stands today.`}
         actions={
           <>
             <div className="hidden h-10.5 items-center gap-2.5 rounded-[10px] border border-line bg-white px-3.5 sm:flex">
@@ -118,8 +128,8 @@ export default function DashboardPage() {
             <Button to="/enquiries/new" icon={MessageSquareText}>
               New enquiry
             </Button>
-            <Button to="/jobs/new" variant="primary" icon={Plus}>
-              New job
+            <Button to="/projects/new" variant="primary" icon={Plus}>
+              New project
             </Button>
           </>
         }
@@ -127,8 +137,8 @@ export default function DashboardPage() {
 
       <section aria-label="Summary" className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 2xl:grid-cols-6">
         <StatCard label="Total clients" value={stats.clients} helper={`${stats.locations} sites in ${stats.cities} cities`} icon={Users} tone="blue" />
-        <StatCard label="Ongoing jobs" value={stats.ongoing} helper={`${stats.dueThisWeek} due this week`} icon={Clock} tone="orange" />
-        <StatCard label="Upcoming jobs" value={stats.upcoming} helper="Not started yet" icon={CalendarDays} tone="sky" />
+        <StatCard label="Ongoing projects" value={stats.ongoing} helper={`${stats.dueThisWeek} due this week`} icon={Clock} tone="orange" />
+        <StatCard label="Upcoming projects" value={stats.upcoming} helper="Not started yet" icon={CalendarDays} tone="sky" />
         <StatCard label="Completed" value={stats.completed} helper={`${stats.completedRecently} in last 30 days`} trend="up" icon={CircleCheck} tone="green" />
         <StatCard
           label="Overdue"
@@ -144,13 +154,13 @@ export default function DashboardPage() {
 
       <section className="grid grid-cols-1 gap-5.5 lg:grid-cols-2 xl:grid-cols-3">
         <Card>
-          <CardHeader title="Job status overview" subtitle="Click a status to see those jobs" />
-          <StatusDonut data={stats.statusData} total={jobs.length} onSelect={(status) => navigate(`/jobs?status=${encodeURIComponent(status)}`)} />
+          <CardHeader title="Project status overview" subtitle="Click a status to see those projects" />
+          <StatusDonut data={stats.statusData} total={projects.length} onSelect={(status) => navigate(`/projects?status=${encodeURIComponent(status)}`)} />
         </Card>
 
         <Card>
           <CardHeader
-            title="Jobs by location"
+            title="Projects by location"
             action={<SelectControl aria-label="Period" value={period} onChange={(e) => setPeriod(e.target.value)} options={PERIODS} className="h-9 w-auto" />}
           />
           <div className="h-[220px]">
@@ -160,7 +170,7 @@ export default function DashboardPage() {
                 <XAxis dataKey="city" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#6E625B' }} interval={0} />
                 <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#6E625B' }} />
                 <Tooltip content={<ChartTooltip />} cursor={{ fill: '#F6F4F1' }} />
-                <Bar dataKey="value" name="Jobs" radius={[6, 6, 0, 0]} maxBarSize={44} isAnimationActive={false}>
+                <Bar dataKey="value" name="Projects" radius={[6, 6, 0, 0]} maxBarSize={44} isAnimationActive={false}>
                   {cityData.map((entry) => (
                     <Cell key={entry.city} fill={entry.city === 'Others' ? '#D8CFC5' : '#b99a60'} />
                   ))}
@@ -171,42 +181,44 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="lg:col-span-2 xl:col-span-1">
-          <CardHeader title="Jobs by service scope" subtitle={PERIODS.find((p) => p.value === period)?.label} action={<Button to="/reports" variant="ghost" size="sm" className="text-brand-ink">Reports</Button>} />
-          <HorizontalBars items={scopeData} />
+          <CardHeader title="Projects by service" subtitle={PERIODS.find((p) => p.value === period)?.label} action={<Button to="/reports" variant="ghost" size="sm" className="text-brand-ink">Reports</Button>} />
+          {serviceData.length ? <HorizontalBars items={serviceData} /> : <p className="text-[13px] text-muted">No projects in this period.</p>}
         </Card>
       </section>
 
       <section className="grid grid-cols-1 gap-5.5 xl:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)]">
         <Card>
-          <CardHeader title="Recent jobs" action={<Link to="/jobs" className="text-[13px] font-semibold text-brand-ink hover:underline">View all jobs</Link>} />
+          <CardHeader title="Recent projects" action={<Link to="/projects" className="text-[13px] font-semibold text-brand-ink hover:underline">View all projects</Link>} />
           <DataTable
-            columns={buildJobColumns(lookups, ['id', 'name', 'progress', 'status', 'due'])}
-            rows={recentJobs}
-            loading={loading}
+            columns={buildProjectColumns(lookups, ['id', 'name', 'progress', 'status', 'due'])}
+            rows={recentProjects}
+            loading={projectsLoading}
+            emptyState={<p className="text-[13px] text-muted">No projects yet.</p>}
             minWidth={640}
           />
         </Card>
 
         <Card>
-          <CardHeader title="Upcoming deadlines" action={<Link to="/jobs?sort=due" className="text-[13px] font-semibold text-brand-ink hover:underline">View all</Link>} />
+          <CardHeader title="Upcoming deadlines" action={<Link to="/projects?sort=due" className="text-[13px] font-semibold text-brand-ink hover:underline">View all</Link>} />
+          {deadlines.length === 0 && <p className="text-[13px] text-muted">No open projects with a due date.</p>}
           <ul className="flex flex-col">
-            {deadlines.map((job) => {
-              const days = daysUntil(job.dueDate);
-              const late = isOverdue(job);
+            {deadlines.map((project) => {
+              const days = daysUntil(project.dueDate);
+              const late = isOverdue(project);
               return (
-                <li key={job.id} className="border-b border-line last:border-0">
-                  <Link to={`/jobs/${job.id}`} className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-3 hover:bg-slate-50">
+                <li key={project.id} className="border-b border-line last:border-0">
+                  <Link to={`/projects/${project.id}`} className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-3 hover:bg-slate-50">
                     <span className={cn('grid size-9.5 shrink-0 place-items-center rounded-[10px]', late ? 'bg-red-50 text-red-700' : 'bg-brand-soft text-brand-ink')}>
                       {late ? <AlertTriangle className="size-4.5" aria-hidden="true" /> : <Briefcase className="size-4.5" aria-hidden="true" />}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-semibold">{job.name}</span>
+                      <span className="block truncate font-semibold">{project.name}</span>
                       <span className="block truncate text-[12.5px] text-muted">
-                        {lookups.getClient(job.clientId)?.name} · {formatDate(job.dueDate, { withYear: false })}
+                        {lookups.getClient(project.clientId)?.name} · {formatDate(project.dueDate, { withYear: false })}
                       </span>
                     </span>
                     <Badge tone={deadlineTone(days)} dot={false}>
-                      {dueLabel(job.dueDate)}
+                      {dueLabel(project.dueDate)}
                     </Badge>
                   </Link>
                 </li>
