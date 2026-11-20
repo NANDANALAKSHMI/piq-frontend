@@ -101,3 +101,39 @@ One-time setup:
 
 `npm run dev` serves `/api/send-invite` locally (see `vite.config.js`), so invitations work in
 development too. Gmail allows roughly 500 emails a day from one account.
+
+## Server-side search (Algolia)
+
+The Projects, Vendors, Enquiries and Clients lists search and filter on Algolia when it's set up,
+with results paged by the server. Without Algolia settings they keep filtering in the browser.
+
+**How it fits together**
+
+- Firestore → Algolia: the Firebase extension **Search Firestore with Algolia** copies each
+  collection into an Algolia index and keeps it updated. No sync code lives in this app.
+- Browser → Algolia: `/api/algolia-key` checks the Firebase sign-in (team members only) and returns
+  a secured key that can only search PIQ's indices and expires after an hour. The search-only and
+  admin keys never reach the browser.
+- Projects get a few extra fields just for search (`code`, `clientName`, `city`, `serviceIds`,
+  `serviceNames`, `dueTs`); older projects are filled in automatically when someone opens the app.
+
+**Setup (once)**
+
+1. Create an Algolia account and application. From *Settings → API Keys* note the Application ID,
+   the **Search-Only** key and the **Admin** key.
+2. Firebase console → *piq-dashboard* → upgrade to the **Blaze** plan (extensions need it).
+3. Firebase console → *Extensions* → install **Search Firestore with Algolia** four times, one per
+   collection. For each install use: collection `projects` / `vendors` / `enquiries` / `clients`,
+   index name the same as the collection (or with your prefix, e.g. `piq_projects`), your
+   Application ID and the **Admin** key. Leave "Indexable fields" empty (all fields).
+   After each install, run the extension's backfill (the "Full index existing documents" option)
+   so documents created before it was installed are copied too.
+4. Add to `.env.local` (and the first three to Vercel → Settings → Environment Variables):
+   `ALGOLIA_APP_ID`, `ALGOLIA_SEARCH_KEY`, `ALGOLIA_INDEX_PREFIX` (optional), and locally only
+   `ALGOLIA_ADMIN_KEY`.
+5. Run `npm run algolia:setup` to set searchable fields and filters on the four indices.
+6. Restart `npm run dev` (or redeploy). The lists now page through Algolia results.
+
+Notes: results arrive a second or two after a save (the extension's sync delay). Sorting by a column
+reorders the current page; CSV export on the Projects page still exports every matching project.
+

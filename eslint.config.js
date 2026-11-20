@@ -24,7 +24,7 @@ export default [
   },
   {
     // Vercel serverless functions and the Vite config run in Node, not the browser.
-    files: ['api/**/*.js', 'vite.config.js'],
+    files: ['api/**/*.js', 'scripts/**/*.mjs', 'vite.config.js'],
     languageOptions: { globals: globals.node },
   },
 ];

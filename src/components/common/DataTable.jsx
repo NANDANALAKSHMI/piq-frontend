@@ -18,6 +18,10 @@ function compare(a, b) {
 /**
  * Generic table with sortable headers, optional pagination, loading skeleton and empty state.
  * columns: [{ key, header, render?(row), sortValue?(row), sortable?, className?, headerClassName? }]
+ *
+ * `serverPagination` = { page (1-based), pageCount, totalItems, onPageChange } when the rows are
+ * already one page of server results (Algolia): the table shows them as-is and the pager asks the
+ * server for other pages. Sorting then reorders the current page only.
  */
 export default function DataTable({
   columns,
@@ -30,6 +34,7 @@ export default function DataTable({
   initialSort,
   rowClassName,
   className,
+  serverPagination,
 }) {
   const [sort, setSort] = useState(initialSort ?? null);
 
@@ -43,7 +48,7 @@ export default function DataTable({
   }, [rows, sort, columns]);
 
   const pagination = usePagination(sortedRows, pageSize ?? Math.max(sortedRows.length, 1));
-  const visibleRows = pageSize ? pagination.pageItems : sortedRows;
+  const visibleRows = pageSize && !serverPagination ? pagination.pageItems : sortedRows;
 
   const toggleSort = (key) => {
     setSort((current) => {
@@ -122,7 +127,17 @@ export default function DataTable({
           {emptyState}
         </div>
       )}
-      {!loading && pageSize && rows.length > 0 && (
+      {!loading && serverPagination && serverPagination.totalItems > 0 && (
+        <Pagination
+          className="mt-4"
+          page={serverPagination.page}
+          pageCount={serverPagination.pageCount}
+          pageSize={pageSize}
+          totalItems={serverPagination.totalItems}
+          onPageChange={serverPagination.onPageChange}
+        />
+      )}
+      {!loading && pageSize && !serverPagination && rows.length > 0 && (
         <Pagination
           className="mt-4"
           page={pagination.page}

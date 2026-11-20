@@ -18,6 +18,8 @@ import useLookups from '../hooks/useLookups.js';
 import useServices from '../hooks/useServices.js';
 import { ENQUIRY_STATUSES } from '../data/constants.js';
 import { cn, daysUntil, formatDate } from '../utils/formatters.js';
+import SearchNote from '../components/common/SearchNote.jsx';
+import useServerSearch, { all, eq, listVersion, usePageFor } from '../hooks/useServerSearch.js';
 
 const PIPELINE = [
   { status: 'New', helper: 'Not contacted' },
@@ -85,6 +87,18 @@ export default function EnquiriesPage() {
       return true;
     });
   }, [enquiries, query, status, city]);
+
+  // Server-side search (Algolia) when it's set up; otherwise the browser filtering above is used.
+  const algoliaFilters = all(
+    status === 'open' && 'NOT status:"Converted" AND NOT status:"Lost"',
+    status !== 'open' && status !== 'all' && eq('status', status),
+    city && eq('city', city),
+  );
+  const [page, setPage] = usePageFor(`${query}|${algoliaFilters}`);
+  const search = useServerSearch({ index: 'enquiries', query: query.trim(), filters: algoliaFilters, page: page - 1, hitsPerPage: 8 }, listVersion(enquiries));
+  const server = search.enabled === true && !search.error;
+  const byId = useMemo(() => new Map(enquiries.map((e) => [e.id, e])), [enquiries]);
+  const visibleRows = server ? search.ids.map((id) => byId.get(id)).filter(Boolean) : rows;
 
   const counts = Object.fromEntries(ENQUIRY_STATUSES.map((s) => [s, enquiries.filter((e) => e.status === s).length]));
   const decided = counts.Converted + counts.Lost;
@@ -179,16 +193,20 @@ export default function EnquiriesPage() {
         <p className="px-4 pb-2 text-[13px] text-muted">
           <b className="text-ink">{dueToday}</b> follow-ups due today or overdue · <b className="text-ink">{winRate}%</b> win rate
         </p>
+        <div className="px-4 pb-2">
+          <SearchNote error={search.error} />
+        </div>
         <div className="px-2 pb-4 sm:px-4">
           <DataTable
             columns={columns}
-            rows={rows}
+            rows={visibleRows}
             pageSize={8}
-            loading={enquiriesLoading}
+            loading={enquiriesLoading || (server && search.loading && !visibleRows.length)}
+            serverPagination={server ? { page, pageCount: Math.max(1, search.nbPages), totalItems: search.nbHits, onPageChange: setPage } : undefined}
             minWidth={820}
             rowClassName={(e) => e.id === selected?.id && 'bg-brand-soft/60 hover:bg-brand-soft/60'}
             emptyState={
-              enquiries.length === 0 ? (
+              enquiries.length === 0 && !server ? (
                 <EmptyState icon={MessageSquareText} title="No enquiries yet" description="Click “New enquiry” to record your first lead." />
               ) : (
                 <EmptyState icon={SearchX} title="No enquiries match" description="Change the filters or add a new enquiry." />

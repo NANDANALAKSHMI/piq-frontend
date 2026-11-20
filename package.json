@@ -10,9 +10,11 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "algolia:setup": "node --env-file=.env.local scripts/algolia-setup.mjs"
   },
   "dependencies": {
+    "algoliasearch": "5.61.0",
     "firebase": "^12.19.0",
     "jose": "^6.2.14",
     "lucide-react": "^1.61.0",

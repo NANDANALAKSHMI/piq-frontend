@@ -8,6 +8,8 @@ import Avatar from '../components/common/Avatar.jsx';
 import DataTable from '../components/common/DataTable.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
+import SearchNote from '../components/common/SearchNote.jsx';
+import useServerSearch, { listVersion, usePageFor } from '../hooks/useServerSearch.js';
 
 const place = (loc) => [loc?.city, loc?.district, loc?.state].filter(Boolean).join(', ');
 
@@ -25,6 +27,13 @@ export default function ClientsPage() {
     const q = query.trim().toLowerCase();
     return q ? clients.filter((c) => searchText(c).includes(q)) : clients;
   }, [clients, query]);
+
+  // Server-side search (Algolia) when it's set up; otherwise the browser filtering above is used.
+  const [page, setPage] = usePageFor(query);
+  const search = useServerSearch({ index: 'clients', query: query.trim(), page: page - 1, hitsPerPage: 8 }, listVersion(clients));
+  const server = search.enabled === true && !search.error;
+  const byId = useMemo(() => new Map(clients.map((c) => [c.id, c])), [clients]);
+  const rows = server ? search.ids.map((id) => byId.get(id)).filter(Boolean) : visibleClients;
 
 
   const columns = [
@@ -87,12 +96,16 @@ export default function ClientsPage() {
       )}
 
       <Card>
-        <SearchInput value={query} onChange={setQuery} placeholder="Search by name, phone, city, district or state" className="mb-4 max-w-md" />
+        <SearchInput value={query} onChange={setQuery} placeholder="Search by name, phone, city, district or state" className="mb-2 max-w-md" />
+        <div className="mb-3">
+          <SearchNote error={search.error} />
+        </div>
         <DataTable
           columns={columns}
-          rows={visibleClients}
-          loading={clientsLoading}
+          rows={rows}
+          loading={clientsLoading || (server && search.loading && !rows.length)}
           pageSize={8}
+          serverPagination={server ? { page, pageCount: Math.max(1, search.nbPages), totalItems: search.nbHits, onPageChange: setPage } : undefined}
           minWidth={640}
           emptyState={
             clients.length ? (

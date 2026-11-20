@@ -12,6 +12,8 @@ import { useAppData } from '../context/AppDataContext.jsx';
 import useServices from '../hooks/useServices.js';
 import { buildVendorLookups } from '../features/vendors/vendorLookups.js';
 import { VENDOR_STATUSES } from '../features/vendors/vendorStatus.js';
+import SearchNote from '../components/common/SearchNote.jsx';
+import useServerSearch, { all, eq, listVersion, usePageFor } from '../hooks/useServerSearch.js';
 
 const NO_FILTERS = { state: '', district: '', city: '', categoryId: '', status: '' };
 
@@ -72,6 +74,21 @@ export default function VendorsPage() {
       return true;
     });
   }, [vendors, filters, query]);
+
+  // Server-side search (Algolia) when it's set up; otherwise the browser filtering above is used.
+  const algoliaFilters = all(
+    filters.state && eq('state', filters.state),
+    filters.district && eq('district', filters.district),
+    filters.city && eq('city', filters.city),
+    filters.categoryId && eq('serviceIds', filters.categoryId),
+    filters.status && eq('status', filters.status),
+  );
+  const [page, setPage] = usePageFor(`${query}|${algoliaFilters}`);
+  const search = useServerSearch({ index: 'vendors', query: query.trim(), filters: algoliaFilters, page: page - 1, hitsPerPage: 10 }, listVersion(vendors));
+  const server = search.enabled === true && !search.error;
+  const byId = useMemo(() => new Map(vendors.map((v) => [v.id, v])), [vendors]);
+  const visibleRows = server ? search.ids.map((id) => byId.get(id)).filter(Boolean) : rows;
+  const matchCount = server ? search.nbHits : rows.length;
 
   const filtered = query.trim() || Object.values(filters).some(Boolean);
   const counts = Object.fromEntries(VENDOR_STATUSES.map(({ value }) => [value, vendors.filter((v) => v.status === value).length]));
@@ -175,19 +192,21 @@ export default function VendorsPage() {
           </div>
           {filtered && !vendorsLoading && (
             <p className="text-[13px] text-muted">
-              Showing <b className="text-ink">{rows.length}</b> of {vendors.length} vendors
+              <b className="text-ink">{matchCount}</b> of {vendors.length} vendors match
             </p>
           )}
+          <SearchNote error={search.error} />
         </div>
         <div className="px-2 pb-4 sm:px-4">
           <DataTable
             columns={columns}
-            rows={rows}
-            loading={vendorsLoading}
+            rows={visibleRows}
+            loading={vendorsLoading || (server && search.loading && !visibleRows.length)}
             pageSize={10}
+            serverPagination={server ? { page, pageCount: Math.max(1, search.nbPages), totalItems: search.nbHits, onPageChange: setPage } : undefined}
             minWidth={1180}
             emptyState={
-              vendors.length === 0 ? (
+              vendors.length === 0 && !server ? (
                 <EmptyState
                   icon={Truck}
                   title="No vendors yet"
