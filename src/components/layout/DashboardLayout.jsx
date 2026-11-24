@@ -34,7 +34,7 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className="flex min-h-screen bg-canvas">
+    <div className="flex h-dvh overflow-hidden bg-canvas">
       <Sidebar
         counts={counts}
         user={user}
@@ -42,9 +42,9 @@ export default function DashboardLayout() {
         onCloseMobile={() => setMobileOpen(false)}
         onLogout={handleLogout}
       />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <Header title={titleFor(pathname)} onOpenMenu={() => setMobileOpen(true)} />
-        <main className="w-full flex-1 px-4  pt-5 md:px-7  md:pt-7">
+        <main className="scrollbar-thin min-h-0 w-full flex-1 overflow-y-auto px-4 pb-24 pt-5 md:px-7 md:pb-6 md:pt-7">
           <Outlet />
         </main>
       </div>

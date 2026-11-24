@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, Pencil, Plus, SearchX, Truck, TriangleAlert, X } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
@@ -33,6 +34,7 @@ function TagList({ names }) {
 export default function VendorsPage() {
   const { vendors, vendorsLoading, vendorsError } = useAppData();
   const { services } = useServices();
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState(NO_FILTERS);
 
@@ -74,7 +76,6 @@ export default function VendorsPage() {
   }, [vendors, filters, query]);
 
   const filtered = query.trim() || Object.values(filters).some(Boolean);
-  const counts = Object.fromEntries(VENDOR_STATUSES.map(({ value }) => [value, vendors.filter((v) => v.status === value).length]));
 
   const columns = [
     {
@@ -120,14 +121,10 @@ export default function VendorsPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-5.5">
+    <div className="flex h-full min-h-[34rem] flex-col gap-5.5">
       <PageHeader
         title="Vendors"
-        subtitle={
-          vendors.length
-            ? `${vendors.length} vendor${vendors.length === 1 ? '' : 's'} · ${counts.Preferred} preferred · ${counts.Approved} approved · ${counts['On hold']} on hold`
-            : 'Your suppliers: what they provide and where they are.'
-        }
+        subtitle="Your suppliers: what they provide and where they are."
         actions={
           <Button to="/vendors/new" variant="primary" icon={Plus}>
             Add vendor
@@ -145,9 +142,9 @@ export default function VendorsPage() {
         </div>
       )}
 
-      <Card padded={false}>
-        <div className="flex flex-col gap-2.5 p-4">
-          <SearchInput value={query} onChange={setQuery} placeholder="Search name, contact, phone or email" className="w-full" />
+      <Card padded={false} className="flex min-h-0 flex-1 flex-col">
+        <div className="flex shrink-0 flex-col gap-2.5 p-4">
+          <SearchInput value={query} onChange={setQuery} placeholder="Search name, contact, phone or email" className="w-full sm:w-80" />
           <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-[repeat(5,minmax(0,1fr))_auto]">
             <SelectControl aria-label="State" value={filters.state} onChange={setFilter('state')} placeholder="State: All" options={stateOptions} />
             <SelectControl aria-label="District" value={filters.district} onChange={setFilter('district')} placeholder="District: All" options={districtOptions} />
@@ -173,14 +170,11 @@ export default function VendorsPage() {
               </Button>
             )}
           </div>
-          {filtered && !vendorsLoading && (
-            <p className="text-[13px] text-muted">
-              Showing <b className="text-ink">{rows.length}</b> of {vendors.length} vendors
-            </p>
-          )}
         </div>
-        <div className="px-2 pb-4 sm:px-4">
+        <div className="flex min-h-0 flex-1 flex-col px-2 pb-4 sm:px-4">
           <DataTable
+            fill
+            onRowClick={(v) => navigate(`/vendors/${v.id}`)}
             columns={columns}
             rows={rows}
             loading={vendorsLoading}

@@ -23,7 +23,7 @@ export default function NotificationsPage() {
     <div className="flex flex-col gap-5.5">
       <PageHeader
         title="Notifications"
-        subtitle={unread ? `${unread} unread` : 'You are all caught up.'}
+        subtitle={unread ? 'You have unread notifications.' : 'You are all caught up.'}
         actions={
           <Button icon={CheckCheck} onClick={markAllNotificationsRead} disabled={!unread}>
             Mark all read

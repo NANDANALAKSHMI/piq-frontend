@@ -86,10 +86,6 @@ export default function EnquiriesPage() {
     });
   }, [enquiries, query, status, city]);
 
-  const counts = Object.fromEntries(ENQUIRY_STATUSES.map((s) => [s, enquiries.filter((e) => e.status === s).length]));
-  const decided = counts.Converted + counts.Lost;
-  const winRate = decided ? Math.round((counts.Converted / decided) * 100) : 0;
-  const dueToday = enquiries.flatMap((e) => e.followUps).filter((f) => !f.done && daysUntil(f.date) <= 0).length;
 
   const columns = [
     { key: 'id', header: 'Enquiry', sortable: true, render: (e) => <CellStack primary={<span className="text-brand-ink">{e.id}</span>} secondary={e.company} /> },
@@ -123,7 +119,7 @@ export default function EnquiriesPage() {
   const closed = selected && ['Converted', 'Lost'].includes(selected.status);
 
   return (
-    <div className="flex flex-col gap-5.5">
+    <div className="flex h-full min-h-160 flex-col gap-5.5">
       <PageHeader
         title="Enquiries"
         subtitle="Capture leads before they become projects. Convert in one click — nothing is re-typed."
@@ -144,7 +140,7 @@ export default function EnquiriesPage() {
         </div>
       )}
 
-      <section className="grid grid-cols-2 gap-4 md:grid-cols-4" aria-label="Pipeline">
+      <section className="grid shrink-0 grid-cols-2 gap-4 md:grid-cols-4" aria-label="Pipeline">
         {PIPELINE.map((stage) => (
           <button
             key={stage.status}
@@ -157,16 +153,15 @@ export default function EnquiriesPage() {
             )}
           >
             <span className="text-[13px] text-muted">{stage.status}</span>
-            <span className="text-[26px] font-bold leading-tight">{counts[stage.status]}</span>
             <StatusBadge value={stage.status} dot={false} className="!font-medium" />
             <span className="sr-only">{stage.helper}</span>
           </button>
         ))}
       </section>
 
-      <Card padded={false}>
-        <div className="flex flex-wrap items-center gap-2.5 p-4">
-          <SearchInput value={query} onChange={setQuery} placeholder="Name, company or phone" className="min-w-52 flex-1" />
+      <Card padded={false} className="flex min-h-0 flex-1 flex-col">
+        <div className="flex shrink-0 flex-wrap items-center gap-2.5 p-4">
+          <SearchInput value={query} onChange={setQuery} placeholder="Name, company or phone" className="w-full sm:w-80" />
           <SelectControl
             aria-label="Status"
             value={status}
@@ -176,11 +171,10 @@ export default function EnquiriesPage() {
           />
           <SelectControl aria-label="City" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City: All" options={cityOptions} className="w-auto" />
         </div>
-        <p className="px-4 pb-2 text-[13px] text-muted">
-          <b className="text-ink">{dueToday}</b> follow-ups due today or overdue · <b className="text-ink">{winRate}%</b> win rate
-        </p>
-        <div className="px-2 pb-4 sm:px-4">
+        <div className="flex min-h-0 flex-1 flex-col px-2 pb-4 sm:px-4">
           <DataTable
+            fill
+            onRowClick={(e) => select(e.id)}
             columns={columns}
             rows={rows}
             pageSize={8}

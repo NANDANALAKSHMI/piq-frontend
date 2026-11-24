@@ -218,7 +218,7 @@ export default function TeamPage() {
   };
 
   return (
-    <div className="flex flex-col gap-5.5">
+    <div className="flex h-full min-h-[34rem] flex-col gap-5.5">
       <PageHeader
         title="Team"
         subtitle={live ? 'Everyone who can sign in to Box Theory. Invited people create their password from the invitation email.' : 'The people you assign to projects.'}
@@ -241,12 +241,13 @@ export default function TeamPage() {
         </div>
       )}
 
-      <Card padded={false}>
+      <Card padded={false} className="flex min-h-0 flex-1 flex-col">
         <div className="flex flex-wrap gap-2.5 p-4">
-          <SearchInput value={query} onChange={setQuery} placeholder="Search team" className="min-w-52 flex-1 sm:max-w-xs" />
+          <SearchInput value={query} onChange={setQuery} placeholder="Search team" className="w-full sm:w-80" />
         </div>
-        <div className="px-2 pb-4 sm:px-4">
+        <div className="flex min-h-0 flex-1 flex-col px-2 pb-4 sm:px-4">
           <DataTable
+            fill
             rows={rows}
             loading={teamLoading && rows.length === 0}
             minWidth={820}

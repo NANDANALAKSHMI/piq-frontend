@@ -5,7 +5,7 @@ import Avatar from '../common/Avatar.jsx';
 import { NAV_SECTIONS } from './navConfig.js';
 import { cn } from '../../utils/formatters.js';
 
-function SidebarContent({ counts, user, onNavigate, onLogout }) {
+function SidebarContent({ user, onNavigate, onLogout }) {
   return (
     <div className="flex h-full flex-col gap-5 px-3.5 py-5">
       <Logo />
@@ -15,7 +15,7 @@ function SidebarContent({ counts, user, onNavigate, onLogout }) {
             {section.label && (
               <p className="px-3 pb-1.5 pt-4 text-[11px] font-semibold uppercase tracking-wider text-[#b5a597]">{section.label}</p>
             )}
-            {section.items.map(({ to, label, icon: Icon, end, countKey, alert }) => (
+            {section.items.map(({ to, label, icon: Icon, end }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -28,20 +28,10 @@ function SidebarContent({ counts, user, onNavigate, onLogout }) {
                   )
                 }
               >
-                {({ isActive }) => (
+                {() => (
                   <>
                     <Icon className="size-[18px] shrink-0" aria-hidden="true" />
                     <span className="flex-1 truncate">{label}</span>
-                    {countKey && counts[countKey] > 0 && (
-                      <span
-                        className={cn(
-                          'rounded-full px-2 py-0.5 text-[11px] font-semibold',
-                          alert ? 'bg-red-600 text-white' : isActive ? 'bg-navy text-white' : 'bg-navy-3 text-white',
-                        )}
-                      >
-                        {counts[countKey]}
-                      </span>
-                    )}
                   </>
                 )}
               </NavLink>
@@ -72,11 +62,11 @@ function SidebarContent({ counts, user, onNavigate, onLogout }) {
 }
 
 /** Fixed sidebar on large screens and a slide-in drawer below that. */
-export default function Sidebar({ counts, user, mobileOpen, onCloseMobile, onLogout }) {
+export default function Sidebar({ user, mobileOpen, onCloseMobile, onLogout }) {
   return (
     <>
       <aside className="sticky top-0 hidden h-screen w-[252px] shrink-0 bg-navy lg:block">
-        <SidebarContent counts={counts} user={user} onLogout={onLogout} />
+        <SidebarContent user={user} onLogout={onLogout} />
       </aside>
 
       <div className={cn('fixed inset-0 z-50 lg:hidden', mobileOpen ? 'visible' : 'invisible')} aria-hidden={!mobileOpen}>
@@ -98,7 +88,7 @@ export default function Sidebar({ counts, user, mobileOpen, onCloseMobile, onLog
           >
             <X className="size-5" aria-hidden="true" />
           </button>
-          <SidebarContent counts={counts} user={user} onNavigate={onCloseMobile} onLogout={onLogout} />
+          <SidebarContent user={user} onNavigate={onCloseMobile} onLogout={onLogout} />
         </aside>
       </div>
     </>

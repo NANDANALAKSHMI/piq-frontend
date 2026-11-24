@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Briefcase, Eye, Plus, SearchX, Users } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
@@ -19,6 +20,7 @@ function searchText(client) {
 
 export default function ClientsPage() {
   const { clients, clientsLoading, clientsError } = useAppData();
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
 
   const visibleClients = useMemo(() => {
@@ -64,10 +66,10 @@ export default function ClientsPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex h-full min-h-[34rem] flex-col gap-5">
       <PageHeader
         title="Clients"
-        subtitle={clientsLoading ? 'Loading…' : `${clients.length} client${clients.length === 1 ? '' : 's'}`}
+        subtitle="Everyone you work for, with their locations and projects."
         actions={
           <>
             <Button to="/projects/new" icon={Briefcase}>
@@ -86,9 +88,11 @@ export default function ClientsPage() {
         </p>
       )}
 
-      <Card>
-        <SearchInput value={query} onChange={setQuery} placeholder="Search by name, phone, city, district or state" className="mb-4 max-w-md" />
+      <Card className="flex min-h-0 flex-1 flex-col">
+        <SearchInput value={query} onChange={setQuery} placeholder="Search by name, phone, city, district or state" className="mb-4 w-full shrink-0 sm:w-80" />
         <DataTable
+          fill
+          onRowClick={(c) => navigate(`/clients/${c.id}`)}
           columns={columns}
           rows={visibleClients}
           loading={clientsLoading}

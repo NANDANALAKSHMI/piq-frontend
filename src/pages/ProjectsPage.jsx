@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Briefcase, Download, Plus, SearchX, TriangleAlert, X } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
@@ -43,6 +43,7 @@ export default function ProjectsPage() {
   const lookups = useLookups();
   const { showToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState(EMPTY_FILTERS);
 
@@ -121,7 +122,7 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-5.5">
+    <div className="flex h-full min-h-[34rem] flex-col gap-5.5">
       <PageHeader
         title="Projects"
         subtitle="Every project in one searchable list — from onboarding to delivery."
@@ -147,7 +148,7 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      <Card padded={false}>
+      <Card padded={false} className="flex min-h-0 flex-1 flex-col">
         <Tabs tabs={tabs} active={activeTab} onChange={setTab} label="Project status" className="px-4" />
 
         <div className="flex flex-col gap-3.5 border-b border-line px-5 py-4.5">
@@ -179,8 +180,10 @@ export default function ProjectsPage() {
           )}
         </div>
 
-        <div className="px-2 pb-4 pt-1 sm:px-4">
+        <div className="flex min-h-0 flex-1 flex-col px-2 pb-4 pt-1 sm:px-4">
           <DataTable
+            fill
+            onRowClick={(p) => navigate(`/projects/${p.id}`)}
             key={activeTab}
             columns={buildProjectColumns(lookups, ['id', 'name', 'city', 'services', 'progress', 'team', 'priority', 'status', 'due', 'view'])}
             rows={tabRows}

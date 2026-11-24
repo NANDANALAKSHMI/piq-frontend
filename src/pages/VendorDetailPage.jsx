@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Mail, MapPin, Pencil, Phone, Trash2, Truck } from 'lucide-react';
+import { Mail, MapPin, Pencil, Phone, Trash2, Truck } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
@@ -96,9 +96,6 @@ export default function VendorDetailPage() {
         subtitle={place || 'No location saved'}
         actions={
           <>
-            <Button to="/vendors" icon={ArrowLeft}>
-              Back to vendors
-            </Button>
             <Button variant="danger" icon={Trash2} onClick={() => setDeleteOpen(true)}>
               Delete
             </Button>
@@ -151,7 +148,7 @@ export default function VendorDetailPage() {
       </div>
 
       <Card>
-        <CardHeader title={`Services · ${categoryNames.length}`} />
+        <CardHeader title="Services" />
         {categoryNames.length ? (
           <div className="flex flex-wrap gap-2">
             {categoryNames.map((name) => (
