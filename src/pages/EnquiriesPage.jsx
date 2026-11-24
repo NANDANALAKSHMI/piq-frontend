@@ -148,7 +148,7 @@ export default function EnquiriesPage() {
             onClick={() => setStatus(status === stage.status ? 'open' : stage.status)}
             aria-pressed={status === stage.status}
             className={cn(
-              'flex flex-col items-start gap-1 rounded-2xl border bg-white p-4 text-left transition-colors hover:border-slate-300',
+              'flex flex-col items-start gap-1 rounded-2xl border bg-surface p-4 text-left transition-colors hover:border-slate-300',
               status === stage.status ? 'border-2 border-brand' : 'border-line',
             )}
           >

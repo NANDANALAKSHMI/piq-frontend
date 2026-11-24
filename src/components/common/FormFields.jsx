@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import Select from './Select.jsx';
 import { cn } from '../../utils/formatters.js';
 
 const CONTROL =
@@ -56,21 +57,7 @@ export function SelectField({ label, hint, error, required, className, options, 
  * Fills its container unless `className` sets its own width (e.g. `w-auto`).
  */
 export function SelectControl({ options, placeholder, invalid, className = '', ...props }) {
-  const hasWidth = /(^|\s)w-/.test(className);
-  return (
-    <select className={cn(CONTROL, 'h-10 cursor-pointer pr-8', !hasWidth && 'w-full', invalid && 'border-red-400', className)} {...props}>
-      {placeholder && <option value="">{placeholder}</option>}
-      {options.map((option) => {
-        const value = typeof option === 'string' ? option : option.value;
-        const text = typeof option === 'string' ? option : option.label;
-        return (
-          <option key={value} value={value}>
-            {text}
-          </option>
-        );
-      })}
-    </select>
-  );
+  return <Select options={options} placeholder={placeholder} invalid={invalid} className={className} {...props} />;
 }
 
 export function Checkbox({ label, className, ...props }) {

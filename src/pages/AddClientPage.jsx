@@ -79,17 +79,17 @@ export default function AddClientPage() {
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex min-h-full flex-col gap-5.5">
       <PageHeader
         title="Add client"
         breadcrumbs={[{ label: 'Clients', to: '/clients' }, { label: 'Add client' }]}
-        actions={<Button to="/clients">Cancel</Button>}
       />
 
-      <div className="flex flex-col gap-5">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-5.5 xl:grid-cols-2">
+        <div className="flex min-w-0 flex-col gap-5.5">
         <Card>
           <CardHeader title="Company" />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <TextField label="Company name" required value={form.name} onChange={update('name')} error={errors.name} placeholder="e.g. Deccan Machine Works" />
             <TextField label="GSTIN" value={form.gstin} onChange={update('gstin')} placeholder="15-character GSTIN" />
           </div>
@@ -97,7 +97,7 @@ export default function AddClientPage() {
 
         <Card>
           <CardHeader title="Contact" />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <TextField label="Contact person" required value={form.contactName} onChange={update('contactName')} error={errors.contactName} placeholder="Full name" />
             <TextField label="Designation" value={form.designation} onChange={update('designation')} placeholder="e.g. Plant manager" />
             <TextField label="Phone" required type="tel" value={form.phone} onChange={update('phone')} error={errors.phone} placeholder="+91 " />
@@ -105,9 +105,12 @@ export default function AddClientPage() {
           </div>
         </Card>
 
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-5.5">
         <Card>
           <CardHeader title="Location" />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <SelectField label="State" required value={place.state} onChange={changeState} options={STATES} placeholder="Select state" error={errors.state} />
             <SelectField
               label="District"
@@ -121,16 +124,22 @@ export default function AddClientPage() {
             />
             <TextField label="City" required value={place.city} onChange={updatePlace('city')} error={errors.city} />
             <TextField label="PIN code" required inputMode="numeric" maxLength={6} value={place.pin} onChange={updatePlace('pin')} error={errors.pin} />
-            <TextField label="Address (optional)" value={place.address} onChange={updatePlace('address')} className="sm:col-span-2 xl:col-span-4" />
+            <TextField label="Address (optional)" value={place.address} onChange={updatePlace('address')} className="sm:col-span-2" />
           </div>
         </Card>
 
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <Card>
           <Checkbox label="Create the first project for this client" checked={createJobAfter} onChange={(e) => setCreateJobAfter(e.target.checked)} />
-          <Button variant="primary" icon={Check} onClick={handleSave} disabled={saving}>
-            Save client
-          </Button>
+        </Card>
         </div>
+      </div>
+
+      {/* Cancel / Save kept in view at the bottom while scrolling the form. */}
+      <div className="sticky bottom-0 z-20 mt-auto flex shrink-0 justify-end gap-2.5 rounded-2xl border border-line bg-surface/95 p-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
+        <Button to="/clients">Cancel</Button>
+        <Button variant="primary" icon={Check} onClick={handleSave} disabled={saving}>
+          Save client
+        </Button>
       </div>
     </div>
   );

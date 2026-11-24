@@ -86,21 +86,15 @@ export default function AddEnquiryPage() {
   };
 
   return (
-    <div className="flex flex-col gap-5.5">
+    <div className="flex min-h-full flex-col gap-5.5">
       <PageHeader
         title="New enquiry"
         breadcrumbs={[{ label: 'Enquiries', to: '/enquiries' }, { label: 'New enquiry' }]}
         subtitle="Record a lead before it becomes a project."
-        actions={
-          <>
-            <Button to="/enquiries">Cancel</Button>
-            <Button variant="primary" icon={Check} disabled={saving} onClick={handleSave}>
-              {saving ? 'Saving…' : 'Save enquiry'}
-            </Button>
-          </>
-        }
       />
 
+      <div className="grid min-w-0 grid-cols-1 items-start gap-5.5 xl:grid-cols-2">
+      <div className="flex min-w-0 flex-col gap-5.5">
       <Card>
         <CardHeader title="Customer" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -129,6 +123,9 @@ export default function AddEnquiryPage() {
         </div>
       </Card>
 
+      </div>
+
+      <div className="flex min-w-0 flex-col gap-5.5">
       <Card>
         <CardHeader title="Requirement" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -160,7 +157,11 @@ export default function AddEnquiryPage() {
         </div>
       </Card>
 
-      <div className="flex justify-end gap-2.5">
+      </div>
+      </div>
+
+      {/* Cancel / Save kept in view at the bottom while scrolling the form. */}
+      <div className="sticky bottom-0 z-20 mt-auto flex shrink-0 justify-end gap-2.5 rounded-2xl border border-line bg-surface/95 p-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
         <Button to="/enquiries">Cancel</Button>
         <Button variant="primary" icon={Check} disabled={saving} onClick={handleSave}>
           {saving ? 'Saving…' : 'Save enquiry'}

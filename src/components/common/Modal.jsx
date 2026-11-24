@@ -35,7 +35,7 @@ export default function Modal({ open, onClose, title, description, children, foo
         aria-labelledby={titleId}
         tabIndex={-1}
         className={cn(
-          'relative flex max-h-[92vh] w-full flex-col rounded-t-2xl bg-white outline-none sm:rounded-2xl',
+          'relative flex max-h-[92vh] w-full flex-col rounded-t-2xl bg-surface outline-none sm:rounded-2xl',
           size === 'lg' ? 'sm:max-w-2xl' : 'sm:max-w-lg',
         )}
       >

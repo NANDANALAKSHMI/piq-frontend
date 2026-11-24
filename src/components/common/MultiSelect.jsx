@@ -55,7 +55,7 @@ export default function MultiSelect({ label, required, options, value, onChange,
         </button>
 
         {open && (
-          <div className="absolute inset-x-0 top-full z-40 mt-1.5 overflow-hidden rounded-xl border border-line bg-white shadow-lg">
+          <div className="absolute inset-x-0 top-full z-40 mt-1.5 overflow-hidden rounded-xl border border-line bg-surface shadow-lg">
             {options.length > 6 && (
               <div className="border-b border-line p-2">
                 <SearchInput value={query} onChange={setQuery} placeholder="Search" />

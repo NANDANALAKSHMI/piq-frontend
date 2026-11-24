@@ -17,8 +17,9 @@
   --color-brand-soft: #f6f0e4;
   --color-brand-line: #e3d3b0;
 
-  --color-canvas: #f6f4f1;
-  --color-line: #e8e2da;
+  --color-canvas: #ece6dc;
+  --color-surface: #faf7f1;
+  --color-line: #dcd2c3;
   --color-ink: #2b211d;
   --color-muted: #6e625b;
 }

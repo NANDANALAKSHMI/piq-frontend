@@ -75,7 +75,7 @@ export default function DataTable({
                     scope="col"
                     aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : undefined}
                     className={cn(
-                      'sticky top-0 z-10 whitespace-nowrap border-b border-line bg-slate-50 px-3 py-2.5 text-left text-xs font-semibold text-muted first:rounded-l-lg last:rounded-r-lg',
+                      'sticky top-0 z-10 whitespace-nowrap border-b border-line bg-[#f1ece3] px-3 py-2.5 text-left text-xs font-semibold text-muted first:rounded-l-lg last:rounded-r-lg',
                       column.headerClassName,
                     )}
                   >
@@ -117,7 +117,7 @@ export default function DataTable({
                         }
                       : undefined
                   }
-                  className={cn('transition-colors hover:bg-slate-50/70', onRowClick && 'cursor-pointer', rowClassName?.(row))}
+                  className={cn('transition-colors hover:bg-[#f4efe6]', onRowClick && 'cursor-pointer', rowClassName?.(row))}
                 >
                   {columns.map((column) => (
                     <td key={column.key} className={cn('whitespace-nowrap px-3 py-2 align-middle', column.className)}>

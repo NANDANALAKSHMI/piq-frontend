@@ -142,14 +142,15 @@ function AddProjectForm() {
   };
 
   return (
-    <div className="flex flex-col gap-5.5">
+    <div className="flex min-h-full flex-col gap-5.5">
       <PageHeader
         title="New project"
         breadcrumbs={[{ label: 'Projects', to: '/projects' }, { label: 'New project' }]}
         subtitle="A project ID is assigned automatically when you create it."
       />
 
-      <div className="flex min-w-0 flex-col gap-5.5">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-5.5 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+        <div className="flex min-w-0 flex-col gap-5.5">
         <Card>
           <SectionTitle number={1} title="Client & location" action={<Link to="/clients/new" className="text-[13px] font-semibold text-brand-ink hover:underline">+ New client</Link>} />
           <SelectField
@@ -215,11 +216,12 @@ function AddProjectForm() {
               onChange={(e) => set({ name: e.target.value })}
               placeholder="e.g. Gearbox Export Crates — Batch 2"
               error={errors.name}
-              className="sm:col-span-2 lg:col-span-3"
+              className="sm:col-span-2"
             />
+            <TextField label="Quantity / volume" value={form.quantity} onChange={(e) => set({ quantity: e.target.value })} placeholder="e.g. 6 crates · ~9 t" />
             <div className="flex flex-col gap-1.5">
               <span className="text-xs font-semibold text-muted">Priority</span>
-              <div className="flex rounded-[10px] bg-slate-200/70 p-[3px]" role="radiogroup" aria-label="Priority">
+              <div className="flex rounded-[10px] bg-[#e7dfd2] p-[3px]" role="radiogroup" aria-label="Priority">
                 {PRIORITIES.map((p) => (
                   <button
                     key={p}
@@ -236,7 +238,6 @@ function AddProjectForm() {
             </div>
             <TextField label="Start date" type="date" required value={form.startDate} onChange={(e) => set({ startDate: e.target.value })} error={errors.startDate} />
             <TextField label="Due date" type="date" required value={form.dueDate} onChange={(e) => set({ dueDate: e.target.value })} error={errors.dueDate} />
-            <TextField label="Quantity / volume" value={form.quantity} onChange={(e) => set({ quantity: e.target.value })} placeholder="e.g. 6 crates · ~9 t" />
             <TextArea label="Description" value={form.description} onChange={(e) => set({ description: e.target.value })} className="sm:col-span-2 lg:col-span-3" placeholder="What needs to be done, materials, special handling…" />
           </div>
         </Card>
@@ -261,7 +262,7 @@ function AddProjectForm() {
             className="lg:max-w-2xl"
           />
           {chosen.length > 0 && (
-            <ul className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3">
+            <ul className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
               {chosen.map((service) => {
                 const subs = service.subServices.filter((sub) => sub.active);
                 return (
@@ -293,6 +294,9 @@ function AddProjectForm() {
           )}
         </Card>
 
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-5.5 xl:sticky xl:top-0">
         <Card>
           <SectionTitle
             number={4}
@@ -307,15 +311,17 @@ function AddProjectForm() {
             {vendorRows.map(({ service, options, chosen: vendorId }) => {
               const vendor = options.find((o) => o.id === vendorId);
               return (
-                <div key={service.id} className="grid grid-cols-1 items-center gap-2 rounded-xl border border-line p-3 sm:grid-cols-[180px_minmax(0,1fr)_auto]">
+                <div key={service.id} className="flex flex-col gap-2 rounded-xl border border-line bg-white/60 p-3">
+                  <div className="flex items-center justify-between gap-2">
                   <b>{service.name}</b>
+                  <span className="text-[12.5px] text-muted">{vendor ? [vendor.city, vendor.phone].filter(Boolean).join(' · ') : ''}</span>
+                  </div>
                   <SelectControl
                     aria-label={`${service.name} vendor`}
                     value={vendorId}
                     onChange={(e) => set({ vendorChoices: { ...form.vendorChoices, [service.id]: e.target.value } })}
                     options={[{ value: '', label: 'Not needed' }, ...options.map((o) => ({ value: o.id, label: `${o.name} · ${o.city || '—'}${o.status === 'Preferred' ? ' · Preferred' : ''}` }))]}
                   />
-                  <span className="text-[12.5px] text-muted">{vendor ? [vendor.city, vendor.phone].filter(Boolean).join(' · ') : '—'}</span>
                 </div>
               );
             })}
@@ -324,18 +330,19 @@ function AddProjectForm() {
 
         <Card>
           <SectionTitle number={5} title="Team & notes" />
-          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-slate-50 p-3">
+          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-[#f1ece3] p-3">
             <AvatarStack people={lookups.membersFor(teamIds)} max={5} size="sm" />
             <span className="text-[13px]">
               {teamIds.length} {teamIds.length === 1 ? 'person' : 'people'} assigned from service owners
             </span>
           </div>
-          <TextArea label="Internal notes" value={form.notes} onChange={(e) => set({ notes: e.target.value })} rows={2} placeholder="Visible to staff only." />
+          <TextArea label="Internal notes" value={form.notes} onChange={(e) => set({ notes: e.target.value })} rows={3} placeholder="Visible to staff only." />
         </Card>
+        </div>
       </div>
 
       {/* One Cancel / Create pair, kept in view at the bottom while scrolling the form. */}
-      <div className="sticky bottom-0 z-20 -mx-1 flex justify-end gap-2.5 rounded-2xl border border-line bg-white/95 p-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
+      <div className="sticky bottom-0 z-20 mt-auto flex shrink-0 justify-end gap-2.5 rounded-2xl border border-line bg-surface/95 p-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
         <Button to="/projects">Cancel</Button>
         <Button variant="primary" icon={Check} disabled={saving || servicesLoading} onClick={handleCreate}>
           {saving ? 'Creating…' : 'Create project'}
