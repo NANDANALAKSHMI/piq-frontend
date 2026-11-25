@@ -4,6 +4,7 @@ import { notifications as initialNotifications } from '../data/activityData.js';
 import { daysFromToday } from '../utils/formatters.js';
 import { useAuth } from './AuthContext.jsx';
 import useFirestoreList, { firestoreAction } from '../hooks/useFirestoreList.js';
+import useSearchIndexSync from '../hooks/useSearchIndexSync.js';
 import { isFirebaseConfigured } from '../lib/firebase.js';
 import { ADMIN_EMAILS, describeFirestoreError, memberId, normaliseEmail } from '../lib/memberUtils.js';
 
@@ -197,6 +198,16 @@ export function AppDataProvider({ children }) {
     const ids = new Set(members.map((m) => m.id));
     return [...members, ...localMembers.filter((m) => !ids.has(m.id))];
   }, [realTeam, members, localMembers]);
+
+  /** Keeps the Algolia search index in step with these lists (does nothing when Algolia isn't set up). */
+  useSearchIndexSync({
+    enabled: realTeam,
+    projects: { rows: projects, ready: !projectsLoading && !projectsError },
+    clients: { rows: clients, ready: clientsSynced && !clientsError },
+    enquiries: { rows: enquiries, ready: enquiriesSynced && !enquiriesError },
+    vendors: { rows: vendors, ready: !vendorsLoading && !vendorsError },
+    members: { rows: members, ready: teamSynced && !teamError },
+  });
 
   /* ---------- projects (Firestore) ---------- */
 

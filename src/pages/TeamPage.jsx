@@ -16,6 +16,7 @@ import { useAppData } from '../context/AppDataContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { EMAIL_PATTERN } from '../lib/memberUtils.js';
 import { formatDate } from '../utils/formatters.js';
+import useServerSearch from '../hooks/useServerSearch.js';
 
 const shortDate = (date) => formatDate(date, { withYear: false });
 
@@ -171,12 +172,12 @@ export default function TeamPage() {
   const closeAddModal = useCallback(() => setAddOpen(false), []);
   const closeCancelModal = useCallback(() => setCancelling(null), []);
 
+  const { filter: searchFilter } = useServerSearch('members', query);
+
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return members.filter(
-      (m) => !q || `${m.name} ${m.email} ${m.title} ${m.phone}`.toLowerCase().includes(q),
-    );
-  }, [members, query]);
+    return searchFilter(members, (m) => `${m.name} ${m.email} ${m.title} ${m.phone}`.toLowerCase().includes(q));
+  }, [members, query, searchFilter]);
 
   const nobodyInvited = live && !teamLoading && !teamError && !members.some((m) => m.source === 'invite');
 

@@ -10,6 +10,7 @@ import DataTable from '../components/common/DataTable.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import { SelectControl } from '../components/common/FormFields.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
+import useServerSearch from '../hooks/useServerSearch.js';
 import useServices from '../hooks/useServices.js';
 import { buildVendorLookups } from '../features/vendors/vendorLookups.js';
 import { VENDOR_STATUSES } from '../features/vendors/vendorStatus.js';
@@ -62,18 +63,20 @@ export default function VendorsPage() {
       return next;
     });
 
+  const { filter: searchFilter } = useServerSearch('vendors', query);
+
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return vendors.filter((v) => {
+    const matchesLocally = (v) => `${v.name} ${v.contactPerson} ${v.phone} ${v.email} ${v.city}`.toLowerCase().includes(q);
+    return searchFilter(vendors, matchesLocally).filter((v) => {
       if (filters.state && v.state !== filters.state) return false;
       if (filters.district && v.district !== filters.district) return false;
       if (filters.city && v.city !== filters.city) return false;
       if (filters.categoryId && !v.serviceIds.includes(filters.categoryId)) return false;
       if (filters.status && v.status !== filters.status) return false;
-      if (q && !`${v.name} ${v.contactPerson} ${v.phone} ${v.email} ${v.city}`.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [vendors, filters, query]);
+  }, [vendors, filters, query, searchFilter]);
 
   const filtered = query.trim() || Object.values(filters).some(Boolean);
 

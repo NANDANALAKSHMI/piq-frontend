@@ -15,6 +15,7 @@ import { useToast } from '../components/common/Toast.jsx';
 import { ConvertModal, FollowUpModal } from '../features/enquiries/EnquiryModals.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
 import useLookups from '../hooks/useLookups.js';
+import useServerSearch from '../hooks/useServerSearch.js';
 import useServices from '../hooks/useServices.js';
 import { ENQUIRY_STATUSES } from '../data/constants.js';
 import { cn, daysUntil, formatDate } from '../utils/formatters.js';
@@ -75,16 +76,18 @@ export default function EnquiriesPage() {
     setSearchParams({ selected: id }, { replace: true });
   };
 
+  const { filter: searchFilter } = useServerSearch('enquiries', query);
+
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return enquiries.filter((e) => {
-      if (q && !`${e.id} ${e.company} ${e.contactName} ${e.phone}`.toLowerCase().includes(q)) return false;
+    const matchesLocally = (e) => `${e.id} ${e.company} ${e.contactName} ${e.phone}`.toLowerCase().includes(q);
+    return searchFilter(enquiries, matchesLocally).filter((e) => {
       if (status === 'open' && ['Converted', 'Lost'].includes(e.status)) return false;
       if (status !== 'open' && status !== 'all' && e.status !== status) return false;
       if (city && e.city !== city) return false;
       return true;
     });
-  }, [enquiries, query, status, city]);
+  }, [enquiries, query, status, city, searchFilter]);
 
 
   const columns = [

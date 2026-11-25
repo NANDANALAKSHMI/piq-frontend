@@ -30,14 +30,14 @@ export class HttpError extends Error {
  * or a service account. Returns the token claims, or throws an HttpError (401 / 502).
  */
 export async function verifyFirebaseIdToken(token, { projectId, keys = FIREBASE_KEYS }) {
-  if (!token) throw new HttpError(401, 'Sign in again to send invitations.');
+  if (!token) throw new HttpError(401, 'Sign in again and retry.');
   try {
     const { payload } = await jwtVerify(token, keys, {
       issuer: `https://securetoken.google.com/${projectId}`,
       audience: projectId,
       algorithms: ['RS256'],
     });
-    if (!payload.sub) throw new HttpError(401, 'Sign in again to send invitations.');
+    if (!payload.sub) throw new HttpError(401, 'Sign in again and retry.');
     return payload;
   } catch (error) {
     if (error instanceof HttpError) throw error;

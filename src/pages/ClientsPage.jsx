@@ -8,6 +8,7 @@ import SearchInput from '../components/common/SearchInput.jsx';
 import Avatar from '../components/common/Avatar.jsx';
 import DataTable from '../components/common/DataTable.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
+import useServerSearch from '../hooks/useServerSearch.js';
 import { useAppData } from '../context/AppDataContext.jsx';
 
 const place = (loc) => [loc?.city, loc?.district, loc?.state].filter(Boolean).join(', ');
@@ -23,10 +24,12 @@ export default function ClientsPage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
 
+  const { filter: searchFilter } = useServerSearch('clients', query);
+
   const visibleClients = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return q ? clients.filter((c) => searchText(c).includes(q)) : clients;
-  }, [clients, query]);
+    return searchFilter(clients, (c) => searchText(c).includes(q));
+  }, [clients, query, searchFilter]);
 
 
   const columns = [

@@ -12,6 +12,7 @@ import EmptyState from '../components/common/EmptyState.jsx';
 import { useToast } from '../components/common/Toast.jsx';
 import { buildProjectColumns } from '../features/projects/projectColumns.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
+import useServerSearch from '../hooks/useServerSearch.js';
 import useLookups from '../hooks/useLookups.js';
 import useServices from '../hooks/useServices.js';
 import { displayStatus, isOverdue, projectProgress, serviceNames } from '../utils/projects.js';
@@ -66,13 +67,13 @@ export default function ProjectsPage() {
     [projects, lookups],
   );
 
+  const { filter: searchFilter } = useServerSearch('projects', query);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return projects.filter((project) => {
-      if (q) {
-        const haystack = `${project.id} ${project.name} ${lookups.getClient(project.clientId)?.name} ${lookups.projectCity(project)}`.toLowerCase();
-        if (!haystack.includes(q)) return false;
-      }
+    const matchesLocally = (project) =>
+      `${project.id} ${project.name} ${lookups.getClient(project.clientId)?.name} ${lookups.projectCity(project)}`.toLowerCase().includes(q);
+    return searchFilter(projects, matchesLocally).filter((project) => {
       if (filters.city && lookups.projectCity(project) !== filters.city) return false;
       if (filters.service && !project.services.some((s) => s.serviceId === filters.service)) return false;
       if (filters.staff && !project.teamIds.includes(filters.staff)) return false;
@@ -84,7 +85,7 @@ export default function ProjectsPage() {
       }
       return true;
     });
-  }, [projects, query, filters, lookups]);
+  }, [projects, query, filters, lookups, searchFilter]);
 
   const tabs = STATUS_TABS.map((tab) => ({ ...tab, count: filtered.filter(tab.match).length }));
   const tabRows = filtered.filter(STATUS_TABS.find((t) => t.id === activeTab).match);
