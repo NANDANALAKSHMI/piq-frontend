@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, Users } from 'lucide-react';
+import { Check, FolderPlus, Users } from 'lucide-react';
 import EmptyState from '../components/common/EmptyState.jsx';
-import PageHeader from '../components/common/PageHeader.jsx';
+import StickyPageHeader from '../components/common/StickyPageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
-import MultiSelect from '../components/common/MultiSelect.jsx';
 import { SelectControl, SelectField, TextArea, TextField } from '../components/common/FormFields.jsx';
 import { Chip } from '../components/common/Tabs.jsx';
 import { AvatarStack } from '../components/common/Avatar.jsx';
@@ -143,10 +142,18 @@ function AddProjectForm() {
 
   return (
     <div className="flex min-h-full flex-col gap-5.5">
-      <PageHeader
-        title="New project"
+      <StickyPageHeader
+        icon={FolderPlus}
+        title="Create new project"
+        subtitle="Set up project details, services and team assignments."
         breadcrumbs={[{ label: 'Projects', to: '/projects' }, { label: 'New project' }]}
-        subtitle="A project ID is assigned automatically when you create it."
+        badge="Draft"
+        cancelTo="/projects"
+        submitLabel="Create project"
+        submittingLabel="Creating…"
+        submitting={saving}
+        disabled={servicesLoading}
+        onSubmit={handleCreate}
       />
 
       <div className="grid min-w-0 grid-cols-1 items-start gap-5.5 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
@@ -246,52 +253,88 @@ function AddProjectForm() {
           <SectionTitle
             number={3}
             title="Services"
-            subtitle="What Box Theory is responsible for. Each service is tracked separately."
+            subtitle="Pick what this project needs — each one is tracked separately."
             action={<Link to="/services" className="text-[13px] font-semibold text-brand-ink hover:underline">Manage services</Link>}
           />
-          <MultiSelect
-            label="Services"
-            required
-            options={offered.map((s) => ({ value: s.id, label: s.name, hint: s.description }))}
-            value={form.serviceIds}
-            onChange={changeServices}
-            placeholder={servicesLoading ? 'Loading services…' : 'Select services'}
-            disabled={servicesLoading}
-            emptyText="No services yet — add them on the Services page."
-            error={errors.services}
-            className="lg:max-w-2xl"
-          />
-          {chosen.length > 0 && (
-            <ul className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              {chosen.map((service) => {
-                const subs = service.subServices.filter((sub) => sub.active);
-                return (
-                  <li key={service.id} className="flex flex-col gap-3 rounded-xl border border-brand-line bg-[#fbf8f2] p-3.5">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <b>{service.name}</b>
-                      <SelectControl
-                        aria-label={`${service.name} owner`}
-                        value={ownerFor(service.id)}
-                        onChange={(e) => set({ owners: { ...form.owners, [service.id]: e.target.value } })}
-                        options={activeMembers.map((m) => ({ value: m.id, label: m.name }))}
-                        placeholder={activeMembers.length ? undefined : 'No team members'}
-                        className="h-9 w-44 text-[13px]"
-                      />
-                    </div>
-                    {subs.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {subs.map((sub) => (
-                          <Chip key={sub.id} active={form.subServiceIds.includes(sub.id)} onClick={() => toggleSub(sub.id)}>
-                            {sub.name}
-                          </Chip>
-                        ))}
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+          {servicesLoading && <p className="text-[13px] text-muted">Loading services…</p>}
+          {!servicesLoading && offered.length === 0 && (
+            <p className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-[13px] text-muted">
+              No services yet — add them on the{' '}
+              <Link to="/services" className="font-semibold text-brand-ink hover:underline">
+                Services page
+              </Link>
+              .
+            </p>
           )}
+          {offered.length > 0 && (
+            <>
+              <p className="mb-2.5 text-xs font-semibold text-muted">
+                Tap the services this project needs <span className="text-red-600">*</span>
+              </p>
+              <ul className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                {offered.map((service) => {
+                  const selected = form.serviceIds.includes(service.id);
+                  const subs = service.subServices.filter((sub) => sub.active);
+                  return (
+                    <li
+                      key={service.id}
+                      className={cn('rounded-xl border transition-colors', selected ? 'border-2 border-brand bg-brand-soft/50' : 'border-line bg-white/60 hover:border-brand-line')}
+                    >
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked={selected}
+                        onClick={() => changeServices(selected ? form.serviceIds.filter((id) => id !== service.id) : [...form.serviceIds, service.id])}
+                        className="flex w-full items-center gap-3 rounded-xl p-3.5 text-left"
+                      >
+                        <span
+                          className={cn(
+                            'grid size-5 shrink-0 place-items-center rounded-md border',
+                            selected ? 'border-navy bg-navy text-white' : 'border-slate-300 bg-white text-transparent',
+                          )}
+                        >
+                          <Check className="size-3.5" aria-hidden="true" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate font-semibold">{service.name}</span>
+                          {service.description && <span className="block truncate text-xs text-muted">{service.description}</span>}
+                        </span>
+                      </button>
+
+                      {selected && (
+                        <div className="flex flex-col gap-3 border-t border-brand-line/70 px-3.5 pb-3.5 pt-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-xs font-semibold text-muted">Owner</span>
+                            <SelectControl
+                              aria-label={`${service.name} owner`}
+                              value={ownerFor(service.id)}
+                              onChange={(e) => set({ owners: { ...form.owners, [service.id]: e.target.value } })}
+                              options={activeMembers.map((m) => ({ value: m.id, label: m.name }))}
+                              placeholder={activeMembers.length ? undefined : 'No team members'}
+                              className="h-9 w-48 text-[13px]"
+                            />
+                          </div>
+                          {subs.length > 0 && (
+                            <div>
+                              <p className="mb-1.5 text-xs font-semibold text-muted">Include</p>
+                              <div className="flex flex-wrap gap-2">
+                                {subs.map((sub) => (
+                                  <Chip key={sub.id} active={form.subServiceIds.includes(sub.id)} onClick={() => toggleSub(sub.id)}>
+                                    {sub.name}
+                                  </Chip>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
+          {errors.services && <p className="mt-2 text-xs font-medium text-red-700">{errors.services}</p>}
         </Card>
 
         </div>
@@ -339,14 +382,6 @@ function AddProjectForm() {
           <TextArea label="Internal notes" value={form.notes} onChange={(e) => set({ notes: e.target.value })} rows={3} placeholder="Visible to staff only." />
         </Card>
         </div>
-      </div>
-
-      {/* One Cancel / Create pair, kept in view at the bottom while scrolling the form. */}
-      <div className="sticky bottom-0 z-20 mt-auto flex shrink-0 justify-end gap-2.5 rounded-2xl border border-line bg-surface/95 p-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
-        <Button to="/projects">Cancel</Button>
-        <Button variant="primary" icon={Check} disabled={saving || servicesLoading} onClick={handleCreate}>
-          {saving ? 'Creating…' : 'Create project'}
-        </Button>
       </div>
     </div>
   );

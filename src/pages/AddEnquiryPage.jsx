@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Check } from 'lucide-react';
-import PageHeader from '../components/common/PageHeader.jsx';
-import Button from '../components/common/Button.jsx';
+import { MessageSquarePlus } from 'lucide-react';
+import StickyPageHeader from '../components/common/StickyPageHeader.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
 import { Chip } from '../components/common/Tabs.jsx';
 import { SelectField, TextArea, TextField } from '../components/common/FormFields.jsx';
@@ -87,10 +86,16 @@ export default function AddEnquiryPage() {
 
   return (
     <div className="flex min-h-full flex-col gap-5.5">
-      <PageHeader
+      <StickyPageHeader
+        icon={MessageSquarePlus}
         title="New enquiry"
-        breadcrumbs={[{ label: 'Enquiries', to: '/enquiries' }, { label: 'New enquiry' }]}
         subtitle="Record a lead before it becomes a project."
+        breadcrumbs={[{ label: 'Enquiries', to: '/enquiries' }, { label: 'New enquiry' }]}
+        badge="Draft"
+        cancelTo="/enquiries"
+        submitLabel="Save enquiry"
+        submitting={saving}
+        onSubmit={handleSave}
       />
 
       <div className="grid min-w-0 grid-cols-1 items-start gap-5.5 xl:grid-cols-2">
@@ -160,13 +165,6 @@ export default function AddEnquiryPage() {
       </div>
       </div>
 
-      {/* Cancel / Save kept in view at the bottom while scrolling the form. */}
-      <div className="sticky bottom-0 z-20 mt-auto flex shrink-0 justify-end gap-2.5 rounded-2xl border border-line bg-surface/95 p-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
-        <Button to="/enquiries">Cancel</Button>
-        <Button variant="primary" icon={Check} disabled={saving} onClick={handleSave}>
-          {saving ? 'Saving…' : 'Save enquiry'}
-        </Button>
-      </div>
     </div>
   );
 }

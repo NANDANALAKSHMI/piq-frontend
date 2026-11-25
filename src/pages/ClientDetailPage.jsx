@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Briefcase, Mail, MapPin, Phone, Plus, SearchX, Users } from 'lucide-react';
-import PageHeader from '../components/common/PageHeader.jsx';
+import { Briefcase, Building2, Mail, MapPin, Phone, Plus, SearchX, Users } from 'lucide-react';
+import StickyPageHeader from '../components/common/StickyPageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
 import SearchInput from '../components/common/SearchInput.jsx';
@@ -52,16 +52,15 @@ export default function ClientDetailPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader
+      <StickyPageHeader
+        icon={Building2}
         title={client.name}
         subtitle={client.since ? `Client since ${formatDate(client.since)}` : undefined}
         breadcrumbs={[{ label: 'Clients', to: '/clients' }, { label: client.name }]}
         actions={
-          <>
-            <Button to={`/projects/new?client=${client.id}`} variant="primary" icon={Plus}>
-              New project
-            </Button>
-          </>
+          <Button size="sm" to={`/projects/new?client=${client.id}`} variant="primary" icon={Plus}>
+            New project
+          </Button>
         }
       />
 

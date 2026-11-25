@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check } from 'lucide-react';
-import PageHeader from '../components/common/PageHeader.jsx';
-import Button from '../components/common/Button.jsx';
+import { UserPlus } from 'lucide-react';
+import StickyPageHeader from '../components/common/StickyPageHeader.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
 import { Checkbox, SelectField, TextField } from '../components/common/FormFields.jsx';
 import { useToast } from '../components/common/Toast.jsx';
@@ -80,9 +79,16 @@ export default function AddClientPage() {
 
   return (
     <div className="flex min-h-full flex-col gap-5.5">
-      <PageHeader
+      <StickyPageHeader
+        icon={UserPlus}
         title="Add client"
+        subtitle="Company, contact person and location details."
         breadcrumbs={[{ label: 'Clients', to: '/clients' }, { label: 'Add client' }]}
+        badge="Draft"
+        cancelTo="/clients"
+        submitLabel="Save client"
+        submitting={saving}
+        onSubmit={handleSave}
       />
 
       <div className="grid min-w-0 grid-cols-1 items-start gap-5.5 xl:grid-cols-2">
@@ -134,13 +140,6 @@ export default function AddClientPage() {
         </div>
       </div>
 
-      {/* Cancel / Save kept in view at the bottom while scrolling the form. */}
-      <div className="sticky bottom-0 z-20 mt-auto flex shrink-0 justify-end gap-2.5 rounded-2xl border border-line bg-surface/95 p-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
-        <Button to="/clients">Cancel</Button>
-        <Button variant="primary" icon={Check} onClick={handleSave} disabled={saving}>
-          Save client
-        </Button>
-      </div>
     </div>
   );
 }

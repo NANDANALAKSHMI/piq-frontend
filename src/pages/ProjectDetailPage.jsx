@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { CheckCircle2, FileQuestion, MessageSquare, Pencil, RefreshCw, Star } from 'lucide-react';
-import PageHeader from '../components/common/PageHeader.jsx';
+import { CheckCircle2, FileQuestion, FolderOpen, MessageSquare, Pencil, RefreshCw, Star } from 'lucide-react';
+import StickyPageHeader from '../components/common/StickyPageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
 import Tabs from '../components/common/Tabs.jsx';
@@ -115,9 +115,16 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="flex flex-col gap-5.5">
-      <PageHeader
+      <StickyPageHeader
+        icon={FolderOpen}
         title={project.id}
         breadcrumbs={[{ label: 'Projects', to: '/projects' }, { label: project.id }]}
+        titleAddon={
+          <>
+            <StatusBadge value={displayStatus(project)} />
+            <StatusBadge value={project.priority} />
+          </>
+        }
         subtitle={
           <>
             {project.name}
@@ -133,18 +140,15 @@ export default function ProjectDetailPage() {
         }
         actions={
           <>
-            <Button icon={RefreshCw} onClick={() => setModal('status')}>
+            <Button size="sm" icon={RefreshCw} onClick={() => setModal('status')}>
               Update status
             </Button>
-            <Button variant="primary" icon={Pencil} onClick={() => setModal('edit')}>
+            <Button size="sm" variant="primary" icon={Pencil} onClick={() => setModal('edit')}>
               Edit project
             </Button>
           </>
         }
-      >
-        <StatusBadge value={displayStatus(project)} />
-        <StatusBadge value={project.priority} />
-      </PageHeader>
+      />
 
       <Tabs tabs={tabs} active={tab} onChange={setTab} label="Project sections" />
 

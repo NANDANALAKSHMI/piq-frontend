@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Check, Truck } from 'lucide-react';
-import PageHeader from '../components/common/PageHeader.jsx';
+import { Truck } from 'lucide-react';
+import StickyPageHeader from '../components/common/StickyPageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
@@ -120,10 +120,17 @@ function VendorForm({ initial, vendorId }) {
 
   return (
     <div className="flex min-h-full flex-col gap-5.5">
-      <PageHeader
+      <StickyPageHeader
+        icon={Truck}
         title={title}
-        breadcrumbs={[{ label: 'Vendors', to: '/vendors' }, ...(editing ? [{ label: initial.name, to: `/vendors/${vendorId}` }] : []), { label: editing ? 'Edit' : 'Add vendor' }]}
         subtitle={editing ? 'Update this vendor’s details, services and sub-services.' : 'Supplier details, what they provide, and where they are.'}
+        breadcrumbs={[{ label: 'Vendors', to: '/vendors' }, ...(editing ? [{ label: initial.name, to: `/vendors/${vendorId}` }] : []), { label: editing ? 'Edit' : 'Add vendor' }]}
+        badge={editing ? undefined : 'Draft'}
+        cancelTo={cancelTo}
+        submitLabel="Save vendor"
+        submitting={saving}
+        disabled={servicesLoading}
+        onSubmit={handleSave}
       />
 
       <div className="grid min-w-0 grid-cols-1 items-start gap-5.5 xl:grid-cols-2">
@@ -235,13 +242,6 @@ function VendorForm({ initial, vendorId }) {
         </div>
       </Card>
 
-      {/* One Save / Cancel pair, kept in view at the bottom while scrolling the form. */}
-      <div className="sticky bottom-0 z-20 mt-auto flex shrink-0 justify-end gap-2.5 rounded-2xl border border-line bg-surface/95 p-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
-        <Button to={cancelTo}>Cancel</Button>
-        <Button variant="primary" icon={Check} disabled={saving || servicesLoading} onClick={handleSave}>
-          {saving ? 'Saving…' : 'Save vendor'}
-        </Button>
-      </div>
     </div>
   );
 }
