@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Briefcase, Mail, MapPin, Phone, Plus, SearchX, Users } from 'lucide-react';
-import PageHeader from '../components/common/PageHeader.jsx';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Briefcase, Building2, Mail, MapPin, Phone, Plus, SearchX, Users } from 'lucide-react';
+import StickyPageHeader from '../components/common/StickyPageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
 import SearchInput from '../components/common/SearchInput.jsx';
@@ -23,6 +23,7 @@ function Detail({ label, children }) {
 
 export default function ClientDetailPage() {
   const { clientId } = useParams();
+  const navigate = useNavigate();
   const { clients, clientsLoading, projects } = useAppData();
   const lookups = useLookups();
   const [query, setQuery] = useState('');
@@ -51,17 +52,15 @@ export default function ClientDetailPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader
+      <StickyPageHeader
+        icon={Building2}
         title={client.name}
         subtitle={client.since ? `Client since ${formatDate(client.since)}` : undefined}
         breadcrumbs={[{ label: 'Clients', to: '/clients' }, { label: client.name }]}
         actions={
-          <>
-            <Button to="/clients">Back</Button>
-            <Button to={`/projects/new?client=${client.id}`} variant="primary" icon={Plus}>
-              New project
-            </Button>
-          </>
+          <Button size="sm" to={`/projects/new?client=${client.id}`} variant="primary" icon={Plus}>
+            New project
+          </Button>
         }
       />
 
@@ -104,10 +103,11 @@ export default function ClientDetailPage() {
       </Card>
 
       <Card>
-        <CardHeader title={`Projects (${clientJobs.length})`} />
-        <SearchInput value={query} onChange={setQuery} placeholder="Search by project ID, name or status" className="mb-4 max-w-md" />
+        <CardHeader title="Projects" />
+        <SearchInput value={query} onChange={setQuery} placeholder="Search by project ID, name or status" className="mb-4 w-full sm:w-80" />
         <DataTable
           key={`${client.id}-${query}`}
+          onRowClick={(p) => navigate(`/projects/${p.id}`)}
           columns={buildProjectColumns(lookups, ['id', 'projectName', 'services', 'progress', 'status', 'due'])}
           rows={visibleJobs}
           pageSize={8}

@@ -15,11 +15,10 @@ import { useToast } from '../components/common/Toast.jsx';
 import { ConvertModal, FollowUpModal } from '../features/enquiries/EnquiryModals.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
 import useLookups from '../hooks/useLookups.js';
+import useServerSearch from '../hooks/useServerSearch.js';
 import useServices from '../hooks/useServices.js';
 import { ENQUIRY_STATUSES } from '../data/constants.js';
 import { cn, daysUntil, formatDate } from '../utils/formatters.js';
-import SearchNote from '../components/common/SearchNote.jsx';
-import useServerSearch, { all, eq, listVersion, usePageFor } from '../hooks/useServerSearch.js';
 
 const PIPELINE = [
   { status: 'New', helper: 'Not contacted' },
@@ -77,33 +76,19 @@ export default function EnquiriesPage() {
     setSearchParams({ selected: id }, { replace: true });
   };
 
+  const { filter: searchFilter } = useServerSearch('enquiries', query);
+
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return enquiries.filter((e) => {
-      if (q && !`${e.id} ${e.company} ${e.contactName} ${e.phone}`.toLowerCase().includes(q)) return false;
+    const matchesLocally = (e) => `${e.id} ${e.company} ${e.contactName} ${e.phone}`.toLowerCase().includes(q);
+    return searchFilter(enquiries, matchesLocally).filter((e) => {
       if (status === 'open' && ['Converted', 'Lost'].includes(e.status)) return false;
       if (status !== 'open' && status !== 'all' && e.status !== status) return false;
       if (city && e.city !== city) return false;
       return true;
     });
-  }, [enquiries, query, status, city]);
+  }, [enquiries, query, status, city, searchFilter]);
 
-  // Server-side search (Algolia) when it's set up; otherwise the browser filtering above is used.
-  const algoliaFilters = all(
-    status === 'open' && 'NOT status:"Converted" AND NOT status:"Lost"',
-    status !== 'open' && status !== 'all' && eq('status', status),
-    city && eq('city', city),
-  );
-  const [page, setPage] = usePageFor(`${query}|${algoliaFilters}`);
-  const search = useServerSearch({ index: 'enquiries', query: query.trim(), filters: algoliaFilters, page: page - 1, hitsPerPage: 8 }, listVersion(enquiries));
-  const server = search.enabled === true && !search.error;
-  const byId = useMemo(() => new Map(enquiries.map((e) => [e.id, e])), [enquiries]);
-  const visibleRows = server ? search.ids.map((id) => byId.get(id)).filter(Boolean) : rows;
-
-  const counts = Object.fromEntries(ENQUIRY_STATUSES.map((s) => [s, enquiries.filter((e) => e.status === s).length]));
-  const decided = counts.Converted + counts.Lost;
-  const winRate = decided ? Math.round((counts.Converted / decided) * 100) : 0;
-  const dueToday = enquiries.flatMap((e) => e.followUps).filter((f) => !f.done && daysUntil(f.date) <= 0).length;
 
   const columns = [
     { key: 'id', header: 'Enquiry', sortable: true, render: (e) => <CellStack primary={<span className="text-brand-ink">{e.id}</span>} secondary={e.company} /> },
@@ -137,7 +122,7 @@ export default function EnquiriesPage() {
   const closed = selected && ['Converted', 'Lost'].includes(selected.status);
 
   return (
-    <div className="flex flex-col gap-5.5">
+    <div className="flex h-full min-h-160 flex-col gap-5.5">
       <PageHeader
         title="Enquiries"
         subtitle="Capture leads before they become projects. Convert in one click — nothing is re-typed."
@@ -158,7 +143,7 @@ export default function EnquiriesPage() {
         </div>
       )}
 
-      <section className="grid grid-cols-2 gap-4 md:grid-cols-4" aria-label="Pipeline">
+      <section className="grid shrink-0 grid-cols-2 gap-4 md:grid-cols-4" aria-label="Pipeline">
         {PIPELINE.map((stage) => (
           <button
             key={stage.status}
@@ -171,16 +156,15 @@ export default function EnquiriesPage() {
             )}
           >
             <span className="text-[13px] text-muted">{stage.status}</span>
-            <span className="text-[26px] font-bold leading-tight">{counts[stage.status]}</span>
             <StatusBadge value={stage.status} dot={false} className="!font-medium" />
             <span className="sr-only">{stage.helper}</span>
           </button>
         ))}
       </section>
 
-      <Card padded={false}>
-        <div className="flex flex-wrap items-center gap-2.5 p-4">
-          <SearchInput value={query} onChange={setQuery} placeholder="Name, company or phone" className="min-w-52 flex-1" />
+      <Card padded={false} className="flex min-h-0 flex-1 flex-col">
+        <div className="flex shrink-0 flex-wrap items-center gap-2.5 p-4">
+          <SearchInput value={query} onChange={setQuery} placeholder="Name, company or phone" className="w-full sm:w-80" />
           <SelectControl
             aria-label="Status"
             value={status}
@@ -190,23 +174,18 @@ export default function EnquiriesPage() {
           />
           <SelectControl aria-label="City" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City: All" options={cityOptions} className="w-auto" />
         </div>
-        <p className="px-4 pb-2 text-[13px] text-muted">
-          <b className="text-ink">{dueToday}</b> follow-ups due today or overdue · <b className="text-ink">{winRate}%</b> win rate
-        </p>
-        <div className="px-4 pb-2">
-          <SearchNote error={search.error} />
-        </div>
-        <div className="px-2 pb-4 sm:px-4">
+        <div className="flex min-h-0 flex-1 flex-col px-2 pb-4 sm:px-4">
           <DataTable
+            fill
+            onRowClick={(e) => select(e.id)}
             columns={columns}
-            rows={visibleRows}
+            rows={rows}
             pageSize={8}
-            loading={enquiriesLoading || (server && search.loading && !visibleRows.length)}
-            serverPagination={server ? { page, pageCount: Math.max(1, search.nbPages), totalItems: search.nbHits, onPageChange: setPage } : undefined}
+            loading={enquiriesLoading}
             minWidth={820}
             rowClassName={(e) => e.id === selected?.id && 'bg-brand-soft/60 hover:bg-brand-soft/60'}
             emptyState={
-              enquiries.length === 0 && !server ? (
+              enquiries.length === 0 ? (
                 <EmptyState icon={MessageSquareText} title="No enquiries yet" description="Click “New enquiry” to record your first lead." />
               ) : (
                 <EmptyState icon={SearchX} title="No enquiries match" description="Change the filters or add a new enquiry." />

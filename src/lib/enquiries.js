@@ -34,7 +34,6 @@ function toEnquiry(snapshot) {
     assignedTo: data.assignedTo ?? null,
     notes: data.notes ?? '',
     followUps: Array.isArray(data.followUps) ? data.followUps : [],
-    updatedAt: typeof data.updatedAt?.toDate === 'function' ? data.updatedAt.toDate() : null,
   };
 }
 
@@ -58,7 +57,7 @@ export async function createEnquiry(draft, existingIds, createdBy) {
     const ref = enquiryRef(id);
     const created = await runTransaction(db, async (transaction) => {
       if ((await transaction.get(ref)).exists()) return false;
-      transaction.set(ref, { ...draft, code: id, createdBy, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+      transaction.set(ref, { ...draft, createdBy, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
       return true;
     });
     if (created) return id;

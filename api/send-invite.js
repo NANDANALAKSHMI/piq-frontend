@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 import { HttpError } from './_lib/firebaseToken.js';
-import { clean, env, requireTeamMember } from './_lib/teamAccess.js';
+import { clean, env, readBody, requireAdmin } from './_lib/auth.js';
 import { buildInviteEmail } from './_lib/inviteEmail.js';
 
 /**
@@ -17,19 +17,6 @@ import { buildInviteEmail } from './_lib/inviteEmail.js';
  */
 
 const EMAIL_PATTERN = /^[^\s@/]+@[^\s@/]+\.[^\s@/]+$/;
-
-function readBody(req) {
-  try {
-    const { body } = req;
-    if (typeof body === 'string') return body ? JSON.parse(body) : {};
-    return body ?? {};
-  } catch {
-    throw new HttpError(400, 'The request body must be JSON.');
-  }
-}
-
-/** Only admins may send invitations: the VITE_ADMIN_EMAILS owners and everyone on the team. */
-const requireAdmin = (req) => requireTeamMember(req, 'Only Box Theory admins can send invitations.');
 
 /** Site the invitation link points to: APP_URL, else the site the admin is using. */
 function appUrl(req) {

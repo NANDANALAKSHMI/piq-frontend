@@ -6,6 +6,8 @@ import { cn } from '../../utils/formatters.js';
 
 /** Every body row is this tall, so a paged table keeps the same height and the pagination bar never moves. */
 const ROW_HEIGHT = 56;
+/** Sticky header row height; the scroll box is sized to header + pageSize rows. */
+const HEADER_HEIGHT = 42;
 
 function compare(a, b) {
   if (a === b) return 0;
@@ -18,10 +20,6 @@ function compare(a, b) {
 /**
  * Generic table with sortable headers, optional pagination, loading skeleton and empty state.
  * columns: [{ key, header, render?(row), sortValue?(row), sortable?, className?, headerClassName? }]
- *
- * `serverPagination` = { page (1-based), pageCount, totalItems, onPageChange } when the rows are
- * already one page of server results (Algolia): the table shows them as-is and the pager asks the
- * server for other pages. Sorting then reorders the current page only.
  */
 export default function DataTable({
   columns,
@@ -34,7 +32,8 @@ export default function DataTable({
   initialSort,
   rowClassName,
   className,
-  serverPagination,
+  fill = false,
+  onRowClick,
 }) {
   const [sort, setSort] = useState(initialSort ?? null);
 
@@ -48,7 +47,7 @@ export default function DataTable({
   }, [rows, sort, columns]);
 
   const pagination = usePagination(sortedRows, pageSize ?? Math.max(sortedRows.length, 1));
-  const visibleRows = pageSize && !serverPagination ? pagination.pageItems : sortedRows;
+  const visibleRows = pageSize ? pagination.pageItems : sortedRows;
 
   const toggleSort = (key) => {
     setSort((current) => {
@@ -59,8 +58,11 @@ export default function DataTable({
   };
 
   return (
-    <div className={className}>
-      <div className="scrollbar-thin relative overflow-x-auto">
+    <div className={cn(fill && 'flex min-h-0 flex-1 flex-col', className)}>
+      <div
+        className={cn('scrollbar-thin relative overflow-auto', fill && 'min-h-0 flex-1')}
+        style={!fill && pageSize && !loading && rows.length > 0 ? { height: ROW_HEIGHT * pageSize + HEADER_HEIGHT } : undefined}
+      >
         <table className="w-full border-collapse" style={{ minWidth }}>
           <thead>
             <tr>
@@ -73,7 +75,7 @@ export default function DataTable({
                     scope="col"
                     aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : undefined}
                     className={cn(
-                      'whitespace-nowrap border-b border-line bg-slate-50 px-3 py-2.5 text-left text-xs font-semibold text-muted first:rounded-l-lg last:rounded-r-lg',
+                      'sticky top-0 z-10 whitespace-nowrap border-b border-line bg-subtle px-3 py-2.5 text-left text-xs font-semibold text-muted first:rounded-l-lg last:rounded-r-lg',
                       column.headerClassName,
                     )}
                   >
@@ -103,7 +105,20 @@ export default function DataTable({
               ))}
             {!loading &&
               visibleRows.map((row) => (
-                <tr key={rowKey(row)} style={{ height: ROW_HEIGHT }} className={cn('transition-colors hover:bg-slate-50/70', rowClassName?.(row))}>
+                <tr
+                  key={rowKey(row)}
+                  style={{ height: ROW_HEIGHT }}
+                  onClick={
+                    onRowClick
+                      ? (event) => {
+                          // Ignore clicks on buttons/links inside the row; they do their own thing.
+                          if (event.target.closest('a, button, input, select, textarea, label')) return;
+                          onRowClick(row);
+                        }
+                      : undefined
+                  }
+                  className={cn('transition-colors hover:bg-row-hover', onRowClick && 'cursor-pointer', rowClassName?.(row))}
+                >
                   {columns.map((column) => (
                     <td key={column.key} className={cn('whitespace-nowrap px-3 py-2 align-middle', column.className)}>
                       {column.render ? column.render(row) : row[column.key]}
@@ -127,19 +142,9 @@ export default function DataTable({
           {emptyState}
         </div>
       )}
-      {!loading && serverPagination && serverPagination.totalItems > 0 && (
+      {!loading && pageSize && rows.length > 0 && (
         <Pagination
-          className="mt-4"
-          page={serverPagination.page}
-          pageCount={serverPagination.pageCount}
-          pageSize={pageSize}
-          totalItems={serverPagination.totalItems}
-          onPageChange={serverPagination.onPageChange}
-        />
-      )}
-      {!loading && pageSize && !serverPagination && rows.length > 0 && (
-        <Pagination
-          className="mt-4"
+          className="mt-4 shrink-0"
           page={pagination.page}
           pageCount={pagination.pageCount}
           pageSize={pagination.pageSize}

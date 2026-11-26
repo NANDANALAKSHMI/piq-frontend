@@ -23,11 +23,15 @@
   --color-brand-soft-hover: #efe4cc;
   --color-brand-deep: #5c4520;
 
-  --color-canvas: #f6f4f1;
-  --color-line: #e8e2da;
+  --color-canvas: #ece6dc;
+  --color-surface: #faf7f1;
+  --color-line: #dcd2c3;
   --color-ink: #2b211d;
   --color-muted: #6e625b;
   --color-surface: #ffffff;
+  --color-subtle: #f1ece3; /* table headers, disabled fields, toolbars */
+  --color-row-hover: #f4efe6;
+  --color-segment: #e7dfd2; /* segmented-control track */
 }
 
 /*
@@ -53,6 +57,9 @@
 
   --color-canvas: #171210;
   --color-surface: #211a17;
+  --color-subtle: #2a221d;
+  --color-row-hover: #2c241f;
+  --color-segment: #2f2621;
   --color-line: #3a302a;
   --color-ink: #f1ebe5;
   --color-muted: #a99b90;

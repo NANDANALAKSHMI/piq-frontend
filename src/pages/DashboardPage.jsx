@@ -192,6 +192,7 @@ export default function DashboardPage() {
           <DataTable
             columns={buildProjectColumns(lookups, ['id', 'name', 'progress', 'status', 'due'])}
             rows={recentProjects}
+            onRowClick={(p) => navigate(`/projects/${p.id}`)}
             loading={projectsLoading}
             emptyState={<p className="text-[13px] text-muted">No projects yet.</p>}
             minWidth={640}

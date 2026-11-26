@@ -1,10 +1,10 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { teamMembers as initialMembers } from '../data/teamData.js';
 import { notifications as initialNotifications } from '../data/activityData.js';
 import { daysFromToday } from '../utils/formatters.js';
-import { SEARCH_VERSION, dayTs, projectSearchFields } from '../utils/searchFields.js';
 import { useAuth } from './AuthContext.jsx';
 import useFirestoreList, { firestoreAction } from '../hooks/useFirestoreList.js';
+import useSearchIndexSync from '../hooks/useSearchIndexSync.js';
 import { isFirebaseConfigured } from '../lib/firebase.js';
 import { ADMIN_EMAILS, describeFirestoreError, memberId, normaliseEmail } from '../lib/memberUtils.js';
 
@@ -199,10 +199,19 @@ export function AppDataProvider({ children }) {
     return [...members, ...localMembers.filter((m) => !ids.has(m.id))];
   }, [realTeam, members, localMembers]);
 
+  /** Keeps the Algolia search index in step with these lists (does nothing when Algolia isn't set up). */
+  useSearchIndexSync({
+    enabled: realTeam,
+    projects: { rows: projects, ready: !projectsLoading && !projectsError },
+    clients: { rows: clients, ready: clientsSynced && !clientsError },
+    enquiries: { rows: enquiries, ready: enquiriesSynced && !enquiriesError },
+    vendors: { rows: vendors, ready: !vendorsLoading && !vendorsError },
+    members: { rows: members, ready: teamSynced && !teamError },
+  });
+
   /* ---------- projects (Firestore) ---------- */
 
   const actorName = user?.name ?? 'Someone';
-  const backfilled = useRef(new Set());
   const entry = useCallback((type, text) => logEntry(type, text, actorId, actorName), [actorId, actorName]);
   const findProject = useCallback(
     (projectId) => {
@@ -224,35 +233,16 @@ export function AppDataProvider({ children }) {
           createdFrom: null,
           completedOn: null,
           ...draft,
-          ...projectSearchFields(draft, clients),
           activity: [entry('created', draft.createdFrom ? `Created from enquiry ${draft.createdFrom}` : 'Project created')],
         },
         projects.map((p) => p.id),
         user?.email ?? '',
       ),
-    [clients, entry, projects, user],
+    [entry, projects, user],
   );
-
-  /**
-   * Older project documents (or ones whose search fields are out of date) get their Algolia search
-   * fields filled in once per session, so filters by city / service / due date find them too.
-   */
-  useEffect(() => {
-    if (!projects.length || !clients.length) return;
-    projects
-      .filter((p) => p.searchVersion !== SEARCH_VERSION && !backfilled.current.has(p.id))
-      .forEach((p) => {
-        backfilled.current.add(p.id);
-        saveProject(p.id, projectSearchFields(p, clients)).catch(() => {});
-      });
-  }, [projects, clients]);
 
   /** Saves edited project details (name, dates, priority, description…). */
-  const updateProject = useCallback(
-    (projectId, patch) =>
-      saveProject(projectId, 'dueDate' in patch ? { ...patch, dueTs: dayTs(patch.dueDate) } : patch, { entry: entry('edit', 'Project details updated') }),
-    [entry],
-  );
+  const updateProject = useCallback((projectId, patch) => saveProject(projectId, patch, { entry: entry('edit', 'Project details updated') }), [entry]);
 
   const setProjectStatus = useCallback(
     (projectId, status) =>

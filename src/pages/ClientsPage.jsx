@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Briefcase, Eye, Plus, SearchX, Users } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
@@ -7,9 +8,8 @@ import SearchInput from '../components/common/SearchInput.jsx';
 import Avatar from '../components/common/Avatar.jsx';
 import DataTable from '../components/common/DataTable.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
+import useServerSearch from '../hooks/useServerSearch.js';
 import { useAppData } from '../context/AppDataContext.jsx';
-import SearchNote from '../components/common/SearchNote.jsx';
-import useServerSearch, { listVersion, usePageFor } from '../hooks/useServerSearch.js';
 
 const place = (loc) => [loc?.city, loc?.district, loc?.state].filter(Boolean).join(', ');
 
@@ -21,19 +21,15 @@ function searchText(client) {
 
 export default function ClientsPage() {
   const { clients, clientsLoading, clientsError } = useAppData();
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
+
+  const { filter: searchFilter } = useServerSearch('clients', query);
 
   const visibleClients = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return q ? clients.filter((c) => searchText(c).includes(q)) : clients;
-  }, [clients, query]);
-
-  // Server-side search (Algolia) when it's set up; otherwise the browser filtering above is used.
-  const [page, setPage] = usePageFor(query);
-  const search = useServerSearch({ index: 'clients', query: query.trim(), page: page - 1, hitsPerPage: 8 }, listVersion(clients));
-  const server = search.enabled === true && !search.error;
-  const byId = useMemo(() => new Map(clients.map((c) => [c.id, c])), [clients]);
-  const rows = server ? search.ids.map((id) => byId.get(id)).filter(Boolean) : visibleClients;
+    return searchFilter(clients, (c) => searchText(c).includes(q));
+  }, [clients, query, searchFilter]);
 
 
   const columns = [
@@ -73,10 +69,10 @@ export default function ClientsPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex h-full min-h-[34rem] flex-col gap-5">
       <PageHeader
         title="Clients"
-        subtitle={clientsLoading ? 'Loading…' : `${clients.length} client${clients.length === 1 ? '' : 's'}`}
+        subtitle="Everyone you work for, with their locations and projects."
         actions={
           <>
             <Button to="/projects/new" icon={Briefcase}>
@@ -95,17 +91,15 @@ export default function ClientsPage() {
         </p>
       )}
 
-      <Card>
-        <SearchInput value={query} onChange={setQuery} placeholder="Search by name, phone, city, district or state" className="mb-2 max-w-md" />
-        <div className="mb-3">
-          <SearchNote error={search.error} />
-        </div>
+      <Card className="flex min-h-0 flex-1 flex-col">
+        <SearchInput value={query} onChange={setQuery} placeholder="Search by name, phone, city, district or state" className="mb-4 w-full shrink-0 sm:w-80" />
         <DataTable
+          fill
+          onRowClick={(c) => navigate(`/clients/${c.id}`)}
           columns={columns}
-          rows={rows}
-          loading={clientsLoading || (server && search.loading && !rows.length)}
+          rows={visibleClients}
+          loading={clientsLoading}
           pageSize={8}
-          serverPagination={server ? { page, pageCount: Math.max(1, search.nbPages), totalItems: search.nbHits, onPageChange: setPage } : undefined}
           minWidth={640}
           emptyState={
             clients.length ? (

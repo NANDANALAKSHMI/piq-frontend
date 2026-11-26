@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Mail, MapPin, Pencil, Phone, Trash2, Truck } from 'lucide-react';
-import PageHeader from '../components/common/PageHeader.jsx';
+import { Mail, MapPin, Pencil, Phone, Trash2, Truck } from 'lucide-react';
+import StickyPageHeader from '../components/common/StickyPageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
 import Modal from '../components/common/Modal.jsx';
@@ -90,26 +90,23 @@ export default function VendorDetailPage() {
 
   return (
     <div className="flex flex-col gap-5.5">
-      <PageHeader
+      <StickyPageHeader
+        icon={Truck}
         title={vendor.name}
         breadcrumbs={[{ label: 'Vendors', to: '/vendors' }, { label: vendor.name }]}
         subtitle={place || 'No location saved'}
+        titleAddon={<StatusBadge value={vendor.status} />}
         actions={
           <>
-            <Button to="/vendors" icon={ArrowLeft}>
-              Back to vendors
-            </Button>
-            <Button variant="danger" icon={Trash2} onClick={() => setDeleteOpen(true)}>
+            <Button size="sm" variant="danger" icon={Trash2} onClick={() => setDeleteOpen(true)}>
               Delete
             </Button>
-            <Button to={`/vendors/${vendor.id}/edit`} variant="primary" icon={Pencil}>
+            <Button size="sm" to={`/vendors/${vendor.id}/edit`} variant="primary" icon={Pencil}>
               Edit vendor
             </Button>
           </>
         }
-      >
-        <StatusBadge value={vendor.status} />
-      </PageHeader>
+      />
 
       <div className="grid grid-cols-1 gap-5.5 lg:grid-cols-2">
         <Card>
@@ -151,7 +148,7 @@ export default function VendorDetailPage() {
       </div>
 
       <Card>
-        <CardHeader title={`Services · ${categoryNames.length}`} />
+        <CardHeader title="Services" />
         {categoryNames.length ? (
           <div className="flex flex-wrap gap-2">
             {categoryNames.map((name) => (

@@ -42,7 +42,6 @@ function toClient(snapshot) {
     notes: data.notes ?? '',
     since: data.since ?? '',
     locations: Array.isArray(data.locations) ? data.locations.filter((l) => l?.id).map(toLocation) : [],
-    updatedAt: typeof data.updatedAt?.toDate === 'function' ? data.updatedAt.toDate() : null,
   };
 }
 

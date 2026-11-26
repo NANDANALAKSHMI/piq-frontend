@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Briefcase, Download, Plus, SearchX, TriangleAlert, X } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
@@ -12,13 +12,11 @@ import EmptyState from '../components/common/EmptyState.jsx';
 import { useToast } from '../components/common/Toast.jsx';
 import { buildProjectColumns } from '../features/projects/projectColumns.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
+import useServerSearch from '../hooks/useServerSearch.js';
 import useLookups from '../hooks/useLookups.js';
 import useServices from '../hooks/useServices.js';
 import { displayStatus, isOverdue, projectProgress, serviceNames } from '../utils/projects.js';
-import { daysFromToday, daysUntil } from '../utils/formatters.js';
-import { dayTs } from '../utils/searchFields.js';
-import SearchNote from '../components/common/SearchNote.jsx';
-import useServerSearch, { all, any, eq, listVersion, usePageFor } from '../hooks/useServerSearch.js';
+import { daysUntil } from '../utils/formatters.js';
 import { exportCsv } from '../utils/exportCsv.js';
 
 const STATUS_TABS = [
@@ -39,7 +37,6 @@ const DUE_FILTERS = [
 ];
 
 const EMPTY_FILTERS = { city: '', service: '', staff: '', due: '' };
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 export default function ProjectsPage() {
   const { projects, projectsLoading, projectsError, members } = useAppData();
@@ -47,6 +44,7 @@ export default function ProjectsPage() {
   const lookups = useLookups();
   const { showToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState(EMPTY_FILTERS);
 
@@ -69,13 +67,13 @@ export default function ProjectsPage() {
     [projects, lookups],
   );
 
+  const { filter: searchFilter } = useServerSearch('projects', query);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return projects.filter((project) => {
-      if (q) {
-        const haystack = `${project.id} ${project.name} ${lookups.getClient(project.clientId)?.name} ${lookups.projectCity(project)}`.toLowerCase();
-        if (!haystack.includes(q)) return false;
-      }
+    const matchesLocally = (project) =>
+      `${project.id} ${project.name} ${lookups.getClient(project.clientId)?.name} ${lookups.projectCity(project)}`.toLowerCase().includes(q);
+    return searchFilter(projects, matchesLocally).filter((project) => {
       if (filters.city && lookups.projectCity(project) !== filters.city) return false;
       if (filters.service && !project.services.some((s) => s.serviceId === filters.service)) return false;
       if (filters.staff && !project.teamIds.includes(filters.staff)) return false;
@@ -87,50 +85,10 @@ export default function ProjectsPage() {
       }
       return true;
     });
-  }, [projects, query, filters, lookups]);
+  }, [projects, query, filters, lookups, searchFilter]);
 
-  const localTabRows = filtered.filter(STATUS_TABS.find((t) => t.id === activeTab).match);
-
-  // Server-side search (Algolia) when it's set up; otherwise the browser filtering above is used.
-  // One request returns this page of the active tab, the per-status counts and the overdue count.
-  const today = dayTs(daysFromToday(0));
-  const baseFilters = all(
-    filters.city && eq('city', filters.city),
-    filters.service && eq('serviceIds', filters.service),
-    filters.staff && eq('teamIds', filters.staff),
-    filters.due === 'week' && `dueTs:${today} TO ${today + 7 * DAY_MS}`,
-    filters.due === 'month' && `dueTs:${today} TO ${today + 30 * DAY_MS}`,
-    filters.due === 'past' && `dueTs < ${today}`,
-  );
-  const overdueFilter = all(any(eq('status', 'In progress'), eq('status', 'On hold')), `dueTs < ${today}`);
-  const tabFilter = activeTab === 'all' ? '' : activeTab === 'Overdue' ? overdueFilter : eq('status', activeTab);
-  const q = query.trim();
-  const [page, setPage] = usePageFor(`${q}|${baseFilters}|${activeTab}`);
-  const search = useServerSearch(
-    {
-      index: 'projects',
-      query: q,
-      filters: all(baseFilters, tabFilter),
-      page: page - 1,
-      hitsPerPage: 10,
-      extra: [
-        { query: q, filters: baseFilters, hitsPerPage: 0, facets: ['status'] },
-        { query: q, filters: all(baseFilters, overdueFilter), hitsPerPage: 0 },
-      ],
-    },
-    listVersion(projects),
-  );
-  const server = search.enabled === true && !search.error;
-  const byId = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects]);
-  const tabRows = server ? search.ids.map((id) => byId.get(id)).filter(Boolean) : localTabRows;
-
-  const serverCount = (tab) => {
-    const [counts, overdue] = search.extra;
-    if (tab.id === 'all') return counts?.nbHits ?? 0;
-    if (tab.id === 'Overdue') return overdue?.nbHits ?? 0;
-    return counts?.facets?.status?.[tab.id] ?? 0;
-  };
-  const tabs = STATUS_TABS.map((tab) => ({ ...tab, count: server ? serverCount(tab) : filtered.filter(tab.match).length }));
+  const tabs = STATUS_TABS.map((tab) => ({ ...tab, count: filtered.filter(tab.match).length }));
+  const tabRows = filtered.filter(STATUS_TABS.find((t) => t.id === activeTab).match);
 
   const activeFilterChips = [
     filters.city && { key: 'city', label: `City: ${filters.city}` },
@@ -159,19 +117,19 @@ export default function ProjectsPage() {
         { header: 'Start', value: (p) => p.startDate },
         { header: 'Due', value: (p) => p.dueDate },
       ],
-      localTabRows,
+      tabRows,
     );
-    showToast(`Exported ${localTabRows.length} projects to CSV.`);
+    showToast(`Exported ${tabRows.length} projects to CSV.`);
   };
 
   return (
-    <div className="flex flex-col gap-5.5">
+    <div className="flex h-full min-h-[34rem] flex-col gap-5.5">
       <PageHeader
         title="Projects"
         subtitle="Every project in one searchable list — from onboarding to delivery."
         actions={
           <>
-            <Button icon={Download} onClick={handleExport} disabled={!localTabRows.length}>
+            <Button icon={Download} onClick={handleExport} disabled={!tabRows.length}>
               Export
             </Button>
             <Button to="/projects/new" variant="primary" icon={Plus}>
@@ -191,7 +149,7 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      <Card padded={false}>
+      <Card padded={false} className="flex min-h-0 flex-1 flex-col">
         <Tabs tabs={tabs} active={activeTab} onChange={setTab} label="Project status" className="px-4" />
 
         <div className="flex flex-col gap-3.5 border-b border-line px-5 py-4.5">
@@ -202,7 +160,6 @@ export default function ProjectsPage() {
             <SelectControl aria-label="Assigned staff" value={filters.staff} onChange={(e) => setFilter('staff', e.target.value)} placeholder="Staff: Anyone" options={members.map((m) => ({ value: m.id, label: m.name }))} />
             <SelectControl aria-label="Due date" value={filters.due} onChange={(e) => setFilter('due', e.target.value)} options={DUE_FILTERS} />
           </div>
-          <SearchNote error={search.error} />
           {(activeFilterChips.length > 0 || query) && (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[13px] text-muted">Active filters:</span>
@@ -224,18 +181,19 @@ export default function ProjectsPage() {
           )}
         </div>
 
-        <div className="px-2 pb-4 pt-1 sm:px-4">
+        <div className="flex min-h-0 flex-1 flex-col px-2 pb-4 pt-1 sm:px-4">
           <DataTable
+            fill
+            onRowClick={(p) => navigate(`/projects/${p.id}`)}
             key={activeTab}
             columns={buildProjectColumns(lookups, ['id', 'name', 'city', 'services', 'progress', 'team', 'priority', 'status', 'due', 'view'])}
             rows={tabRows}
             pageSize={10}
-            loading={projectsLoading || (server && search.loading && !tabRows.length)}
-            serverPagination={server ? { page, pageCount: Math.max(1, search.nbPages), totalItems: search.nbHits, onPageChange: setPage } : undefined}
+            loading={projectsLoading}
             minWidth={1260}
             initialSort={initialSort}
             emptyState={
-              projects.length === 0 && !server ? (
+              projects.length === 0 ? (
                 <EmptyState icon={Briefcase} title="No projects yet" description="Click “New project” to create the first one." />
               ) : (
                 <EmptyState

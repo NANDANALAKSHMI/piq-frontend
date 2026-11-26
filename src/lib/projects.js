@@ -51,7 +51,6 @@ function toProject(snapshot) {
     // Comments oldest first (a conversation); activity newest first (a log).
     comments: list(data.comments).slice().sort((a, b) => -byTime(a, b)),
     activity: list(data.activity).slice().sort(byTime),
-    searchVersion: data.searchVersion ?? 0,
     createdAt: toDate(data.createdAt),
     updatedAt: toDate(data.updatedAt),
   };
@@ -77,7 +76,7 @@ export async function createProject(draft, existingIds, createdBy) {
     const ref = projectRef(id);
     const created = await runTransaction(db, async (transaction) => {
       if ((await transaction.get(ref)).exists()) return false;
-      transaction.set(ref, { ...draft, code: id, createdBy, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+      transaction.set(ref, { ...draft, createdBy, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
       return true;
     });
     if (created) return id;

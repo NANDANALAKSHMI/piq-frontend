@@ -296,9 +296,6 @@ export default function ServicesPage() {
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2.5">
                           <span className="truncate font-semibold">{service.name}</span>
-                          <span className="shrink-0 text-[12.5px] text-muted">
-                            {plural(service.subServices.length, 'sub-service')} · {plural(service.questions.length, 'question')}
-                          </span>
                           {!service.active && <Tag>Inactive</Tag>}
                         </span>
                         {service.description && <span className="block truncate text-[12.5px] text-muted">{service.description}</span>}

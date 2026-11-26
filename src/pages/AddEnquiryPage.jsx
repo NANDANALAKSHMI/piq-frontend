@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Check } from 'lucide-react';
-import PageHeader from '../components/common/PageHeader.jsx';
-import Button from '../components/common/Button.jsx';
+import { MessageSquarePlus } from 'lucide-react';
+import StickyPageHeader from '../components/common/StickyPageHeader.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
 import { Chip } from '../components/common/Tabs.jsx';
 import { SelectField, TextArea, TextField } from '../components/common/FormFields.jsx';
@@ -86,21 +85,21 @@ export default function AddEnquiryPage() {
   };
 
   return (
-    <div className="flex flex-col gap-5.5">
-      <PageHeader
+    <div className="flex min-h-full flex-col gap-5.5">
+      <StickyPageHeader
+        icon={MessageSquarePlus}
         title="New enquiry"
-        breadcrumbs={[{ label: 'Enquiries', to: '/enquiries' }, { label: 'New enquiry' }]}
         subtitle="Record a lead before it becomes a project."
-        actions={
-          <>
-            <Button to="/enquiries">Cancel</Button>
-            <Button variant="primary" icon={Check} disabled={saving} onClick={handleSave}>
-              {saving ? 'Saving…' : 'Save enquiry'}
-            </Button>
-          </>
-        }
+        breadcrumbs={[{ label: 'Enquiries', to: '/enquiries' }, { label: 'New enquiry' }]}
+        badge="Draft"
+        cancelTo="/enquiries"
+        submitLabel="Save enquiry"
+        submitting={saving}
+        onSubmit={handleSave}
       />
 
+      <div className="grid min-w-0 grid-cols-1 items-start gap-5.5 xl:grid-cols-2">
+      <div className="flex min-w-0 flex-col gap-5.5">
       <Card>
         <CardHeader title="Customer" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -129,6 +128,9 @@ export default function AddEnquiryPage() {
         </div>
       </Card>
 
+      </div>
+
+      <div className="flex min-w-0 flex-col gap-5.5">
       <Card>
         <CardHeader title="Requirement" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -160,12 +162,9 @@ export default function AddEnquiryPage() {
         </div>
       </Card>
 
-      <div className="flex justify-end gap-2.5">
-        <Button to="/enquiries">Cancel</Button>
-        <Button variant="primary" icon={Check} disabled={saving} onClick={handleSave}>
-          {saving ? 'Saving…' : 'Save enquiry'}
-        </Button>
       </div>
+      </div>
+
     </div>
   );
 }

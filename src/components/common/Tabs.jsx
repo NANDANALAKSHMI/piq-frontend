@@ -1,6 +1,6 @@
 import { cn } from '../../utils/formatters.js';
 
-/** Underlined tabs. `tabs` = [{ id, label, count? }]. */
+/** Underlined tabs. `tabs` = [{ id, label }]. */
 export default function Tabs({ tabs, active, onChange, className, label = 'Sections' }) {
   return (
     <div role="tablist" aria-label={label} className={cn('scrollbar-thin flex gap-1 overflow-x-auto border-b border-line', className)}>
@@ -19,16 +19,6 @@ export default function Tabs({ tabs, active, onChange, className, label = 'Secti
             )}
           >
             {tab.label}
-            {tab.count !== undefined && (
-              <span
-                className={cn(
-                  'rounded-full px-2 py-0.5 text-[11px] font-semibold',
-                  selected ? 'bg-brand-soft text-brand-ink' : 'bg-slate-100 text-slate-600',
-                )}
-              >
-                {tab.count}
-              </span>
-            )}
           </button>
         );
       })}

@@ -1,6 +1,6 @@
 import { HttpError, verifyFirebaseIdToken } from './firebaseToken.js';
 
-/** Trimmed environment variable, or `fallback` when it's missing/empty. */
+/** Reads a server environment variable (trimmed), falling back to `fallback` when empty. */
 export function env(name, fallback = '') {
   const value = process.env[name]?.trim();
   return value ? value : fallback;
@@ -13,11 +13,12 @@ const emailList = (value) =>
     .filter(Boolean);
 
 /** Single-line, length-limited text (keeps header injection and huge payloads out). */
-export const clean = (value, max = 80) =>
-  String(value ?? '')
+export function clean(value, max = 80) {
+  return String(value ?? '')
     .replace(/[\r\n\t]+/g, ' ')
     .trim()
     .slice(0, max);
+}
 
 /**
  * Is this person on the team (invited from the Team page and not switched off)? Reads their own
@@ -30,20 +31,19 @@ async function isTeamMember({ projectId, email, idToken }) {
   try {
     response = await fetch(url, { headers: { Authorization: `Bearer ${idToken}` }, signal: AbortSignal.timeout(8000) });
   } catch {
-    throw new HttpError(502, 'Could not check your access. Please try again.');
+    throw new HttpError(502, 'Could not check your admin access. Please try again.');
   }
   if (response.status === 404 || response.status === 403) return false;
-  if (!response.ok) throw new HttpError(502, 'Could not check your access. Please try again.');
+  if (!response.ok) throw new HttpError(502, 'Could not check your admin access. Please try again.');
   const { fields = {} } = await response.json();
   return ['Invited', 'Active'].includes(fields.status?.stringValue);
 }
 
 /**
- * Lets the request through only for signed-in Box Theory team members: the VITE_ADMIN_EMAILS
- * owners and everyone on the team (checked in Firestore). There is one role, so this is also the
- * admin check. Returns { email, name } or throws an HttpError (401 / 403 / 500 / 502).
+ * Only signed-in Box Theory people may call an API route: the VITE_ADMIN_EMAILS owners and everyone
+ * on the team. `action` finishes the sentence "Only Box Theory admins can …" in the 403 message.
  */
-export async function requireTeamMember(req, deniedMessage = 'Only Box Theory team members can do this.') {
+export async function requireAdmin(req, action = 'send invitations') {
   const projectId = env('FIREBASE_PROJECT_ID', env('VITE_FIREBASE_PROJECT_ID'));
   const admins = emailList(env('ADMIN_EMAILS', env('VITE_ADMIN_EMAILS')));
   if (!projectId || !admins.length) {
@@ -53,8 +53,19 @@ export async function requireTeamMember(req, deniedMessage = 'Only Box Theory te
   const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
   const claims = await verifyFirebaseIdToken(token, { projectId });
   const email = String(claims.email ?? '').toLowerCase();
-  const allowed =
+  const isAdmin =
     claims.email_verified === true && (admins.includes(email) || (await isTeamMember({ projectId, email, idToken: token })));
-  if (!allowed) throw new HttpError(403, deniedMessage);
+  if (!isAdmin) throw new HttpError(403, `Only Box Theory admins can ${action}.`);
   return { email, name: clean(claims.name) };
+}
+
+/** Parses a JSON request body (Vercel gives an object or a string). */
+export function readBody(req) {
+  try {
+    const { body } = req;
+    if (typeof body === 'string') return body ? JSON.parse(body) : {};
+    return body ?? {};
+  } catch {
+    throw new HttpError(400, 'The request body must be JSON.');
+  }
 }
