@@ -2,7 +2,7 @@ import { useId } from 'react';
 import { cn } from '../../utils/formatters.js';
 
 const CONTROL =
-  'min-w-0 rounded-[10px] border border-line bg-white px-3 text-sm text-ink outline-none transition-colors placeholder:text-slate-400 focus:border-brand disabled:bg-slate-50';
+  'min-w-0 rounded-[10px] border border-line bg-surface px-3 text-sm text-ink outline-none transition-colors placeholder:text-slate-400 focus:border-brand disabled:bg-slate-50';
 
 function FieldShell({ id, label, hint, error, required, className, children }) {
   return (

@@ -29,7 +29,7 @@ export default function Pagination({ page, pageCount, totalItems, pageSize, onPa
           type="button"
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
-          className="flex h-9 items-center gap-1 rounded-[10px] border border-line bg-white px-2.5 text-[13px] font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-9 items-center gap-1 rounded-[10px] border border-line bg-surface px-2.5 text-[13px] font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronLeft className="size-4" aria-hidden="true" />
           <span className="hidden sm:inline">Previous</span>
@@ -47,7 +47,7 @@ export default function Pagination({ page, pageCount, totalItems, pageSize, onPa
               aria-current={item === page ? 'page' : undefined}
               className={cn(
                 'h-9 min-w-9 rounded-[10px] border px-2 text-[13px] font-semibold transition-colors',
-                item === page ? 'border-navy bg-navy text-white' : 'border-line bg-white hover:bg-slate-50',
+                item === page ? 'border-navy bg-navy text-white' : 'border-line bg-surface hover:bg-slate-50',
               )}
             >
               {item}
@@ -58,7 +58,7 @@ export default function Pagination({ page, pageCount, totalItems, pageSize, onPa
           type="button"
           onClick={() => onPageChange(page + 1)}
           disabled={page === pageCount}
-          className="flex h-9 items-center gap-1 rounded-[10px] border border-line bg-white px-2.5 text-[13px] font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-9 items-center gap-1 rounded-[10px] border border-line bg-surface px-2.5 text-[13px] font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <span className="hidden sm:inline">Next</span>
           <ChevronRight className="size-4" aria-hidden="true" />

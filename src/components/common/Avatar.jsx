@@ -15,7 +15,7 @@ export default function Avatar({ name, color = 'bg-navy-3', size = 'md', ring = 
         'grid shrink-0 place-items-center rounded-full font-semibold text-white',
         SIZES[size],
         color,
-        ring && 'ring-2 ring-white',
+        ring && 'ring-2 ring-surface',
         className,
       )}
     >
@@ -35,7 +35,7 @@ export function AvatarStack({ people, max = 3, size = 'xs' }) {
         <Avatar key={person.id} name={person.name} color={person.color} size={size} ring className={index > 0 ? '-ml-2' : ''} />
       ))}
       {extra > 0 && (
-        <span className={cn('-ml-2 grid place-items-center rounded-full bg-slate-100 font-semibold text-slate-600 ring-2 ring-white', SIZES[size])}>
+        <span className={cn('-ml-2 grid place-items-center rounded-full bg-slate-100 font-semibold text-slate-600 ring-2 ring-surface', SIZES[size])}>
           +{extra}
         </span>
       )}

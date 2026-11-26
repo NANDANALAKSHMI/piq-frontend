@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { LogOut, X } from 'lucide-react';
 import Logo from './Logo.jsx';
 import Avatar from '../common/Avatar.jsx';
+import ThemeToggle from '../common/ThemeToggle.jsx';
 import { NAV_SECTIONS } from './navConfig.js';
 import { cn } from '../../utils/formatters.js';
 
@@ -56,10 +57,11 @@ function SidebarContent({ counts, user, onNavigate, onLogout }) {
             <p className="truncate text-[13px] font-semibold text-white">{user.name}</p>
             <p className="truncate text-xs text-navy-muted">{user.role === 'Admin' ? 'Administrator' : user.title}</p>
           </div>
+          <ThemeToggle variant="sidebar" />
           <button
             type="button"
             onClick={onLogout}
-            className="grid size-9 place-items-center rounded-lg bg-navy-3 text-white transition-colors hover:bg-[#7a6457]"
+            className="grid size-9 place-items-center rounded-lg bg-navy-3 text-white transition-colors hover:bg-[#7a6457] dark:hover:bg-[#4a3b33]"
             aria-label="Sign out"
             title="Sign out"
           >
@@ -75,7 +77,7 @@ function SidebarContent({ counts, user, onNavigate, onLogout }) {
 export default function Sidebar({ counts, user, mobileOpen, onCloseMobile, onLogout }) {
   return (
     <>
-      <aside className="sticky top-0 hidden h-screen w-[252px] shrink-0 bg-navy lg:block">
+      <aside className="sticky top-0 hidden h-screen w-[252px] shrink-0 bg-navy lg:block dark:border-r dark:border-line">
         <SidebarContent counts={counts} user={user} onLogout={onLogout} />
       </aside>
 

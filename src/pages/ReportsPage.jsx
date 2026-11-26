@@ -170,10 +170,10 @@ export default function ReportsPage() {
           <div className="h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 8, right: 4, left: -24, bottom: 0 }}>
-                <CartesianGrid vertical={false} stroke="#E8E2DA" />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#6E625B' }} />
-                <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#6E625B' }} />
-                <Tooltip content={<ChartTooltip />} cursor={{ fill: '#F6F4F1' }} />
+                <CartesianGrid vertical={false} stroke="var(--color-line)" />
+                <XAxis dataKey="month" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: 'var(--color-muted)' }} />
+                <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: 'var(--color-muted)' }} />
+                <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--color-slate-50)' }} />
                 <Bar dataKey="completed" name="Completed" fill="#b99a60" maxBarSize={44} radius={[6, 6, 0, 0]} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>

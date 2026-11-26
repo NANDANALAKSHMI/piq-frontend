@@ -44,7 +44,7 @@ export default function MultiSelect({ label, required, options, value, onChange,
           aria-expanded={open}
           onClick={() => (open ? close() : setOpen(true))}
           className={cn(
-            'flex h-10 w-full items-center justify-between gap-2 rounded-[10px] border bg-white px-3 text-left text-sm outline-none transition-colors focus:border-brand disabled:cursor-not-allowed disabled:bg-slate-50',
+            'flex h-10 w-full items-center justify-between gap-2 rounded-[10px] border bg-surface px-3 text-left text-sm outline-none transition-colors focus:border-brand disabled:cursor-not-allowed disabled:bg-slate-50',
             error ? 'border-red-400' : 'border-line',
           )}
         >
@@ -55,7 +55,7 @@ export default function MultiSelect({ label, required, options, value, onChange,
         </button>
 
         {open && (
-          <div className="absolute inset-x-0 top-full z-40 mt-1.5 overflow-hidden rounded-xl border border-line bg-white shadow-lg">
+          <div className="absolute inset-x-0 top-full z-40 mt-1.5 overflow-hidden rounded-xl border border-line bg-surface shadow-lg">
             {options.length > 6 && (
               <div className="border-b border-line p-2">
                 <SearchInput value={query} onChange={setQuery} placeholder="Search" />
@@ -74,7 +74,7 @@ export default function MultiSelect({ label, required, options, value, onChange,
                       <span
                         className={cn(
                           'grid size-4.5 shrink-0 place-items-center rounded border',
-                          checked ? 'border-navy bg-navy text-white' : 'border-slate-300 bg-white text-transparent',
+                          checked ? 'border-navy bg-navy text-white' : 'border-slate-300 bg-surface text-transparent',
                         )}
                       >
                         <Check className="size-3" aria-hidden="true" />

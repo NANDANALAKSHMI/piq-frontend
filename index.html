@@ -10,7 +10,15 @@
     <link rel="preconnect" href="https://securetoken.googleapis.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Saira:wght@500;600;700&display=swap" rel="stylesheet" />
     <title>PIQ — Box Theory</title>
-    <meta name="theme-color" content="#4a3831" />
+    <meta name="theme-color" content="#120d0b" />
+    <script>
+      // Apply the saved theme before first paint (dark by default) so the page never flashes light.
+      (function () {
+        var theme = 'dark';
+        try { theme = localStorage.getItem('piq-theme') === 'light' ? 'light' : 'dark'; } catch (e) {}
+        if (theme === 'dark') document.documentElement.classList.add('dark');
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -166,7 +166,7 @@ export default function EnquiriesPage() {
             onClick={() => setStatus(status === stage.status ? 'open' : stage.status)}
             aria-pressed={status === stage.status}
             className={cn(
-              'flex flex-col items-start gap-1 rounded-2xl border bg-white p-4 text-left transition-colors hover:border-slate-300',
+              'flex flex-col items-start gap-1 rounded-2xl border bg-surface p-4 text-left transition-colors hover:border-slate-300',
               status === stage.status ? 'border-2 border-brand' : 'border-line',
             )}
           >
@@ -357,7 +357,7 @@ export default function EnquiriesPage() {
                       aria-label={f.done ? 'Mark as not done' : 'Mark as done'}
                       className={cn(
                         'grid size-7 shrink-0 place-items-center rounded-lg border transition-colors',
-                        f.done ? 'border-green-700 bg-green-700 text-white' : 'border-slate-300 bg-white text-transparent hover:text-slate-400',
+                        f.done ? 'border-green-700 bg-green-700 text-white' : 'border-slate-300 bg-surface text-transparent hover:text-slate-400',
                       )}
                     >
                       <Check className="size-4" aria-hidden="true" />

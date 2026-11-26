@@ -18,7 +18,7 @@ export default function Dropdown({ trigger, children, align = 'right', panelClas
       {open && (
         <div
           className={cn(
-            'absolute top-full z-40 mt-2 w-72 overflow-hidden rounded-xl border border-line bg-white shadow-lg',
+            'absolute top-full z-40 mt-2 w-72 overflow-hidden rounded-xl border border-line bg-surface shadow-lg',
             align === 'right' ? 'right-0' : 'left-0',
             panelClassName,
           )}

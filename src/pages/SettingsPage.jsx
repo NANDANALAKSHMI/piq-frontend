@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, KeyRound, LogOut } from 'lucide-react';
+import { Check, KeyRound, LogOut, Moon, Sun } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
@@ -10,9 +10,11 @@ import Modal from '../components/common/Modal.jsx';
 import { TextField } from '../components/common/FormFields.jsx';
 import { useToast } from '../components/common/Toast.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useTheme } from '../context/ThemeContext.jsx';
 import { cn } from '../utils/formatters.js';
 
 const SECTIONS = [
+  { id: 'appearance', label: 'Appearance' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'account', label: 'My account' },
 ];
@@ -35,6 +37,47 @@ const DEFAULT_NOTIFICATIONS = {
   enquiry: { 'In app': true, Email: true, WhatsApp: true },
   summary: { 'In app': false, Email: true, WhatsApp: false },
 };
+
+const THEME_OPTIONS = [
+  { value: 'dark', label: 'Dark', icon: Moon, hint: 'Default' },
+  { value: 'light', label: 'Light', icon: Sun },
+];
+
+function AppearanceCard() {
+  const { theme, setTheme } = useTheme();
+  return (
+    <Card id="settings-appearance" className="scroll-mt-24">
+      <CardHeader title="Appearance" subtitle="Saved on this device" />
+      <div role="radiogroup" aria-label="Theme" className="grid gap-3 sm:grid-cols-2">
+        {THEME_OPTIONS.map(({ value, label, icon: Icon, hint }) => {
+          const selected = theme === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => setTheme(value)}
+              className={cn(
+                'flex items-center gap-3 rounded-xl border p-3.5 text-left transition-colors',
+                selected ? 'border-2 border-brand bg-brand-tint' : 'border-line hover:border-slate-300',
+              )}
+            >
+              <span className="grid size-9 place-items-center rounded-lg bg-slate-100 text-ink">
+                <Icon className="size-4" aria-hidden="true" />
+              </span>
+              <span className="flex-1">
+                <b className="block text-sm">{label}</b>
+                {hint && <span className="text-xs text-muted">{hint}</span>}
+              </span>
+              {selected && <Check className="size-4 text-brand" aria-hidden="true" />}
+            </button>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
 
 function PasswordModal({ open, onClose, onSave }) {
   const [form, setForm] = useState({ current: '', next: '', confirm: '' });
@@ -75,7 +118,7 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState(DEFAULT_NOTIFICATIONS);
   const [passwordOpen, setPasswordOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState('notifications');
+  const [activeSection, setActiveSection] = useState('appearance');
 
 
   const goTo = (id) => {
@@ -115,6 +158,8 @@ export default function SettingsPage() {
         </Card>
 
         <div className="flex min-w-0 flex-col gap-5.5">
+          <AppearanceCard />
+
           <Card id="settings-notifications" className="scroll-mt-24">
             <CardHeader title="Notifications" subtitle="For your account" />
             <div className="scrollbar-thin overflow-x-auto">

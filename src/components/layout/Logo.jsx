@@ -25,7 +25,7 @@ export default function Logo({ tone = 'dark', size = 40, className }) {
     <div className={cn('flex items-center gap-3 px-2', className)}>
       <LogoMark size={size} />
       <div>
-        <span className={cn('block font-display text-[24px] font-bold leading-[0.95] tracking-wide', dark ? 'text-white' : 'text-navy')}>
+        <span className={cn('block font-display text-[24px] font-bold leading-[0.95] tracking-wide', dark ? 'text-white' : 'text-navy dark:text-ink')}>
           PIQ
         </span>
         <span className={cn('mt-1 block text-[12px] font-medium', dark ? 'text-navy-muted' : 'text-muted')}>

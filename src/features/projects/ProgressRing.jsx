@@ -5,7 +5,7 @@ export default function ProgressRing({ value, size = 116, label }) {
   const dash = (Math.max(0, Math.min(100, value)) / 100) * CIRCUMFERENCE;
   return (
     <svg width={size} height={size} viewBox="0 0 116 116" role="img" aria-label={label ?? `${value}% complete`} className="shrink-0">
-      <circle cx="58" cy="58" r={RADIUS} fill="none" stroke="#F1EDE8" strokeWidth="12" />
+      <circle cx="58" cy="58" r={RADIUS} fill="none" stroke="var(--color-slate-100)" strokeWidth="12" />
       <circle
         cx="58"
         cy="58"
@@ -18,7 +18,7 @@ export default function ProgressRing({ value, size = 116, label }) {
         transform="rotate(-90 58 58)"
         className="transition-[stroke-dasharray] duration-500"
       />
-      <text x="58" y="64" textAnchor="middle" fontSize="22" fontWeight="700" fill="#0F172A">
+      <text x="58" y="64" textAnchor="middle" fontSize="22" fontWeight="700" fill="var(--color-ink)">
         {value}%
       </text>
     </svg>

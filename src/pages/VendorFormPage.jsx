@@ -214,7 +214,7 @@ function VendorForm({ initial, vendorId }) {
               key={value}
               className={cn(
                 'flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 transition-colors',
-                form.status === value ? 'border-2 border-brand bg-[#fbf8f2]' : 'border-line hover:border-slate-300',
+                form.status === value ? 'border-2 border-brand bg-brand-tint' : 'border-line hover:border-slate-300',
               )}
             >
               <input type="radio" name="vendor-status" value={value} checked={form.status === value} onChange={update('status')} className="mt-0.5 size-4 accent-navy" />
@@ -228,7 +228,7 @@ function VendorForm({ initial, vendorId }) {
       </Card>
 
       {/* One Save / Cancel pair, kept in view at the bottom while scrolling the form. */}
-      <div className="sticky bottom-0 z-20 -mx-1 flex justify-end gap-2.5 rounded-2xl border border-line bg-white/95 p-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
+      <div className="sticky bottom-0 z-20 -mx-1 flex justify-end gap-2.5 rounded-2xl border border-line bg-surface/95 p-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
         <Button to={cancelTo}>Cancel</Button>
         <Button variant="primary" icon={Check} disabled={saving || servicesLoading} onClick={handleSave}>
           {saving ? 'Saving…' : 'Save vendor'}

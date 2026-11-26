@@ -45,7 +45,7 @@ export function Chip({ active, onClick, children, className }) {
       aria-pressed={active}
       className={cn(
         'inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-[13px] font-medium transition-colors',
-        active ? 'border-navy bg-navy text-white' : 'border-line bg-white text-ink hover:border-slate-300',
+        active ? 'border-navy bg-navy text-white' : 'border-line bg-surface text-ink hover:border-slate-300',
         className,
       )}
     >

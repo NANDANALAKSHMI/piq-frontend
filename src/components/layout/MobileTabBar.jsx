@@ -13,7 +13,7 @@ export default function MobileTabBar({ onOpenMenu }) {
   return (
     <nav
       aria-label="Quick navigation"
-      className="fixed inset-x-0 bottom-0 z-30 flex items-end justify-around border-t border-line bg-white px-1.5 pb-[max(env(safe-area-inset-bottom),12px)] pt-2 md:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 flex items-end justify-around border-t border-line bg-surface px-1.5 pb-[max(env(safe-area-inset-bottom),12px)] pt-2 md:hidden"
     >
       <NavLink to="/" end className={tabClass}>
         <LayoutDashboard className="size-[22px]" aria-hidden="true" />

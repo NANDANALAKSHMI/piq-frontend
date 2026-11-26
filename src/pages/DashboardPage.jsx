@@ -121,7 +121,7 @@ export default function DashboardPage() {
         subtitle={`Welcome back, ${user?.name.split(' ')[0]} — here’s where every project stands today.`}
         actions={
           <>
-            <div className="hidden h-10.5 items-center gap-2.5 rounded-[10px] border border-line bg-white px-3.5 sm:flex">
+            <div className="hidden h-10.5 items-center gap-2.5 rounded-[10px] border border-line bg-surface px-3.5 sm:flex">
               <CalendarDays className="size-4.5 text-muted" aria-hidden="true" />
               <span className="text-[13px] font-semibold">{formatToday()}</span>
             </div>
@@ -166,13 +166,13 @@ export default function DashboardPage() {
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={cityData} margin={{ top: 16, right: 4, left: -24, bottom: 0 }}>
-                <CartesianGrid vertical={false} stroke="#E8E2DA" />
-                <XAxis dataKey="city" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#6E625B' }} interval={0} />
-                <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: '#6E625B' }} />
-                <Tooltip content={<ChartTooltip />} cursor={{ fill: '#F6F4F1' }} />
+                <CartesianGrid vertical={false} stroke="var(--color-line)" />
+                <XAxis dataKey="city" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: 'var(--color-muted)' }} interval={0} />
+                <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: 'var(--color-muted)' }} />
+                <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--color-slate-50)' }} />
                 <Bar dataKey="value" name="Projects" radius={[6, 6, 0, 0]} maxBarSize={44} isAnimationActive={false}>
                   {cityData.map((entry) => (
-                    <Cell key={entry.city} fill={entry.city === 'Others' ? '#D8CFC5' : '#b99a60'} />
+                    <Cell key={entry.city} fill={entry.city === 'Others' ? 'var(--color-slate-300)' : '#b99a60'} />
                   ))}
                 </Bar>
               </BarChart>

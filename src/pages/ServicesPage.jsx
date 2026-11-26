@@ -324,7 +324,7 @@ export default function ServicesPage() {
                             {items.length > 0 && (
                               <ul className="mt-2 flex flex-col gap-1.5">
                                 {items.map((item, index) => (
-                                  <li key={item.id} className="flex items-center gap-2 rounded-[10px] border border-line bg-white py-1 pl-3.5 pr-1.5">
+                                  <li key={item.id} className="flex items-center gap-2 rounded-[10px] border border-line bg-surface py-1 pl-3.5 pr-1.5">
                                     {list === 'questions' && <span className="shrink-0 text-[12.5px] font-semibold text-muted">Q{index + 1}.</span>}
                                     <span className={cn('min-w-0 flex-1', list === 'questions' ? 'break-words py-1' : 'truncate', !item.active && 'text-muted')}>{nameOf(item)}</span>
                                     <RowActions

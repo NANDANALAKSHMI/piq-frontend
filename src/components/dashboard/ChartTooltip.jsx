@@ -2,7 +2,7 @@
 export default function ChartTooltip({ active, payload, label, unit = 'projects' }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-line bg-white px-3 py-2 text-xs shadow-md">
+    <div className="rounded-lg border border-line bg-surface px-3 py-2 text-xs shadow-md">
       {label && <p className="mb-1 font-semibold">{label}</p>}
       {payload.map((entry) => (
         <p key={entry.dataKey ?? entry.name} className="flex items-center gap-2 text-muted">

@@ -3,7 +3,7 @@ import { cn } from '../../utils/formatters.js';
 
 export default function SearchInput({ value, onChange, placeholder = 'Search', label, className, inputRef, onKeyDown }) {
   return (
-    <label className={cn('flex h-10 min-w-0 items-center gap-2 rounded-[10px] border border-line bg-white px-3 text-muted focus-within:border-brand', className)}>
+    <label className={cn('flex h-10 min-w-0 items-center gap-2 rounded-[10px] border border-line bg-surface px-3 text-muted focus-within:border-brand', className)}>
       <span className="sr-only">{label ?? placeholder}</span>
       <Search className="size-4 shrink-0" aria-hidden="true" />
       <input

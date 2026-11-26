@@ -30,10 +30,10 @@ function PageLoader() {
       <div className="h-8 w-56 animate-pulse rounded-lg bg-slate-200/70" />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-24 animate-pulse rounded-2xl bg-white" />
+          <div key={i} className="h-24 animate-pulse rounded-2xl bg-surface" />
         ))}
       </div>
-      <div className="h-80 animate-pulse rounded-2xl bg-white" />
+      <div className="h-80 animate-pulse rounded-2xl bg-surface" />
     </div>
   );
 }

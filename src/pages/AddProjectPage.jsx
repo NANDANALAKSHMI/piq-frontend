@@ -179,7 +179,7 @@ function AddProjectForm() {
                         key={loc.id}
                         className={cn(
                           'flex cursor-pointer flex-col gap-1.5 rounded-xl border p-3.5 transition-colors',
-                          selected ? 'border-2 border-brand bg-[#fbf8f2]' : 'border-line hover:border-slate-300',
+                          selected ? 'border-2 border-brand bg-brand-tint' : 'border-line hover:border-slate-300',
                         )}
                       >
                         <span className="flex items-center justify-between gap-2">
@@ -227,7 +227,7 @@ function AddProjectForm() {
                     role="radio"
                     aria-checked={form.priority === p}
                     onClick={() => set({ priority: p })}
-                    className={cn('h-[34px] flex-1 rounded-lg text-[13px] font-semibold', form.priority === p ? 'bg-white text-ink shadow-sm' : 'text-muted')}
+                    className={cn('h-[34px] flex-1 rounded-lg text-[13px] font-semibold', form.priority === p ? 'bg-surface text-ink shadow-sm' : 'text-muted')}
                   >
                     {p}
                   </button>
@@ -265,7 +265,7 @@ function AddProjectForm() {
               {chosen.map((service) => {
                 const subs = service.subServices.filter((sub) => sub.active);
                 return (
-                  <li key={service.id} className="flex flex-col gap-3 rounded-xl border border-brand-line bg-[#fbf8f2] p-3.5">
+                  <li key={service.id} className="flex flex-col gap-3 rounded-xl border border-brand-line bg-brand-tint p-3.5">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <b>{service.name}</b>
                       <SelectControl
@@ -335,7 +335,7 @@ function AddProjectForm() {
       </div>
 
       {/* One Cancel / Create pair, kept in view at the bottom while scrolling the form. */}
-      <div className="sticky bottom-0 z-20 -mx-1 flex justify-end gap-2.5 rounded-2xl border border-line bg-white/95 p-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
+      <div className="sticky bottom-0 z-20 -mx-1 flex justify-end gap-2.5 rounded-2xl border border-line bg-surface/95 p-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
         <Button to="/projects">Cancel</Button>
         <Button variant="primary" icon={Check} disabled={saving || servicesLoading} onClick={handleCreate}>
           {saving ? 'Creating…' : 'Create project'}

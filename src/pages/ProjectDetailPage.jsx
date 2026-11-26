@@ -182,7 +182,7 @@ export default function ProjectDetailPage() {
                 </>
               )}
               {project.keyDecision && (
-                <div className="mt-4 flex gap-3 rounded-xl border border-brand-line bg-brand-soft p-3.5 text-[13px] text-[#5c4520]">
+                <div className="mt-4 flex gap-3 rounded-xl border border-brand-line bg-brand-soft p-3.5 text-[13px] text-brand-deep">
                   <Star className="size-4.5 shrink-0" aria-hidden="true" />
                   <p>
                     <b>Key decision (pinned)</b>

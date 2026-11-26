@@ -34,7 +34,7 @@ export function ToastProvider({ children }) {
           return (
             <div
               key={toast.id}
-              className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-xl bg-navy px-4 py-3 text-sm text-white shadow-lg"
+              className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-xl bg-navy px-4 py-3 text-sm text-white shadow-lg dark:border dark:border-line dark:bg-navy-2"
             >
               <Icon className={`size-5 shrink-0 ${toast.tone === 'error' ? 'text-red-300' : 'text-brand'}`} aria-hidden="true" />
               <span className="flex-1">{toast.message}</span>

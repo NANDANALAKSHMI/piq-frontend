@@ -23,7 +23,7 @@ function GoogleIcon({ className }) {
   );
 }
 
-const CARD = 'flex flex-col gap-4 rounded-2xl border border-line bg-white p-7 sm:p-9';
+const CARD = 'flex flex-col gap-4 rounded-2xl border border-line bg-surface p-7 sm:p-9';
 const LINK = 'self-center text-[13px] font-semibold text-brand-ink hover:underline';
 
 function Alert({ tone = 'error', children }) {

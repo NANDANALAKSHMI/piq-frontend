@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* `dark:` utilities follow the .dark class on <html> (set by ThemeContext), not the OS setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* Box Theory brand guidelines: Archivo (body) + Saira (headings), Cocoa Umber + Antique Champagne Gold */
   --font-sans: 'Archivo', ui-sans-serif, system-ui, sans-serif;
@@ -16,12 +19,77 @@
   --color-brand-ink: #86682f;
   --color-brand-soft: #f6f0e4;
   --color-brand-line: #e3d3b0;
+  --color-brand-tint: #fbf8f2;
+  --color-brand-soft-hover: #efe4cc;
+  --color-brand-deep: #5c4520;
 
   --color-canvas: #f6f4f1;
   --color-line: #e8e2da;
   --color-ink: #2b211d;
   --color-muted: #6e625b;
+  --color-surface: #ffffff;
 }
+
+/*
+ * Dark theme (the default). Every app colour token is re-pointed here, so classes such as
+ * bg-surface, bg-canvas, text-ink, border-line and the slate greys follow the theme on their own.
+ * Solid colours (bg-*-600/700, text-white) are left alone because they sit on coloured fills.
+ */
+.dark {
+  color-scheme: dark;
+
+  --color-navy: #120d0b;
+  --color-navy-2: #241c18;
+  --color-navy-3: #3a2e28;
+  --color-navy-muted: #a8998e;
+
+  --color-brand: #c4a56b;
+  --color-brand-ink: #d9bd86;
+  --color-brand-soft: #2d2419;
+  --color-brand-line: #574730;
+  --color-brand-tint: #251e17;
+  --color-brand-soft-hover: #3a2f20;
+  --color-brand-deep: #e6d2a8;
+
+  --color-canvas: #171210;
+  --color-surface: #211a17;
+  --color-line: #3a302a;
+  --color-ink: #f1ebe5;
+  --color-muted: #a99b90;
+
+  /* Neutral greys used for hover rows, chips and borders */
+  --color-slate-50: #2a221e;
+  --color-slate-100: #322924;
+  --color-slate-200: #3d332d;
+  --color-slate-300: #54473f;
+  --color-slate-400: #8a7d74;
+
+  /* Pale status tints (badges, alerts) become deep translucent tints */
+  --color-red-50: rgb(239 68 68 / 0.14);
+  --color-red-200: rgb(239 68 68 / 0.35);
+  --color-amber-50: rgb(245 158 11 / 0.13);
+  --color-amber-200: rgb(245 158 11 / 0.32);
+  --color-green-50: rgb(34 197 94 / 0.13);
+  --color-blue-50: rgb(59 130 246 / 0.14);
+  --color-sky-50: rgb(14 165 233 / 0.14);
+  --color-violet-50: rgb(139 92 246 / 0.15);
+}
+
+/* Status text on those tints: lighten so it stays readable on dark surfaces. */
+.dark .text-slate-500 { color: #b3a69b; }
+.dark .text-slate-600 { color: #c3b7ad; }
+.dark .text-slate-700 { color: #d6ccc3; }
+.dark .text-red-600,
+.dark .text-red-700 { color: #fca5a5; }
+.dark .text-amber-700,
+.dark .text-amber-800 { color: #fcd34d; }
+.dark .text-amber-900 { color: #fde68a; }
+.dark .text-green-700,
+.dark .text-green-800 { color: #86efac; }
+.dark .text-blue-700 { color: #93c5fd; }
+.dark .text-sky-700 { color: #7dd3fc; }
+.dark .text-violet-700 { color: #c4b5fd; }
+.dark .border-red-400 { border-color: #f87171; }
 
 @layer base {
   html,
