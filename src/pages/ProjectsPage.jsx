@@ -1,33 +1,48 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Briefcase, Download, Plus, SearchX, TriangleAlert, X } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card from '../components/common/Card.jsx';
-import Tabs from '../components/common/Tabs.jsx';
 import SearchInput from '../components/common/SearchInput.jsx';
 import { SelectControl } from '../components/common/FormFields.jsx';
-import DataTable from '../components/common/DataTable.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import { useToast } from '../components/common/Toast.jsx';
-import { buildProjectColumns } from '../features/projects/projectColumns.jsx';
+import { ProjectGroup, ProjectRow } from '../features/projects/ProjectRow.jsx';
+import { statusLabel } from '../features/projects/StatusMenu.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
 import useServerSearch from '../hooks/useServerSearch.js';
 import useLookups from '../hooks/useLookups.js';
 import useServices from '../hooks/useServices.js';
 import { displayStatus, isOverdue, projectProgress, serviceNames } from '../utils/projects.js';
-import { daysUntil } from '../utils/formatters.js';
+import { cn, daysUntil } from '../utils/formatters.js';
 import { exportCsv } from '../utils/exportCsv.js';
 
+/** Status filter chips. Ongoing is the default (no `status` in the URL). */
 const STATUS_TABS = [
-  { id: 'all', label: 'All projects', match: () => true },
-  { id: 'Upcoming', label: 'Upcoming', match: (p) => p.status === 'Upcoming' },
+  { id: 'all', label: 'All', match: () => true },
   { id: 'In progress', label: 'Ongoing', match: (p) => p.status === 'In progress' },
-  { id: 'Completed', label: 'Completed', match: (p) => p.status === 'Completed' },
+  { id: 'Upcoming', label: 'Upcoming', match: (p) => p.status === 'Upcoming' },
   { id: 'On hold', label: 'On hold', match: (p) => p.status === 'On hold' },
   { id: 'Overdue', label: 'Overdue', match: isOverdue },
+  { id: 'Completed', label: 'Completed', match: (p) => p.status === 'Completed' },
   { id: 'Cancelled', label: 'Cancelled', match: (p) => p.status === 'Cancelled' },
 ];
+const DEFAULT_TAB = 'In progress';
+
+/** Groups, in display order: ongoing work first, finished and cancelled last. */
+const GROUP_ORDER = ['In progress', 'Upcoming', 'On hold', 'Completed', 'Cancelled'];
+const PRIORITY_RANK = { High: 0, Medium: 1, Low: 2 };
+const GROUP_PAGE = 10;
+
+/** Within a group: High, Medium, Low priority, then the nearest due date first (no date last). */
+function byPriorityThenDue(a, b) {
+  const priority = (PRIORITY_RANK[a.priority] ?? 3) - (PRIORITY_RANK[b.priority] ?? 3);
+  if (priority) return priority;
+  return (a.dueDate || '9999-12-31').localeCompare(b.dueDate || '9999-12-31');
+}
+
+const FOCUS = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 
 const DUE_FILTERS = [
   { value: '', label: 'Due: Any time' },
@@ -39,24 +54,41 @@ const DUE_FILTERS = [
 const EMPTY_FILTERS = { city: '', service: '', staff: '', due: '' };
 
 export default function ProjectsPage() {
-  const { projects, projectsLoading, projectsError, members } = useAppData();
+  const { projects, projectsLoading, projectsError, members, setProjectStatus } = useAppData();
   const { services } = useServices();
   const lookups = useLookups();
   const { showToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState(EMPTY_FILTERS);
+  const [toggled, setToggled] = useState({});
+  const [shown, setShown] = useState({});
+  const [savingId, setSavingId] = useState(null);
 
   const statusParam = searchParams.get('status');
-  const activeTab = STATUS_TABS.some((t) => t.id === statusParam) ? statusParam : 'all';
-  const initialSort = searchParams.get('sort') === 'due' ? { key: 'due', direction: 'asc' } : { key: 'id', direction: 'desc' };
+  const activeTab = STATUS_TABS.some((t) => t.id === statusParam) ? statusParam : DEFAULT_TAB;
 
   const setTab = (id) => {
     const next = new URLSearchParams(searchParams);
-    if (id === 'all') next.delete('status');
+    if (id === DEFAULT_TAB) next.delete('status');
     else next.set('status', id);
     setSearchParams(next, { replace: true });
+  };
+
+  /** Ongoing starts open; with a single-status filter its group is open too. Others start collapsed. */
+  const isExpanded = (status) => toggled[`${activeTab}:${status}`] ?? (activeTab !== 'all' || status === 'In progress');
+  const toggleGroup = (status) => setToggled((current) => ({ ...current, [`${activeTab}:${status}`]: !isExpanded(status) }));
+
+  const changeStatus = async (project, status) => {
+    setSavingId(project.id);
+    try {
+      await setProjectStatus(project.id, status);
+      showToast(`${project.id} moved to ${statusLabel(status)}.`);
+    } catch (err) {
+      showToast(err.message || 'Could not change the status. Please try again.', { tone: 'error' });
+    } finally {
+      setSavingId(null);
+    }
   };
 
   const setFilter = (key, value) => setFilters((current) => ({ ...current, [key]: value }));
@@ -89,6 +121,11 @@ export default function ProjectsPage() {
 
   const tabs = STATUS_TABS.map((tab) => ({ ...tab, count: filtered.filter(tab.match).length }));
   const tabRows = filtered.filter(STATUS_TABS.find((t) => t.id === activeTab).match);
+
+  const groups = GROUP_ORDER.map((status) => ({
+    status,
+    rows: tabRows.filter((p) => p.status === status).sort(byPriorityThenDue),
+  })).filter((group) => group.rows.length);
 
   const activeFilterChips = [
     filters.city && { key: 'city', label: `City: ${filters.city}` },
@@ -123,7 +160,7 @@ export default function ProjectsPage() {
   };
 
   return (
-    <div className="flex h-full min-h-[34rem] flex-col gap-5.5">
+    <div className="flex flex-col gap-5">
       <PageHeader
         title="Projects"
         subtitle="Every project in one searchable list — from onboarding to delivery."
@@ -149,10 +186,30 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      <Card padded={false} className="flex min-h-0 flex-1 flex-col">
-        <Tabs tabs={tabs} active={activeTab} onChange={setTab} label="Project status" className="px-4" />
+      <div role="group" aria-label="Filter by status" className="scrollbar-thin -mx-1 flex gap-2 overflow-x-auto px-1 py-1">
+        {tabs.map((tab) => {
+          const active = tab.id === activeTab;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setTab(tab.id)}
+              className={cn(
+                'hit-44 inline-flex h-9 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-semibold transition-colors',
+                active ? 'border-gold bg-gold text-on-gold' : 'border-panel-line bg-panel text-ink-soft hover:border-gold/60 hover:text-ink',
+                FOCUS,
+              )}
+            >
+              {tab.label}
+              <span className={cn('rounded-full px-1.5 text-[11.5px] tabular-nums', active ? 'bg-on-gold/15' : 'bg-slate-100 text-muted')}>{tab.count}</span>
+            </button>
+          );
+        })}
+      </div>
 
-        <div className="flex flex-col gap-3.5 border-b border-line px-5 py-4.5">
+      <Card>
+        <div className="flex flex-col gap-3.5">
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
             <SearchInput value={query} onChange={setQuery} placeholder="Project name, ID or client" className="sm:col-span-2 lg:col-span-1" />
             <SelectControl aria-label="City" value={filters.city} onChange={(e) => setFilter('city', e.target.value)} placeholder="City: All" options={cityOptions} />
@@ -181,32 +238,56 @@ export default function ProjectsPage() {
           )}
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col px-2 pb-4 pt-1 sm:px-4">
-          <DataTable
-            fill
-            onRowClick={(p) => navigate(`/projects/${p.id}`)}
-            key={activeTab}
-            columns={buildProjectColumns(lookups, ['id', 'name', 'city', 'services', 'progress', 'team', 'priority', 'status', 'due', 'view'])}
-            rows={tabRows}
-            pageSize={10}
-            loading={projectsLoading}
-            minWidth={1260}
-            initialSort={initialSort}
-            emptyState={
-              projects.length === 0 ? (
-                <EmptyState icon={Briefcase} title="No projects yet" description="Click “New project” to create the first one." />
-              ) : (
-                <EmptyState
-                  icon={SearchX}
-                  title="No projects match these filters"
-                  description="Try a different search or clear the filters to see every project."
-                  action={<Button onClick={clearAll}>Clear filters</Button>}
-                />
-              )
-            }
-          />
-        </div>
       </Card>
+
+      {projectsLoading ? (
+        <div className="flex flex-col gap-3" aria-label="Loading projects">
+          {Array.from({ length: 3 }, (_, index) => (
+            <div key={index} className="h-24 animate-pulse rounded-xl border border-panel-line bg-panel" />
+          ))}
+        </div>
+      ) : groups.length === 0 ? (
+        projects.length === 0 ? (
+          <EmptyState icon={Briefcase} title="No projects yet" description="Click “New project” to create the first one." />
+        ) : (
+          <EmptyState
+            icon={SearchX}
+            title="No projects match these filters"
+            description="Try another status, a different search or clear the filters."
+            action={<Button onClick={clearAll}>Clear filters</Button>}
+          />
+        )
+      ) : (
+        <div className="flex flex-col gap-3">
+          {groups.map(({ status, rows }) => {
+            const limit = shown[status] ?? GROUP_PAGE;
+            return (
+              <ProjectGroup key={status} status={status} count={rows.length} expanded={isExpanded(status)} onToggle={() => toggleGroup(status)}>
+                <ul className="divide-y divide-panel-line">
+                  {rows.slice(0, limit).map((project) => (
+                    <ProjectRow
+                      key={project.id}
+                      project={project}
+                      lookups={lookups}
+                      saving={savingId === project.id}
+                      onStatusChange={changeStatus}
+                    />
+                  ))}
+                </ul>
+                {rows.length > limit && (
+                  <button
+                    type="button"
+                    onClick={() => setShown((current) => ({ ...current, [status]: limit + GROUP_PAGE }))}
+                    className={cn('min-h-11 w-full rounded-b-xl border-t border-panel-line text-[13px] font-semibold text-brand-ink hover:bg-row-hover', FOCUS, 'focus-visible:-outline-offset-2')}
+                  >
+                    Show {Math.min(GROUP_PAGE, rows.length - limit)} more of {rows.length - limit}
+                  </button>
+                )}
+              </ProjectGroup>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

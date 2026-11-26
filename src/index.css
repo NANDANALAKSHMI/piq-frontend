@@ -32,6 +32,16 @@
   --color-subtle: #f1ece3; /* table headers, disabled fields, toolbars */
   --color-row-hover: #f4efe6;
   --color-segment: #e7dfd2; /* segmented-control track */
+
+  /* Panels, popovers and the gold accent used by the list pages (Clients, Projects) */
+  --color-panel: #ffffff;
+  --color-panel-line: #e8e2da;
+  --color-gold: #b99a60;
+  --color-gold-hover: #a6884f;
+  --color-on-gold: #2b211d;
+  --color-ink-soft: #4a3f38;
+  --color-field: #ffffff; /* input boxes and list rows on panels */
+  --color-check-line: #b5a597; /* unchecked checkbox border */
 }
 
 /*
@@ -60,6 +70,15 @@
   --color-subtle: #2a221d;
   --color-row-hover: #2c241f;
   --color-segment: #2f2621;
+
+  --color-panel: #161310;
+  --color-panel-line: #2a251d;
+  --color-gold: #d8b27a;
+  --color-gold-hover: #e3c08d;
+  --color-on-gold: #1a1408;
+  --color-ink-soft: #d9d2c5;
+  --color-field: #1d1914;
+  --color-check-line: #6b6254;
   --color-line: #3a302a;
   --color-ink: #f1ebe5;
   --color-muted: #a99b90;
@@ -152,6 +171,21 @@
       scrollbar-width: thin;
       scrollbar-color: rgb(110 98 91 / 0.4) transparent;
     }
+  }
+}
+
+@layer utilities {
+  /* Gives small controls a 44px-tall touch target without changing how they look. */
+  .hit-44 {
+    position: relative;
+  }
+  .hit-44::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 50%;
+    height: max(100%, 44px);
+    transform: translateY(-50%);
   }
 }
 

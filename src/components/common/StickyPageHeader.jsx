@@ -30,7 +30,7 @@ export default function StickyPageHeader({
   const goBack = () => (location.key !== 'default' ? navigate(-1) : navigate(parent));
 
   return (
-    <header className="sticky -top-5 z-30 -mx-4 -mt-5 flex flex-col gap-3.5 border-b border-line bg-canvas px-4 pb-4 pt-5 md:-top-7 md:-mx-7 md:-mt-7 md:px-7 md:pt-7">
+    <header data-sticky-header className="sticky -top-5 z-30 -mx-4 -mt-5 flex flex-col gap-3.5 border-b border-line bg-canvas px-4 pb-4 pt-5 md:-top-7 md:-mx-7 md:-mt-7 md:px-7 md:pt-7">
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2">
         <button
           type="button"

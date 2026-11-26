@@ -1,19 +1,18 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, FolderPlus, Users } from 'lucide-react';
+import { FolderPlus, Users } from 'lucide-react';
 import EmptyState from '../components/common/EmptyState.jsx';
 import StickyPageHeader from '../components/common/StickyPageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
 import { SelectControl, SelectField, TextArea, TextField } from '../components/common/FormFields.jsx';
-import { Chip } from '../components/common/Tabs.jsx';
-import { AvatarStack } from '../components/common/Avatar.jsx';
 import { useToast } from '../components/common/Toast.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
-import useLookups from '../hooks/useLookups.js';
 import useServices from '../hooks/useServices.js';
 import { PRIORITIES } from '../data/constants.js';
 import { suggestVendors } from '../features/projects/projectFormHelpers.js';
+import ServicePicker from '../features/projects/ServicePicker.jsx';
+import PeoplePicker from '../features/projects/PeoplePicker.jsx';
 import { cn, daysFromToday } from '../utils/formatters.js';
 
 function SectionTitle({ number, title, subtitle, action }) {
@@ -35,7 +34,6 @@ const placeLine = (loc) => [loc.address, loc.city, loc.district, loc.state].filt
 
 function AddProjectForm() {
   const { clients, members, vendors, addProject } = useAppData();
-  const lookups = useLookups();
   const { services, loading: servicesLoading } = useServices();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -56,6 +54,7 @@ function AddProjectForm() {
     serviceIds: [],
     subServiceIds: [],
     owners: {},
+    teamIds: [],
     vendorChoices: {},
     notes: '',
   });
@@ -69,24 +68,15 @@ function AddProjectForm() {
   const offered = useMemo(() => services.filter((s) => s.active), [services]);
   const chosen = offered.filter((s) => form.serviceIds.includes(s.id));
 
-  const ownerFor = (serviceId) => form.owners[serviceId] ?? activeMembers[0]?.id ?? '';
+  // With no per-service owner picker, each service is owned by the first assigned person (else the first active member).
+  const ownerFor = (serviceId) => form.owners[serviceId] ?? form.teamIds[0] ?? activeMembers[0]?.id ?? '';
 
   /** One row per chosen service that has active vendors; nothing is pre-chosen. */
   const vendorRows = chosen
     .map((service) => ({ service, options: suggestVendors(vendors, service.id), chosen: form.vendorChoices[service.id] ?? '' }))
     .filter((row) => row.options.length);
 
-  const teamIds = [...new Set(chosen.map((s) => ownerFor(s.id)))].filter(Boolean);
-
-  /** Removing a service also clears its sub-services, owner and vendor choice. */
-  const changeServices = (serviceIds) =>
-    setForm((current) => {
-      const allowed = new Set(services.filter((s) => serviceIds.includes(s.id)).flatMap((s) => s.subServices.map((sub) => sub.id)));
-      return { ...current, serviceIds, subServiceIds: current.subServiceIds.filter((id) => allowed.has(id)) };
-    });
-
-  const toggleSub = (subId) =>
-    set({ subServiceIds: form.subServiceIds.includes(subId) ? form.subServiceIds.filter((id) => id !== subId) : [...form.subServiceIds, subId] });
+  const teamIds = form.teamIds;
 
   const validate = () => {
     const next = {};
@@ -214,7 +204,36 @@ function AddProjectForm() {
         </Card>
 
         <Card>
-          <SectionTitle number={2} title="Project details" />
+          <SectionTitle
+            number={2}
+            title="Services"
+            subtitle="Pick what this project needs — each one is tracked separately."
+            action={<Link to="/services" className="text-[13px] font-semibold text-brand-ink hover:underline">Manage services</Link>}
+          />
+          {!servicesLoading && offered.length === 0 && (
+            <p className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-[13px] text-muted">
+              No services yet — add them on the{' '}
+              <Link to="/services" className="font-semibold text-brand-ink hover:underline">
+                Services page
+              </Link>
+              .
+            </p>
+          )}
+          {(servicesLoading || offered.length > 0) && (
+            <ServicePicker
+              services={offered}
+              value={{ serviceIds: form.serviceIds, subServiceIds: form.subServiceIds }}
+              onChange={({ serviceIds, subServiceIds }) => set({ serviceIds, subServiceIds })}
+              loading={servicesLoading}
+              error={errors.services}
+              className="lg:max-w-2xl"
+            />
+          )}
+          {!servicesLoading && offered.length === 0 && errors.services && <p className="mt-2 text-xs font-medium text-red-700">{errors.services}</p>}
+        </Card>
+
+        <Card>
+          <SectionTitle number={3} title="Project details" />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <TextField
               label="Project name"
@@ -247,94 +266,6 @@ function AddProjectForm() {
             <TextField label="Due date" type="date" required value={form.dueDate} onChange={(e) => set({ dueDate: e.target.value })} error={errors.dueDate} />
             <TextArea label="Description" value={form.description} onChange={(e) => set({ description: e.target.value })} className="sm:col-span-2 lg:col-span-3" placeholder="What needs to be done, materials, special handling…" />
           </div>
-        </Card>
-
-        <Card>
-          <SectionTitle
-            number={3}
-            title="Services"
-            subtitle="Pick what this project needs — each one is tracked separately."
-            action={<Link to="/services" className="text-[13px] font-semibold text-brand-ink hover:underline">Manage services</Link>}
-          />
-          {servicesLoading && <p className="text-[13px] text-muted">Loading services…</p>}
-          {!servicesLoading && offered.length === 0 && (
-            <p className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-[13px] text-muted">
-              No services yet — add them on the{' '}
-              <Link to="/services" className="font-semibold text-brand-ink hover:underline">
-                Services page
-              </Link>
-              .
-            </p>
-          )}
-          {offered.length > 0 && (
-            <>
-              <p className="mb-2.5 text-xs font-semibold text-muted">
-                Tap the services this project needs <span className="text-red-600">*</span>
-              </p>
-              <ul className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                {offered.map((service) => {
-                  const selected = form.serviceIds.includes(service.id);
-                  const subs = service.subServices.filter((sub) => sub.active);
-                  return (
-                    <li
-                      key={service.id}
-                      className={cn('rounded-xl border transition-colors', selected ? 'border-2 border-brand bg-brand-soft/50' : 'border-line bg-surface/60 hover:border-brand-line')}
-                    >
-                      <button
-                        type="button"
-                        role="checkbox"
-                        aria-checked={selected}
-                        onClick={() => changeServices(selected ? form.serviceIds.filter((id) => id !== service.id) : [...form.serviceIds, service.id])}
-                        className="flex w-full items-center gap-3 rounded-xl p-3.5 text-left"
-                      >
-                        <span
-                          className={cn(
-                            'grid size-5 shrink-0 place-items-center rounded-md border',
-                            selected ? 'border-navy bg-navy text-white' : 'border-slate-300 bg-surface text-transparent',
-                          )}
-                        >
-                          <Check className="size-3.5" aria-hidden="true" />
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block truncate font-semibold">{service.name}</span>
-                          {service.description && <span className="block truncate text-xs text-muted">{service.description}</span>}
-                        </span>
-                      </button>
-
-                      {selected && (
-                        <div className="flex flex-col gap-3 border-t border-brand-line/70 px-3.5 pb-3.5 pt-3">
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-xs font-semibold text-muted">Owner</span>
-                            <SelectControl
-                              aria-label={`${service.name} owner`}
-                              value={ownerFor(service.id)}
-                              onChange={(e) => set({ owners: { ...form.owners, [service.id]: e.target.value } })}
-                              options={activeMembers.map((m) => ({ value: m.id, label: m.name }))}
-                              placeholder={activeMembers.length ? undefined : 'No team members'}
-                              className="h-9 w-48 text-[13px]"
-                            />
-                          </div>
-                          {subs.length > 0 && (
-                            <div>
-                              <p className="mb-1.5 text-xs font-semibold text-muted">Include</p>
-                              <div className="flex flex-wrap gap-2">
-                                {subs.map((sub) => (
-                                  <Chip key={sub.id} active={form.subServiceIds.includes(sub.id)} onClick={() => toggleSub(sub.id)}>
-                                    {sub.name}
-                                  </Chip>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
-          )}
-          {errors.services && <p className="mt-2 text-xs font-medium text-red-700">{errors.services}</p>}
         </Card>
 
         </div>
@@ -372,13 +303,17 @@ function AddProjectForm() {
         </Card>
 
         <Card>
-          <SectionTitle number={5} title="Team & notes" />
-          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-subtle p-3">
-            <AvatarStack people={lookups.membersFor(teamIds)} max={5} size="sm" />
-            <span className="text-[13px]">
-              {teamIds.length} {teamIds.length === 1 ? 'person' : 'people'} assigned from service owners
-            </span>
-          </div>
+          <SectionTitle number={5} title="Assign team" />
+          <PeoplePicker
+            people={activeMembers}
+            value={form.teamIds}
+            onChange={(ids) => set({ teamIds: ids })}
+            hint="Add everyone who will work on this project. You can pick more than one person."
+          />
+        </Card>
+
+        <Card>
+          <SectionTitle number={6} title="Notes" />
           <TextArea label="Internal notes" value={form.notes} onChange={(e) => set({ notes: e.target.value })} rows={3} placeholder="Visible to staff only." />
         </Card>
         </div>

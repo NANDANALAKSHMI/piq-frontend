@@ -1,0 +1,27 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "vite",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5173"
+      ],
+      "port": 5173
+    },
+    {
+      "name": "clients-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "node_modules/vite/bin/vite.js",
+        "--config",
+        "C:/Users/pmcuser/AppData/Local/Temp/claude/9070a4e3d80964c2/b93bea70-99cb-4b1a-ac8b-726176ec1d35/scratchpad/clients-preview/vite.config.mjs"
+      ],
+      "port": 5190
+    }
+  ]
+}
