@@ -19,13 +19,6 @@ import useServerSearch from '../hooks/useServerSearch.js';
 import { ENQUIRY_STATUSES } from '../data/constants.js';
 import { cn, daysUntil, formatDate } from '../utils/formatters.js';
 
-const PIPELINE = [
-  { status: 'New', helper: 'Not contacted' },
-  { status: 'Follow-up', helper: 'Calls & visits' },
-  { status: 'Converted', helper: 'Became a project' },
-  { status: 'Lost', helper: 'Did not go ahead' },
-];
-
 function nextFollowUp(enquiry) {
   return [...enquiry.followUps].filter((f) => !f.done).sort((a, b) => a.date.localeCompare(b.date))[0];
 }
@@ -152,25 +145,6 @@ export default function EnquiriesPage() {
           </div>
         </div>
       )}
-
-      <section className="grid shrink-0 grid-cols-2 gap-4 md:grid-cols-4" aria-label="Pipeline">
-        {PIPELINE.map((stage) => (
-          <button
-            key={stage.status}
-            type="button"
-            onClick={() => setStatus(status === stage.status ? 'open' : stage.status)}
-            aria-pressed={status === stage.status}
-            className={cn(
-              'app-card app-card-hover flex flex-col items-start gap-1 rounded-2xl border p-4 text-left',
-              status === stage.status && 'border-2 border-brand',
-            )}
-          >
-            <span className="text-[13px] text-muted">{stage.status}</span>
-            <StatusBadge value={stage.status} dot={false} className="!font-medium" />
-            <span className="sr-only">{stage.helper}</span>
-          </button>
-        ))}
-      </section>
 
       <Card padded={false} className="flex min-h-0 flex-1 flex-col">
         <div className="flex shrink-0 flex-wrap items-center gap-2.5 p-4">
