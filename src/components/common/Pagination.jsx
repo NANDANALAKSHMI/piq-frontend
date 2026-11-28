@@ -47,7 +47,7 @@ export default function Pagination({ page, pageCount, totalItems, pageSize, onPa
               aria-current={item === page ? 'page' : undefined}
               className={cn(
                 'h-9 min-w-9 rounded-[10px] border px-2 text-[13px] font-semibold transition-colors',
-                item === page ? 'border-navy bg-navy text-white' : 'border-line bg-surface hover:bg-slate-50',
+                item === page ? 'border-navy bg-navy text-white dark:border-gold dark:bg-gold dark:text-on-gold' : 'border-line bg-surface hover:bg-slate-50',
               )}
             >
               {item}

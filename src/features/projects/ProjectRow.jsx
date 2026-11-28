@@ -137,7 +137,7 @@ export function ProjectGroup({ status, count, expanded, onToggle, children }) {
   const meta = STATUS_META[status] ?? { label: status, dot: 'bg-red-500' };
   const panelId = `group-${status.replace(/\s+/g, '-').toLowerCase()}`;
   return (
-    <section className="rounded-xl border border-panel-line bg-panel">
+    <section className="app-card rounded-xl border">
       <h2 className="font-sans">
         <button
           type="button"

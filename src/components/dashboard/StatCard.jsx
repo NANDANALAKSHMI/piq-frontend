@@ -14,7 +14,7 @@ const ICON_TONES = {
 export default function StatCard({ label, value, helper, icon: Icon, tone = 'blue', trend, valueClassName }) {
   const TrendIcon = trend === 'down' ? TrendingDown : TrendingUp;
   return (
-    <div className="flex min-w-0 items-center gap-3.5 rounded-2xl border border-line bg-surface p-3.5 transition-shadow hover:shadow-sm sm:p-4.5">
+    <div className="app-card flex min-w-0 items-center gap-3.5 rounded-2xl border p-3.5 sm:p-4.5">
       {Icon && (
         <span className={cn('hidden size-11.5 shrink-0 place-items-center rounded-xl sm:grid', ICON_TONES[tone])}>
           <Icon className="size-[22px]" aria-hidden="true" />

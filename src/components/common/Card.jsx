@@ -2,7 +2,7 @@ import { cn } from '../../utils/formatters.js';
 
 export default function Card({ as: Component = 'section', className, padded = true, children, ...props }) {
   return (
-    <Component className={cn('min-w-0 rounded-2xl border border-line bg-surface', padded && 'p-5', className)} {...props}>
+    <Component className={cn('app-card min-w-0 rounded-2xl border', padded && 'p-5', className)} {...props}>
       {children}
     </Component>
   );

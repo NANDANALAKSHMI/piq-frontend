@@ -285,7 +285,7 @@ function AddProjectForm() {
             {vendorRows.map(({ service, options, chosen: vendorId }) => {
               const vendor = options.find((o) => o.id === vendorId);
               return (
-                <div key={service.id} className="flex flex-col gap-2 rounded-xl border border-line bg-surface/60 p-3">
+                <div key={service.id} className="app-row flex flex-col gap-2 rounded-xl border p-3">
                   <div className="flex items-center justify-between gap-2">
                   <b>{service.name}</b>
                   <span className="text-[12.5px] text-muted">{vendor ? [vendor.city, vendor.phone].filter(Boolean).join(' · ') : ''}</span>

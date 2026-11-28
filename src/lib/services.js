@@ -48,15 +48,15 @@ export function subscribeToServices(onChange, onError) {
 }
 
 /** Adds a service and resolves to its new id. */
-export async function createService({ name, description = '', ownerRole = '', questions = [] }) {
+export async function createService({ name, description = '', ownerRole = '', subServices = [], questions = [], active = true }) {
   const ref = doc(collection(db, SERVICES));
   await setDoc(ref, {
     name: name.trim(),
     description: description.trim(),
     ownerRole: ownerRole.trim(),
-    active: true,
+    active,
     order: Date.now(),
-    subServices: [],
+    subServices,
     questions,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),

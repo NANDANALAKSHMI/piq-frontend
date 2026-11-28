@@ -21,7 +21,7 @@ function searchText(client) {
   return `${client.name} ${client.contactName} ${client.phone} ${client.email} ${places}`.toLowerCase();
 }
 
-const CARD = 'rounded-xl border border-panel-line bg-panel text-ink';
+const CARD = 'app-card rounded-xl border text-ink';
 const FOCUS_RING =
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold';
 const GRID = 'grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(300px,1fr))]';
@@ -43,11 +43,11 @@ function ClientCard({ client }) {
       onClick={openClient}
       className={cn(
         CARD,
-        'flex min-h-20 cursor-pointer items-center gap-3 p-3 transition-colors hover:border-brand-line',
+        'app-card-hover flex min-h-20 cursor-pointer items-center gap-3 p-3',
       )}
     >
       <span
-        className="grid size-11 shrink-0 place-items-center rounded-full bg-[#0f766e] text-base font-bold text-white"
+        className="grid size-11 shrink-0 place-items-center rounded-full bg-[#0f766e] text-base font-bold text-white w-[35px] h-[35px]"
         aria-hidden="true"
       >
         {client.name?.trim().charAt(0).toUpperCase() || '?'}

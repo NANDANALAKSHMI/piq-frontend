@@ -18,6 +18,8 @@ const VendorsPage = lazy(() => import('../pages/VendorsPage.jsx'));
 const VendorFormPage = lazy(() => import('../pages/VendorFormPage.jsx'));
 const VendorDetailPage = lazy(() => import('../pages/VendorDetailPage.jsx'));
 const ServicesPage = lazy(() => import('../pages/ServicesPage.jsx'));
+const ServiceFormPage = lazy(() => import('../pages/ServiceFormPage.jsx'));
+const ServiceDetailPage = lazy(() => import('../pages/ServiceDetailPage.jsx'));
 const NotificationsPage = lazy(() => import('../pages/NotificationsPage.jsx'));
 const TeamPage = lazy(() => import('../pages/TeamPage.jsx'));
 const ReportsPage = lazy(() => import('../pages/ReportsPage.jsx'));
@@ -30,10 +32,10 @@ function PageLoader() {
       <div className="h-8 w-56 animate-pulse rounded-lg bg-slate-200/70" />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {[0, 1, 2].map((i) => (
-          <div key={i} className="h-24 animate-pulse rounded-2xl bg-surface" />
+          <div key={i} className="app-card h-24 animate-pulse rounded-2xl border" />
         ))}
       </div>
-      <div className="h-80 animate-pulse rounded-2xl bg-surface" />
+      <div className="app-card h-80 animate-pulse rounded-2xl border" />
     </div>
   );
 }
@@ -79,6 +81,9 @@ export default function AppRoutes() {
         <Route path="vendors/:vendorId/edit" element={page(VendorFormPage)} />
         <Route path="vendor-categories" element={<Navigate to="/services" replace />} />
         <Route path="services" element={page(ServicesPage)} />
+        <Route path="services/new" element={page(ServiceFormPage)} />
+        <Route path="services/:serviceId" element={page(ServiceDetailPage)} />
+        <Route path="services/:serviceId/edit" element={page(ServiceFormPage)} />
         <Route path="categories" element={<Navigate to="/services" replace />} />
         <Route path="notifications" element={page(NotificationsPage)} />
         <Route path="team" element={page(TeamPage)} />

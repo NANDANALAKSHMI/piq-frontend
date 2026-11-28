@@ -243,7 +243,7 @@ export default function ProjectsPage() {
       {projectsLoading ? (
         <div className="flex flex-col gap-3" aria-label="Loading projects">
           {Array.from({ length: 3 }, (_, index) => (
-            <div key={index} className="h-24 animate-pulse rounded-xl border border-panel-line bg-panel" />
+            <div key={index} className="app-card h-24 animate-pulse rounded-xl border" />
           ))}
         </div>
       ) : groups.length === 0 ? (
