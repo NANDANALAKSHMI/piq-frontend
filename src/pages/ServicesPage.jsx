@@ -145,7 +145,6 @@ export default function ServicesPage() {
         (!q || s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q) || s.subServices.some((sub) => sub.name.toLowerCase().includes(q))),
     );
   }, [services, query, status]);
-  const counts = { All: services.length, Active: services.filter((s) => s.active).length, Inactive: services.filter((s) => !s.active).length };
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   useEffect(() => {
@@ -206,15 +205,12 @@ export default function ServicesPage() {
                 setPage(1);
               }}
               className={cn(
-                'inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-[13px] font-semibold transition-colors',
+                'inline-flex h-8 items-center rounded-lg px-3.5 text-[13px] font-semibold transition-colors',
                 FOCUS_RING,
                 status === value ? 'bg-surface text-ink shadow-sm dark:bg-white/[0.09]' : 'text-muted hover:text-ink',
               )}
             >
               {value}
-              <span className={cn('rounded-full px-1.5 text-[11px] tabular-nums', status === value ? 'bg-brand-soft text-brand-ink' : 'bg-black/5 dark:bg-white/[0.06]')}>
-                {counts[value]}
-              </span>
             </button>
           ))}
         </div>
