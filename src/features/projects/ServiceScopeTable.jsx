@@ -2,17 +2,16 @@ import DataTable from '../../components/common/DataTable.jsx';
 import Avatar from '../../components/common/Avatar.jsx';
 import ProgressBar from '../../components/common/ProgressBar.jsx';
 import { StatusBadge } from '../../components/common/Badge.jsx';
-import { SelectControl } from '../../components/common/FormFields.jsx';
+import Button from '../../components/common/Button.jsx';
 import EmptyState from '../../components/common/EmptyState.jsx';
 import { serviceStatus } from '../../utils/projects.js';
-
-const PROGRESS_OPTIONS = [0, 25, 50, 75, 100].map((value) => ({ value: String(value), label: `${value}%` }));
+import { timeAgo } from '../../utils/formatters.js';
 
 /**
  * Per-service tracking: each service in scope has its own owner, sub-services, progress and status.
  * `subServiceName(id)` turns a sub-service id into its name.
  */
-export default function ServiceScopeTable({ services, getMember, subServiceName, onProgressChange, editable = true }) {
+export default function ServiceScopeTable({ services, getMember, subServiceName, onUpdate, editable = true }) {
   if (!services.length) return <EmptyState title="No services in scope" description="This project has no services yet." />;
 
   return (
@@ -54,23 +53,30 @@ export default function ServiceScopeTable({ services, getMember, subServiceName,
           key: 'progress',
           header: 'Progress',
           render: (s) => (
-            <div className="flex items-center gap-2.5">
-              <ProgressBar value={s.progress} tone={s.progress >= 100 ? 'green' : 'brand'} className="w-28" label={`${s.name} progress`} />
-              {editable ? (
-                <SelectControl
-                  aria-label={`Update ${s.name} progress`}
-                  value={String(PROGRESS_OPTIONS.some((o) => o.value === String(s.progress)) ? s.progress : 0)}
-                  onChange={(e) => onProgressChange(s, Number(e.target.value))}
-                  options={PROGRESS_OPTIONS}
-                  className="h-8 w-[82px] text-[13px]"
-                />
-              ) : (
-                <span className="text-[13px] font-semibold">{s.progress}%</span>
-              )}
+            <div className="w-56 max-w-full">
+              <div className="flex items-center gap-3">
+                <ProgressBar value={s.progress} tone={s.progress >= 100 ? 'green' : 'brand'} className="flex-1" label={`${s.name} progress`} />
+                <span className="w-10 text-right text-[13px] font-semibold tabular-nums">{s.progress}%</span>
+              </div>
+              {s.updatedAt && <p className="mt-0.5 text-[11.5px] text-muted">Updated {timeAgo(s.updatedAt)}</p>}
             </div>
           ),
         },
         { key: 'status', header: 'Status', render: (s) => <StatusBadge value={serviceStatus(s.progress)} /> },
+        ...(editable
+          ? [
+              {
+                key: 'update',
+                header: <span className="sr-only">Update</span>,
+                className: 'text-right',
+                render: (s) => (
+                  <Button size="sm" onClick={() => onUpdate(s)} aria-label={`Update ${s.name} progress`}>
+                    Update
+                  </Button>
+                ),
+              },
+            ]
+          : []),
       ]}
     />
   );

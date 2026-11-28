@@ -18,11 +18,13 @@ export default function StickyPageHeader({
   breadcrumbs,
   badge,
   cancelTo,
+  onCancel,
   submitLabel,
   submittingLabel,
   submitting = false,
   disabled = false,
   onSubmit,
+  children,
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,7 +32,7 @@ export default function StickyPageHeader({
   const goBack = () => (location.key !== 'default' ? navigate(-1) : navigate(parent));
 
   return (
-    <header data-sticky-header className="sticky -top-5 z-30 -mx-4 -mt-5 flex flex-col gap-3.5 border-b border-line bg-canvas px-4 pb-4 pt-5 md:-top-7 md:-mx-7 md:-mt-7 md:px-7 md:pt-7">
+    <header data-sticky-header className={`sticky -top-5 z-30 -mx-4 -mt-5 flex flex-col gap-3.5 bg-canvas px-4 pt-5 md:-top-7 md:-mx-7 md:-mt-7 md:px-7 md:pt-7 ${children ? '' : 'border-b border-line pb-4'}`}>
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2">
         <button
           type="button"
@@ -45,7 +47,7 @@ export default function StickyPageHeader({
             <Fragment key={crumb.label}>
               {index > 0 && <ChevronRight className="size-3.5 text-slate-400" aria-hidden="true" />}
               {crumb.to ? (
-                <Link to={crumb.to} className="rounded px-1 py-0.5 hover:bg-black/5 hover:text-ink">
+                <Link to={crumb.to} className="rounded px-1 py-0.5 hover:bg-slate-100 hover:text-ink">
                   {crumb.label}
                 </Link>
               ) : (
@@ -82,7 +84,7 @@ export default function StickyPageHeader({
         <div className="flex flex-wrap items-center gap-2">
           {actions ?? (
             <>
-              <Button size="sm" to={cancelTo}>
+              <Button size="sm" to={cancelTo} onClick={onCancel}>
                 Cancel
               </Button>
               <Button size="sm" variant="primary" icon={Check} disabled={disabled || submitting} onClick={onSubmit}>
@@ -92,6 +94,7 @@ export default function StickyPageHeader({
           )}
         </div>
       </div>
+      {children}
     </header>
   );
 }

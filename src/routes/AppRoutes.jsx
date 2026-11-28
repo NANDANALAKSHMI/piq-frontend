@@ -9,6 +9,7 @@ const DashboardPage = lazy(() => import('../pages/DashboardPage.jsx'));
 const ProjectsPage = lazy(() => import('../pages/ProjectsPage.jsx'));
 const ProjectDetailPage = lazy(() => import('../pages/ProjectDetailPage.jsx'));
 const AddProjectPage = lazy(() => import('../pages/AddProjectPage.jsx'));
+const EditProjectPage = lazy(() => import('../pages/AddProjectPage.jsx').then((m) => ({ default: m.EditProjectPage })));
 const ClientsPage = lazy(() => import('../pages/ClientsPage.jsx'));
 const ClientDetailPage = lazy(() => import('../pages/ClientDetailPage.jsx'));
 const AddClientPage = lazy(() => import('../pages/AddClientPage.jsx'));
@@ -69,6 +70,7 @@ export default function AppRoutes() {
         <Route path="projects" element={page(ProjectsPage)} />
         <Route path="projects/new" element={page(AddProjectPage)} />
         <Route path="projects/:projectId" element={page(ProjectDetailPage)} />
+        <Route path="projects/:projectId/edit" element={page(EditProjectPage)} />
         <Route path="jobs/*" element={<Navigate to="/projects" replace />} />
         <Route path="clients" element={page(ClientsPage)} />
         <Route path="clients/new" element={page(AddClientPage)} />

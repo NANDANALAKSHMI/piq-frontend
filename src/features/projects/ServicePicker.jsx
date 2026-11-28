@@ -191,7 +191,7 @@ export default function ServicePicker({ services, value, onChange, loading, erro
           )}
         >
           <span className={cn('truncate', !chips.length && 'text-muted')}>
-            {loading ? 'Loading services…' : chips.length ? `${chips.length} selected` : 'Select services'}
+            {loading ? 'Loading services…' : chips.length ? [...new Set(chips.map((chip) => chip.service.name))].join(', ') : 'Select services'}
           </span>
           <ChevronDown className={cn('size-4 shrink-0 text-muted transition-transform', open && 'rotate-180')} aria-hidden="true" />
         </button>
@@ -254,11 +254,6 @@ export default function ServicePicker({ services, value, onChange, loading, erro
                         />
                         <span className="min-w-0">
                           <span className="block truncate text-sm font-semibold">{service.name}</span>
-                          {subs.length > 0 && (
-                            <span className="block truncate text-xs text-muted">
-                              {subs.length} sub-service{subs.length === 1 ? '' : 's'}
-                            </span>
-                          )}
                         </span>
                       </label>
                     </div>
@@ -284,7 +279,7 @@ export default function ServicePicker({ services, value, onChange, loading, erro
 
             <div className="flex shrink-0 items-center justify-between gap-3 border-t border-panel-line px-3 py-2">
               <span className="text-[13px] text-muted" aria-live="polite">
-                {chips.length} selected
+                Tick the services this project needs
               </span>
               <div className="flex items-center gap-1.5">
                 <button

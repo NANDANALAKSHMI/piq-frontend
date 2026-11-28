@@ -49,7 +49,7 @@ export default function MultiSelect({ label, required, options, value, onChange,
           )}
         >
           <span className={cn('truncate', !selected.length && 'text-slate-400')}>
-            {selected.length ? `${selected.length} selected` : placeholder}
+            {selected.length ? selected.map((o) => o.label).join(', ') : placeholder}
           </span>
           <ChevronDown className={cn('size-4 shrink-0 text-muted transition-transform', open && 'rotate-180')} aria-hidden="true" />
         </button>
@@ -74,7 +74,7 @@ export default function MultiSelect({ label, required, options, value, onChange,
                       <span
                         className={cn(
                           'grid size-4.5 shrink-0 place-items-center rounded border',
-                          checked ? 'border-navy bg-navy text-white' : 'border-slate-300 bg-surface text-transparent',
+                          checked ? 'border-navy bg-navy text-white dark:border-brand dark:bg-brand dark:text-on-gold' : 'border-slate-300 bg-surface text-transparent',
                         )}
                       >
                         <Check className="size-3" aria-hidden="true" />
@@ -96,7 +96,7 @@ export default function MultiSelect({ label, required, options, value, onChange,
       {selected.length > 0 && (
         <ul className="flex flex-wrap gap-1.5" aria-label={`Selected ${label?.toLowerCase() ?? 'items'}`}>
           {selected.map((option) => (
-            <li key={option.value} className="inline-flex items-center gap-1 rounded-full bg-navy py-1 pl-3 pr-1 text-[13px] font-medium text-white">
+            <li key={option.value} className="inline-flex items-center gap-1 rounded-full bg-navy py-1 pl-3 pr-1 text-[13px] font-medium text-white dark:bg-navy-3">
               {option.label}
               <button
                 type="button"

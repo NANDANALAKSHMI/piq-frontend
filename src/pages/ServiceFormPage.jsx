@@ -127,7 +127,7 @@ function ServiceForm({ initial, serviceId, services, addService, updateService }
                     form.active === value ? 'border-2 border-brand bg-brand-tint' : 'border-line hover:border-slate-300',
                   )}
                 >
-                  <input type="radio" name="service-status" checked={form.active === value} onChange={() => set('active', value)} className="mt-0.5 size-4 accent-navy" />
+                  <input type="radio" name="service-status" checked={form.active === value} onChange={() => set('active', value)} className="mt-0.5 size-4 accent-brand" />
                   <span>
                     <StatusBadge value={label} />
                     <span className="mt-1.5 block text-[12.5px] text-muted">{help}</span>
@@ -141,7 +141,7 @@ function ServiceForm({ initial, serviceId, services, addService, updateService }
         <div className="flex min-w-0 flex-col gap-5.5">
           <Card className={PANEL}>
             <CardHeader
-              title={`Sub-services${form.subServices.length ? ` (${form.subServices.length})` : ''}`}
+              title="Sub-services"
               subtitle="The parts of this service. Switch one off to stop it being picked."
             />
             <ListInput
@@ -172,7 +172,7 @@ function ServiceForm({ initial, serviceId, services, addService, updateService }
 
           <Card className={PANEL}>
             <CardHeader
-              title={`Questions${form.questions.length ? ` (${form.questions.length})` : ''}`}
+              title="Questions"
               subtitle="Optional. Asked when this service is added to a project."
             />
             <ListInput

@@ -29,7 +29,7 @@ function toEnquiry(snapshot) {
     source: data.source ?? '',
     services: Array.isArray(data.services) ? data.services : [],
     scope: data.scope ?? 'Custom',
-    status: data.status ?? 'New',
+    status: ['Quotation sent', 'Negotiation'].includes(data.status) ? 'Follow-up' : data.status ?? 'New',
     receivedOn: data.receivedOn ?? '',
     assignedTo: data.assignedTo ?? null,
     notes: data.notes ?? '',

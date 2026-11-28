@@ -197,7 +197,7 @@ export default function PeoplePicker({ people, value, onChange, label = 'Assigne
 
             <div className="flex shrink-0 items-center justify-between gap-3 border-t border-panel-line px-3 py-2">
               <span className="text-[13px] text-muted" aria-live="polite">
-                {selected.length} assigned
+                Pick everyone who will work on this project
               </span>
               <button
                 type="button"

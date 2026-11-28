@@ -23,7 +23,7 @@ export const SCOPE_SERVICES = {
 
 export const CITIES = ['Bangalore', 'Kochi', 'Chennai', 'Hyderabad', 'Mumbai'];
 
-export const ENQUIRY_STATUSES = ['New', 'Follow-up', 'Quotation sent', 'Negotiation', 'Converted', 'Lost'];
+export const ENQUIRY_STATUSES = ['New', 'Follow-up', 'Converted', 'Lost'];
 
 /** Badge tone for every status-like value used across the app. */
 export const STATUS_TONES = {
@@ -38,8 +38,6 @@ export const STATUS_TONES = {
   Low: 'slate',
   New: 'violet',
   'Follow-up': 'orange',
-  'Quotation sent': 'blue',
-  Negotiation: 'amber',
   Converted: 'green',
   Lost: 'slate',
   Active: 'green',

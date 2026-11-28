@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowRight, CalendarPlus, Check, Eye, Mail, MessageSquareText, Phone, Plus, RefreshCw, SearchX, TriangleAlert } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { CalendarPlus, Check, Eye, Mail, MessageSquareText, Phone, Plus, RefreshCw, SearchX, TriangleAlert } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card from '../components/common/Card.jsx';
@@ -12,19 +12,18 @@ import { StatusBadge, Tag } from '../components/common/Badge.jsx';
 import { Chip } from '../components/common/Tabs.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import { useToast } from '../components/common/Toast.jsx';
-import { ConvertModal, FollowUpModal } from '../features/enquiries/EnquiryModals.jsx';
+import { FollowUpModal } from '../features/enquiries/EnquiryModals.jsx';
 import { useAppData } from '../context/AppDataContext.jsx';
 import useLookups from '../hooks/useLookups.js';
 import useServerSearch from '../hooks/useServerSearch.js';
-import useServices from '../hooks/useServices.js';
 import { ENQUIRY_STATUSES } from '../data/constants.js';
 import { cn, daysUntil, formatDate } from '../utils/formatters.js';
 
 const PIPELINE = [
   { status: 'New', helper: 'Not contacted' },
   { status: 'Follow-up', helper: 'Calls & visits' },
-  { status: 'Quotation sent', helper: 'Awaiting reply' },
-  { status: 'Negotiation', helper: 'Closing soon' },
+  { status: 'Converted', helper: 'Became a project' },
+  { status: 'Lost', helper: 'Did not go ahead' },
 ];
 
 function nextFollowUp(enquiry) {
@@ -41,11 +40,9 @@ function followUpLabel(followUp) {
 }
 
 export default function EnquiriesPage() {
-  const { enquiries, enquiriesLoading, enquiriesError, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry } = useAppData();
+  const { enquiries, enquiriesLoading, enquiriesError, updateEnquiry, addFollowUp, toggleFollowUp } = useAppData();
   const lookups = useLookups();
-  const { services } = useServices();
   const { showToast } = useToast();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('open');
@@ -107,7 +104,20 @@ export default function EnquiriesPage() {
         return <span className={cn(days <= 0 && 'font-semibold', days < 0 ? 'text-red-700' : days === 0 && 'text-brand-ink')}>{followUpLabel(f)}</span>;
       },
     },
-    { key: 'status', header: 'Status', sortable: true, render: (e) => <StatusBadge value={e.status} /> },
+    {
+      key: 'status',
+      header: 'Status',
+      sortable: true,
+      render: (e) => (
+        <SelectControl
+          aria-label={`Status of ${e.id}`}
+          value={e.status}
+          onChange={(event) => save(() => updateEnquiry(e.id, { status: event.target.value }), `${e.id} marked ${event.target.value}.`)}
+          options={ENQUIRY_STATUSES}
+          className="h-8 w-36 text-[13px]"
+        />
+      ),
+    },
     {
       key: 'open',
       header: <span className="sr-only">Open</span>,
@@ -215,9 +225,9 @@ export default function EnquiriesPage() {
               </>
             ) : (
               <>
-                <Button onClick={() => save(() => updateEnquiry(selected.id, { status: 'Lost' }), `${selected.id} marked as lost.`, 'info')}>Mark as lost</Button>
-                <Button variant="primary" iconRight={ArrowRight} onClick={() => setModal('convert')}>
-                  Convert to project
+                <Button onClick={closeDetails}>Close</Button>
+                <Button variant="primary" icon={CalendarPlus} onClick={() => setModal('followup')}>
+                  Schedule follow-up
                 </Button>
               </>
             )
@@ -309,7 +319,7 @@ export default function EnquiriesPage() {
                   const next = e.target.value;
                   save(() => updateEnquiry(selected.id, { status: next }), `${selected.id} moved to ${next}.`);
                 }}
-                options={ENQUIRY_STATUSES.filter((s) => s !== 'Converted')}
+                options={ENQUIRY_STATUSES}
               />
             </div>
           )}
@@ -362,23 +372,6 @@ export default function EnquiriesPage() {
           onClose={() => setModal(null)}
           onSave={async (followUp) => {
             if (await save(() => addFollowUp(selected.id, followUp), 'Follow-up scheduled.')) setModal(null);
-          }}
-        />
-      )}
-      {modal === 'convert' && selected && (
-        <ConvertModal
-          open
-          enquiry={selected}
-          onClose={() => setModal(null)}
-          onConvert={async (options) => {
-            try {
-              const projectId = await convertEnquiry(selected, { ...options, services });
-              setModal(null);
-              showToast(`${selected.id} converted into ${projectId}.`);
-              navigate(`/projects/${projectId}`);
-            } catch (err) {
-              showToast(err.message, { tone: 'error' });
-            }
           }}
         />
       )}

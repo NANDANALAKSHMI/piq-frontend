@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { FolderPlus, Users } from 'lucide-react';
 import EmptyState from '../components/common/EmptyState.jsx';
 import StickyPageHeader from '../components/common/StickyPageHeader.jsx';
@@ -12,6 +12,8 @@ import useServices from '../hooks/useServices.js';
 import { PRIORITIES } from '../data/constants.js';
 import { suggestVendors } from '../features/projects/projectFormHelpers.js';
 import ServicePicker from '../features/projects/ServicePicker.jsx';
+import QuickAddClientModal from '../features/projects/QuickAddClientModal.jsx';
+import QuickAddServiceModal from '../features/services/QuickAddServiceModal.jsx';
 import PeoplePicker from '../features/projects/PeoplePicker.jsx';
 import { cn, daysFromToday } from '../utils/formatters.js';
 
@@ -20,7 +22,7 @@ function SectionTitle({ number, title, subtitle, action }) {
     <CardHeader
       title={
         <span className="flex items-center gap-2.5">
-          <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-navy text-xs font-bold text-white">{number}</span>
+          <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-navy text-xs font-bold text-white dark:bg-brand dark:text-on-gold">{number}</span>
           {title}
         </span>
       }
@@ -32,17 +34,44 @@ function SectionTitle({ number, title, subtitle, action }) {
 
 const placeLine = (loc) => [loc.address, loc.city, loc.district, loc.state].filter(Boolean).join(', ') || '—';
 
-function AddProjectForm() {
-  const { clients, members, vendors, addProject } = useAppData();
+/** The form's values for an existing project (Edit mode). */
+function formFromProject(project, vendors) {
+  return {
+    clientId: project.clientId,
+    locationId: project.locationId,
+    name: project.name,
+    priority: project.priority,
+    startDate: project.startDate,
+    dueDate: project.dueDate,
+    quantity: project.quantity,
+    description: project.description,
+    serviceIds: project.services.map((s) => s.serviceId),
+    subServiceIds: project.services.flatMap((s) => s.subServiceIds),
+    owners: Object.fromEntries(project.services.map((s) => [s.serviceId, s.ownerId])),
+    teamIds: project.teamIds,
+    // The project stores vendors as a flat list: match each one to the service it supplies.
+    vendorChoices: Object.fromEntries(
+      project.services
+        .map((s) => [s.serviceId, project.vendorIds.find((id) => vendors.find((v) => v.id === id)?.serviceIds.includes(s.serviceId))])
+        .filter(([, vendorId]) => vendorId),
+    ),
+    notes: project.notes,
+  };
+}
+
+/** Creates a project, or edits `project` when one is given. */
+function AddProjectForm({ project }) {
+  const editing = Boolean(project);
+  const { clients, members, vendors, addProject, updateProject } = useAppData();
   const { services, loading: servicesLoading } = useServices();
   const { showToast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const initialClient = clients.find((c) => c.id === searchParams.get('client')) ?? null;
+  const initialClient = editing ? null : clients.find((c) => c.id === searchParams.get('client')) ?? null;
   const primaryOf = (client) => client?.locations.find((l) => l.primary)?.id ?? client?.locations[0]?.id ?? '';
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState(() => (editing ? formFromProject(project, vendors) : {
     clientId: initialClient?.id ?? '',
     locationId: primaryOf(initialClient),
     name: '',
@@ -57,15 +86,23 @@ function AddProjectForm() {
     teamIds: [],
     vendorChoices: {},
     notes: '',
-  });
+  }));
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  /** Pop-ups to add a client / service without leaving this page. */
+  const [quickAdd, setQuickAdd] = useState(null);
 
   const set = (patch) => setForm((current) => ({ ...current, ...patch }));
 
   const client = clients.find((c) => c.id === form.clientId);
+
+  // A client added from the pop-up arrives a moment later: once it does, pick its main location too.
+  useEffect(() => {
+    if (client && !form.locationId) set({ locationId: primaryOf(client) });
+  }, [client, form.locationId]);
   const activeMembers = members.filter((m) => m.status === 'Active');
-  const offered = useMemo(() => services.filter((s) => s.active), [services]);
+  // A service switched off later stays pickable on a project that already has it.
+  const offered = useMemo(() => services.filter((s) => s.active || project?.services.some((p) => p.serviceId === s.id)), [services, project]);
   const chosen = offered.filter((s) => form.serviceIds.includes(s.id));
 
   // With no per-service owner picker, each service is owned by the first assigned person (else the first active member).
@@ -101,11 +138,10 @@ function AddProjectForm() {
     }
     setSaving(true);
     try {
-      const id = await addProject({
+      const payload = {
         name: form.name.trim(),
         clientId: form.clientId,
         locationId: form.locationId,
-        status: 'Upcoming',
         priority: form.priority,
         startDate: form.startDate,
         dueDate: form.dueDate,
@@ -114,16 +150,27 @@ function AddProjectForm() {
         notes: form.notes.trim(),
         teamIds,
         vendorIds: vendorRows.map((r) => r.chosen).filter(Boolean),
-        services: chosen.map((s) => ({
-          serviceId: s.id,
-          name: s.name,
-          subServiceIds: s.subServices.filter((sub) => form.subServiceIds.includes(sub.id)).map((sub) => sub.id),
-          ownerId: ownerFor(s.id),
-          progress: 0,
-        })),
-      });
-      showToast(`${id} created.`);
-      navigate(`/projects/${id}`);
+        services: chosen.map((s) => {
+          const existing = project?.services.find((p) => p.serviceId === s.id); // keeps the progress already recorded
+          return {
+            ...existing,
+            serviceId: s.id,
+            name: s.name,
+            subServiceIds: s.subServices.filter((sub) => form.subServiceIds.includes(sub.id)).map((sub) => sub.id),
+            ownerId: ownerFor(s.id),
+            progress: existing?.progress ?? 0,
+          };
+        }),
+      };
+      if (editing) {
+        await updateProject(project.id, payload);
+        showToast('Project details saved.');
+        navigate(`/projects/${project.id}`);
+      } else {
+        const id = await addProject({ ...payload, status: 'Upcoming' });
+        showToast(`${id} created.`);
+        navigate(`/projects/${id}`);
+      }
     } catch (err) {
       showToast(err.message, { tone: 'error' });
       setSaving(false);
@@ -134,13 +181,17 @@ function AddProjectForm() {
     <div className="flex min-h-full flex-col gap-5.5">
       <StickyPageHeader
         icon={FolderPlus}
-        title="Create new project"
-        subtitle="Set up project details, services and team assignments."
-        breadcrumbs={[{ label: 'Projects', to: '/projects' }, { label: 'New project' }]}
-        badge="Draft"
-        cancelTo="/projects"
-        submitLabel="Create project"
-        submittingLabel="Creating…"
+        title={editing ? `Edit ${project.id}` : 'Create new project'}
+        subtitle={editing ? 'Change anything about this project. Progress already recorded is kept.' : 'Set up project details, services and team assignments.'}
+        breadcrumbs={
+          editing
+            ? [{ label: 'Projects', to: '/projects' }, { label: project.id, to: `/projects/${project.id}` }, { label: 'Edit' }]
+            : [{ label: 'Projects', to: '/projects' }, { label: 'New project' }]
+        }
+        badge={editing ? undefined : 'Draft'}
+        cancelTo={editing ? `/projects/${project.id}` : '/projects'}
+        submitLabel={editing ? 'Save changes' : 'Create project'}
+        submittingLabel={editing ? 'Saving…' : 'Creating…'}
         submitting={saving}
         disabled={servicesLoading}
         onSubmit={handleCreate}
@@ -149,7 +200,7 @@ function AddProjectForm() {
       <div className="grid min-w-0 grid-cols-1 items-start gap-5.5 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
         <div className="flex min-w-0 flex-col gap-5.5">
         <Card>
-          <SectionTitle number={1} title="Client & location" action={<Link to="/clients/new" className="text-[13px] font-semibold text-brand-ink hover:underline">+ New client</Link>} />
+          <SectionTitle number={1} title="Client & location" action={<button type="button" onClick={() => setQuickAdd('client')} className="text-[13px] font-semibold text-brand-ink hover:underline">+ New client</button>} />
           <SelectField
             label="Client"
             required
@@ -182,7 +233,7 @@ function AddProjectForm() {
                       >
                         <span className="flex items-center justify-between gap-2">
                           <b>{loc.name || loc.city || 'Location'}</b>
-                          <input type="radio" name="location" checked={selected} onChange={() => set({ locationId: loc.id })} className="size-4.5 accent-navy" />
+                          <input type="radio" name="location" checked={selected} onChange={() => set({ locationId: loc.id })} className="size-4.5 accent-brand" />
                         </span>
                         <span className="text-[12.5px] text-muted">{placeLine(loc)}</span>
                       </label>
@@ -208,14 +259,14 @@ function AddProjectForm() {
             number={2}
             title="Services"
             subtitle="Pick what this project needs — each one is tracked separately."
-            action={<Link to="/services" className="text-[13px] font-semibold text-brand-ink hover:underline">Manage services</Link>}
+            action={<button type="button" onClick={() => setQuickAdd('service')} className="text-[13px] font-semibold text-brand-ink hover:underline">+ New service</button>}
           />
           {!servicesLoading && offered.length === 0 && (
             <p className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-[13px] text-muted">
-              No services yet — add them on the{' '}
-              <Link to="/services" className="font-semibold text-brand-ink hover:underline">
-                Services page
-              </Link>
+              No services yet —{' '}
+              <button type="button" onClick={() => setQuickAdd('service')} className="font-semibold text-brand-ink hover:underline">
+                add your first service
+              </button>
               .
             </p>
           )}
@@ -276,7 +327,6 @@ function AddProjectForm() {
             number={4}
             title="Vendors for this project"
             subtitle="Optional. Vendors offering the chosen services; preferred vendors first."
-            action={<Link to="/vendors" className="text-[13px] font-semibold text-brand-ink hover:underline">Open vendor list</Link>}
           />
           <div className="flex flex-col gap-3">
             {vendorRows.length === 0 && (
@@ -318,8 +368,46 @@ function AddProjectForm() {
         </Card>
         </div>
       </div>
+
+      {quickAdd === 'client' && (
+        <QuickAddClientModal
+          onClose={() => setQuickAdd(null)}
+          onCreated={(id) => {
+            set({ clientId: id, locationId: '' }); // its main location is picked when the client arrives
+            setQuickAdd(null);
+          }}
+        />
+      )}
+      {quickAdd === 'service' && (
+        <QuickAddServiceModal
+          onClose={() => setQuickAdd(null)}
+          onCreated={(id) => {
+            set({ serviceIds: [...new Set([...form.serviceIds, id])] });
+            setQuickAdd(null);
+          }}
+        />
+      )}
     </div>
   );
+}
+
+/** /projects/:projectId/edit */
+export function EditProjectPage() {
+  const { projectId } = useParams();
+  const { projects, projectsLoading } = useAppData();
+  if (projectsLoading) return <p className="py-10 text-center text-[13px] text-muted">Loading project…</p>;
+  const project = projects.find((p) => p.id === projectId);
+  if (!project) {
+    return (
+      <EmptyState
+        icon={Users}
+        title={`Project ${projectId} not found`}
+        description="It may have been removed, or the link is wrong."
+        action={<Button to="/projects" variant="primary">Back to projects</Button>}
+      />
+    );
+  }
+  return <AddProjectForm key={project.id} project={project} />;
 }
 
 export default function AddProjectPage() {

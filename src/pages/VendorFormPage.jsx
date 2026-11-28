@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Truck } from 'lucide-react';
 import StickyPageHeader from '../components/common/StickyPageHeader.jsx';
 import Button from '../components/common/Button.jsx';
 import Card, { CardHeader } from '../components/common/Card.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
-import MultiSelect from '../components/common/MultiSelect.jsx';
+import ServicePicker from '../features/projects/ServicePicker.jsx';
+import QuickAddServiceModal from '../features/services/QuickAddServiceModal.jsx';
 import { StatusBadge } from '../components/common/Badge.jsx';
 import { TextArea, TextField } from '../components/common/FormFields.jsx';
 import { useToast } from '../components/common/Toast.jsx';
@@ -13,7 +14,6 @@ import { useAppData } from '../context/AppDataContext.jsx';
 import useServices from '../hooks/useServices.js';
 import useLocations from '../hooks/useLocations.js';
 import LocationFields from '../features/vendors/LocationFields.jsx';
-import { Chip } from '../components/common/Tabs.jsx';
 import { VENDOR_STATUSES } from '../features/vendors/vendorStatus.js';
 import { cn } from '../utils/formatters.js';
 
@@ -44,26 +44,13 @@ function VendorForm({ initial, vendorId }) {
   const [form, setForm] = useState(initial);
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const [quickAdd, setQuickAdd] = useState(false); // pop-up to add a service without leaving the form
 
   const editing = Boolean(vendorId);
   const update = (key) => (e) => setForm((current) => ({ ...current, [key]: e.target.value }));
 
   /** Categories are the services from the Services page; the services offered are their sub-services. */
   const categories = useMemo(() => services.filter((s) => s.active || form.serviceIds.includes(s.id)), [services, form.serviceIds]);
-  const chosen = useMemo(() => categories.filter((s) => form.serviceIds.includes(s.id)), [categories, form.serviceIds]);
-
-  /** Removing a category also clears the sub-services picked under it. */
-  const changeCategories = (serviceIds) =>
-    setForm((current) => {
-      const allowed = new Set(services.filter((s) => serviceIds.includes(s.id)).flatMap((s) => s.subServices.map((sub) => sub.id)));
-      return { ...current, serviceIds, subServiceIds: current.subServiceIds.filter((id) => allowed.has(id)) };
-    });
-
-  const toggleSub = (subId) =>
-    setForm((current) => ({
-      ...current,
-      subServiceIds: current.subServiceIds.includes(subId) ? current.subServiceIds.filter((id) => id !== subId) : [...current.subServiceIds, subId],
-    }));
 
   const validate = () => {
     const next = {};
@@ -136,7 +123,7 @@ function VendorForm({ initial, vendorId }) {
       <div className="grid min-w-0 grid-cols-1 items-start gap-5.5 xl:grid-cols-2">
       <div className="flex min-w-0 flex-col gap-5.5">
       <Card>
-        <CardHeader title="Basic information" />
+        <CardHeader title="Basic information" subtitle="Who the vendor is and how to reach them." />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <TextField label="Vendor name" required value={form.name} onChange={update('name')} error={errors.name} placeholder="e.g. Sri Balaji Timbers" />
           <TextField label="Contact person" value={form.contactPerson} onChange={update('contactPerson')} placeholder="Full name" />
@@ -159,71 +146,25 @@ function VendorForm({ initial, vendorId }) {
       <Card>
         <CardHeader
           title="Services"
-          subtitle="What this vendor supplies. Services come from the Services page — pick as many as apply."
+          subtitle="Pick what this vendor supplies — tick a service for all of it, or open it to choose sub-services."
           action={
-            <Link to="/services" className="text-[13px] font-semibold text-brand-ink hover:underline">
-              Manage on Services page
-            </Link>
+            <button type="button" onClick={() => setQuickAdd(true)} className="text-[13px] font-semibold text-brand-ink hover:underline">
+              + New service
+            </button>
           }
         />
-        <MultiSelect
-          label="Services"
-          options={categories.map((s) => ({ value: s.id, label: s.name, hint: s.description }))}
-          value={form.serviceIds}
-          onChange={changeCategories}
-          placeholder={servicesLoading ? 'Loading services…' : 'Select services'}
-          disabled={servicesLoading}
-          emptyText="No services yet — add them on the Services page."
+        <ServicePicker
+          services={categories}
+          value={{ serviceIds: form.serviceIds, subServiceIds: form.subServiceIds }}
+          onChange={({ serviceIds, subServiceIds }) => setForm((current) => ({ ...current, serviceIds, subServiceIds }))}
+          loading={servicesLoading}
           className="lg:max-w-2xl"
         />
       </Card>
 
       <Card>
-        <CardHeader title="Sub-services" subtitle="The sub-services this vendor offers under each chosen service." />
-        {!chosen.length ? (
-          <p className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-[13px] text-muted">Choose at least one service to see its sub-services.</p>
-        ) : (
-          <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-            {chosen.map((category) => {
-              const subs = category.subServices.filter((sub) => sub.active || form.subServiceIds.includes(sub.id));
-              const picked = subs.filter((sub) => form.subServiceIds.includes(sub.id)).length;
-              return (
-                <li key={category.id} className="rounded-xl border border-line p-3.5">
-                  <div className="mb-2.5 flex items-center justify-between gap-2">
-                    <b>{category.name}</b>
-                    <span className="text-[12.5px] text-muted">
-                      {picked} of {subs.length} selected
-                    </span>
-                  </div>
-                  {subs.length ? (
-                    <div className="flex flex-wrap gap-2">
-                      {subs.map((sub) => (
-                        <Chip key={sub.id} active={form.subServiceIds.includes(sub.id)} onClick={() => toggleSub(sub.id)}>
-                          {sub.name}
-                        </Chip>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-[13px] text-muted">
-                      No sub-services under {category.name} yet.{' '}
-                      <Link to="/services" className="font-semibold text-brand-ink hover:underline">
-                        Add them
-                      </Link>
-                    </p>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </Card>
-
-      </div>
-      </div>
-
-      <Card>
-        <CardHeader title="Vendor status" />
-        <div role="radiogroup" aria-label="Vendor status" className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+        <CardHeader title="Vendor status" subtitle="Controls how this vendor appears in project suggestions." />
+        <div role="radiogroup" aria-label="Vendor status" className="grid grid-cols-1 gap-2.5 sm:grid-cols-1">
           {VENDOR_STATUSES.map(({ value, help }) => (
             <label
               key={value}
@@ -232,7 +173,7 @@ function VendorForm({ initial, vendorId }) {
                 form.status === value ? 'border-2 border-brand bg-brand-tint' : 'border-line hover:border-slate-300',
               )}
             >
-              <input type="radio" name="vendor-status" value={value} checked={form.status === value} onChange={update('status')} className="mt-0.5 size-4 accent-navy" />
+              <input type="radio" name="vendor-status" value={value} checked={form.status === value} onChange={update('status')} className="mt-0.5 size-4 accent-brand" />
               <span>
                 <StatusBadge value={value} />
                 <span className="mt-1.5 block text-[12.5px] text-muted">{help}</span>
@@ -242,6 +183,20 @@ function VendorForm({ initial, vendorId }) {
         </div>
       </Card>
 
+      </div>
+      </div>
+
+
+
+      {quickAdd && (
+        <QuickAddServiceModal
+          onClose={() => setQuickAdd(false)}
+          onCreated={(id) => {
+            setForm((current) => ({ ...current, serviceIds: [...new Set([...current.serviceIds, id])] }));
+            setQuickAdd(false);
+          }}
+        />
+      )}
     </div>
   );
 }

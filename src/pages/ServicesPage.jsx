@@ -9,7 +9,7 @@ import Pagination from '../components/common/Pagination.jsx';
 import { useToast } from '../components/common/Toast.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import useServices from '../hooks/useServices.js';
-import { plural } from '../features/services/serviceHelpers.js';
+
 import { SERVICE_SURFACE, initialOf, serviceTone } from '../features/services/serviceTone.js';
 import { cn } from '../utils/formatters.js';
 
@@ -51,10 +51,6 @@ function ServiceCard({ service, onToggle, onEdit, onView }) {
           <h2 className="truncate text-[15px] font-semibold leading-tight" title={service.name}>
             {service.name}
           </h2>
-          <p className="mt-1 text-xs text-muted">
-            {plural(subs.length, 'sub-service')}
-            {service.questions.length > 0 && ` · ${plural(service.questions.length, 'question')}`}
-          </p>
         </div>
         <Toggle size="sm" checked={service.active} label={`${service.name} active`} onChange={onToggle} />
       </div>

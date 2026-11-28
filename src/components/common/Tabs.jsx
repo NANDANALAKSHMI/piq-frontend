@@ -3,7 +3,7 @@ import { cn } from '../../utils/formatters.js';
 /** Underlined tabs. `tabs` = [{ id, label }]. */
 export default function Tabs({ tabs, active, onChange, className, label = 'Sections' }) {
   return (
-    <div role="tablist" aria-label={label} className={cn('scrollbar-thin flex gap-1 overflow-x-auto border-b border-line', className)}>
+    <div role="tablist" aria-label={label} className={cn('scrollbar-thin flex gap-1 overflow-x-auto overflow-y-hidden border-b border-line', className)}>
       {tabs.map((tab) => {
         const selected = tab.id === active;
         return (
@@ -35,7 +35,7 @@ export function Chip({ active, onClick, children, className }) {
       aria-pressed={active}
       className={cn(
         'inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-[13px] font-medium transition-colors',
-        active ? 'border-navy bg-navy text-white' : 'border-line bg-surface text-ink hover:border-slate-300',
+        active ? 'border-navy bg-navy text-white dark:border-brand dark:bg-brand dark:text-on-gold' : 'border-line bg-surface text-ink hover:border-slate-300',
         className,
       )}
     >

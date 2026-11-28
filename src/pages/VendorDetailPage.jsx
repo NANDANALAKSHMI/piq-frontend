@@ -152,7 +152,7 @@ export default function VendorDetailPage() {
         {categoryNames.length ? (
           <div className="flex flex-wrap gap-2">
             {categoryNames.map((name) => (
-              <span key={name} className="rounded-full bg-navy px-3 py-1.5 text-[13px] font-medium text-white">
+              <span key={name} className="rounded-full bg-navy px-3 py-1.5 text-[13px] font-medium text-white dark:bg-navy-3">
                 {name}
               </span>
             ))}

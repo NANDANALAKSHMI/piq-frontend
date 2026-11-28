@@ -113,7 +113,7 @@ export default function ServiceDetailPage() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card className={PANEL}>
-          <CardHeader title={`Sub-services (${service.subServices.length})`} subtitle="Switch one off to stop it being picked for new projects." />
+          <CardHeader title="Sub-services" subtitle="Switch one off to stop it being picked for new projects." />
           {service.subServices.length ? (
             <ul className="flex flex-col gap-2">
               {service.subServices.map((sub) => (
@@ -137,7 +137,7 @@ export default function ServiceDetailPage() {
         </Card>
 
         <Card className={PANEL}>
-          <CardHeader title={`Questions (${service.questions.length})`} subtitle="Asked when this service is added to a project." />
+          <CardHeader title="Questions" subtitle="Asked when this service is added to a project." />
           {service.questions.length ? (
             <ol className="flex flex-col gap-2">
               {service.questions.map((q, index) => (
@@ -155,7 +155,7 @@ export default function ServiceDetailPage() {
 
       <Card className={PANEL}>
         <CardHeader
-          title={`Ongoing projects (${ongoing.length})`}
+          title="Ongoing projects"
           subtitle="Projects using this service that aren’t completed or cancelled."
           action={
             ongoing.length > 0 && (

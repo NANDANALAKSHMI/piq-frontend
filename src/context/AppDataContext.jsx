@@ -255,16 +255,27 @@ export function AppDataProvider({ children }) {
   );
 
   const setServiceProgress = useCallback(
-    async (projectId, serviceId, progress) => {
+    // Time-stamps the change in the activity log; an optional `note` is also posted to the team chat.
+    async (projectId, serviceId, progress, note = '') => {
       const project = findProject(projectId);
       const service = project.services.find((s) => s.serviceId === serviceId);
+      const name = service?.name ?? 'Service';
+      const from = service?.progress ?? 0;
+      const at = new Date().toISOString();
+      const summary = progress >= 100 ? `${name} marked complete` : from === progress ? `${name}: note added` : `${name}: ${from}% → ${progress}%`;
+      const member = members.find((m) => m.id === actorId);
       return saveProject(
         projectId,
-        { services: project.services.map((s) => (s.serviceId === serviceId ? { ...s, progress } : s)) },
-        progress >= 100 ? { entry: entry('done', `${service?.name ?? 'Service'} marked complete`) } : {},
+        { services: project.services.map((s) => (s.serviceId === serviceId ? { ...s, progress, updatedAt: at, updatedBy: actorName } : s)) },
+        {
+          entry: entry(progress >= 100 ? 'done' : 'stage', summary),
+          ...(note
+            ? { comment: { id: localId('cm'), authorId: actorId, authorName: actorName, role: member?.title ?? '', text: `${summary} — ${note}`, at } }
+            : {}),
+        },
       );
     },
-    [entry, findProject],
+    [actorId, actorName, entry, findProject, members],
   );
 
   const addComment = useCallback(
@@ -368,55 +379,6 @@ export function AppDataProvider({ children }) {
     [enquiries, updateEnquiry],
   );
 
-  /**
-   * Creates (or reuses) the client and a new project from an enquiry — nothing is re-typed.
-   * `services` is the Services-page list, used to match the enquiry's service names.
-   */
-  const convertEnquiry = useCallback(
-    async (enquiry, { services = [], dueDate = daysFromToday(14) } = {}) => {
-      const existing = clients.find((c) => c.name.toLowerCase() === enquiry.company.toLowerCase());
-      let clientId = existing?.id;
-      let locationId = existing?.locations.find((l) => l.primary)?.id ?? existing?.locations[0]?.id ?? '';
-      if (!existing) {
-        locationId = localId('loc');
-        clientId = await addClient({
-          name: enquiry.company,
-          industry: '',
-          contactName: enquiry.contactName,
-          designation: '',
-          phone: enquiry.phone,
-          email: enquiry.email,
-          gstin: '',
-          type: 'One-time project',
-          notes: enquiry.notes,
-          locations: [{ id: locationId, name: enquiry.location || enquiry.city, address: enquiry.location, city: enquiry.city, state: enquiry.state ?? '', district: '', pin: '', primary: true }],
-        });
-      }
-      const owner = enquiry.assignedTo ?? actorId;
-      const projectServices = enquiry.services.map((name) => {
-        const match = services.find((s) => s.name.toLowerCase() === name.toLowerCase());
-        return { serviceId: match?.id ?? `name:${name}`, name: match?.name ?? name, subServiceIds: [], ownerId: owner, progress: 0 };
-      });
-      const projectId = await addProject({
-        name: `${enquiry.company} — ${enquiry.services.join(' + ')}`,
-        clientId,
-        locationId,
-        status: 'Upcoming',
-        priority: 'Medium',
-        startDate: daysFromToday(2),
-        dueDate,
-        quantity: '',
-        description: enquiry.notes,
-        notes: '',
-        teamIds: [owner],
-        createdFrom: enquiry.id,
-        services: projectServices,
-      });
-      updateEnquiry(enquiry.id, { status: 'Converted' }).catch(() => {});
-      return projectId;
-    },
-    [actorId, addClient, addProject, clients, updateEnquiry],
-  );
 
   /* ---------- vendors, team, notifications ---------- */
 
@@ -511,7 +473,7 @@ export function AppDataProvider({ children }) {
       projects, projectsLoading, projectsError, clients, clientsLoading, clientsError, enquiries, enquiriesLoading, enquiriesError, vendors, vendorsLoading, vendorsError, members, knownMembers, notifications,
       addProject, updateProject, setProjectStatus, setServiceProgress, addComment,
       addClient, addLocation,
-      addEnquiry, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry,
+      addEnquiry, updateEnquiry, addFollowUp, toggleFollowUp,
       addVendor, updateVendor, removeVendor,
       toggleMemberAccess, inviteMember, resendInvite, removeInvite, teamMode, teamLoading, teamError,
       markNotificationRead, markAllNotificationsRead,
@@ -520,7 +482,7 @@ export function AppDataProvider({ children }) {
       projects, projectsLoading, projectsError, clients, clientsLoading, clientsError, enquiries, enquiriesLoading, enquiriesError, vendors, vendorsLoading, vendorsError, members, knownMembers, notifications,
       addProject, updateProject, setProjectStatus, setServiceProgress, addComment,
       addClient, addLocation,
-      addEnquiry, updateEnquiry, addFollowUp, toggleFollowUp, convertEnquiry,
+      addEnquiry, updateEnquiry, addFollowUp, toggleFollowUp,
       addVendor, updateVendor, removeVendor,
       toggleMemberAccess, inviteMember, resendInvite, removeInvite, teamMode, teamLoading, teamError,
       markNotificationRead, markAllNotificationsRead,

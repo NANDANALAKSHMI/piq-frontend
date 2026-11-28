@@ -202,7 +202,6 @@ export default function ProjectsPage() {
               )}
             >
               {tab.label}
-              <span className={cn('rounded-full px-1.5 text-[11.5px] tabular-nums', active ? 'bg-on-gold/15' : 'bg-slate-100 text-muted')}>{tab.count}</span>
             </button>
           );
         })}
@@ -262,7 +261,7 @@ export default function ProjectsPage() {
           {groups.map(({ status, rows }) => {
             const limit = shown[status] ?? GROUP_PAGE;
             return (
-              <ProjectGroup key={status} status={status} count={rows.length} expanded={isExpanded(status)} onToggle={() => toggleGroup(status)}>
+              <ProjectGroup key={status} status={status} expanded={isExpanded(status)} onToggle={() => toggleGroup(status)}>
                 <ul className="divide-y divide-panel-line">
                   {rows.slice(0, limit).map((project) => (
                     <ProjectRow

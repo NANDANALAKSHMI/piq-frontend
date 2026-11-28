@@ -1,5 +1,6 @@
 import { arrayUnion, collection, doc, onSnapshot, runTransaction, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from './firestore.js';
+import { daysUntil } from '../utils/formatters.js';
 
 /**
  * Projects live in the Firestore `projects` collection — one document per project, keyed by its
@@ -24,6 +25,8 @@ function toService(raw) {
     subServiceIds: list(raw.subServiceIds),
     ownerId: raw.ownerId ?? '',
     progress: Number(raw.progress) || 0,
+    updatedAt: raw.updatedAt ?? null,
+    updatedBy: raw.updatedBy ?? '',
   };
 }
 
@@ -36,7 +39,8 @@ function toProject(snapshot) {
     clientId: data.clientId ?? '',
     locationId: data.locationId ?? '',
     priority: data.priority ?? 'Medium',
-    status: data.status ?? 'Upcoming',
+    // An "Upcoming" project whose start date has arrived is ongoing. Display only: the saved value is untouched.
+    status: (data.status ?? 'Upcoming') === 'Upcoming' && data.startDate && daysUntil(data.startDate) <= 0 ? 'In progress' : data.status ?? 'Upcoming',
     startDate: data.startDate ?? '',
     dueDate: data.dueDate ?? '',
     completedOn: data.completedOn ?? null,

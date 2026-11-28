@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { CalendarDays, ChevronDown, Eye, MapPin } from 'lucide-react';
+import { CalendarDays, ChevronDown, Eye, MapPin, Pencil } from 'lucide-react';
 import { AvatarStack } from '../../components/common/Avatar.jsx';
 import StatusMenu, { STATUS_META } from './StatusMenu.jsx';
 import { projectProgress, serviceNames } from '../../utils/projects.js';
@@ -50,7 +50,7 @@ export function ProjectRow({ project, lookups, saving, onStatusChange }) {
   return (
     <li
       onClick={open}
-      className="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] last:rounded-b-xl items-center gap-x-4 gap-y-3 px-4 py-3.5 transition-colors hover:bg-row-hover xl:grid-cols-[minmax(0,2.2fr)_minmax(0,1.1fr)_7.5rem_6.5rem_7.5rem_4.5rem_2rem]"
+      className="grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] last:rounded-b-xl items-center gap-x-4 gap-y-3 px-4 py-3.5 transition-colors hover:bg-row-hover xl:grid-cols-[minmax(0,2.2fr)_minmax(0,1.1fr)_7.5rem_6.5rem_7.5rem_4.5rem_4.5rem]"
     >
       {/* Name, ID and client */}
       <div className="min-w-0">
@@ -117,23 +117,20 @@ export function ProjectRow({ project, lookups, saving, onStatusChange }) {
         <AvatarStack people={lookups.membersFor(project.teamIds)} />
       </div>
       </div>
-      <Link
-        to={`/projects/${project.id}`}
-        aria-label={`View ${project.id}`}
-        title="View project"
-        className={cn(
-          'hit-44 hidden size-8 place-items-center rounded-lg border border-panel-line text-ink-soft transition-colors hover:border-gold hover:text-gold xl:order-6 xl:grid',
-          FOCUS,
-        )}
-      >
-        <Eye className="size-4" aria-hidden="true" />
-      </Link>
+      <div className="hidden items-center gap-2 xl:order-6 xl:flex">
+        <Link to={`/projects/${project.id}`} aria-label={`View ${project.id}`} title="View project" className={cn('hit-44 grid size-8 place-items-center rounded-lg border border-panel-line text-ink-soft transition-colors hover:border-gold hover:text-gold', FOCUS)}>
+          <Eye className="size-4" aria-hidden="true" />
+        </Link>
+        <Link to={`/projects/${project.id}/edit`} aria-label={`Edit ${project.id}`} title="Edit project" className={cn('hit-44 grid size-8 place-items-center rounded-lg border border-panel-line text-ink-soft transition-colors hover:border-gold hover:text-gold', FOCUS)}>
+          <Pencil className="size-4" aria-hidden="true" />
+        </Link>
+      </div>
     </li>
   );
 }
 
 /** Collapsible group of projects with one status, e.g. "Ongoing (12)". */
-export function ProjectGroup({ status, count, expanded, onToggle, children }) {
+export function ProjectGroup({ status, expanded, onToggle, children }) {
   const meta = STATUS_META[status] ?? { label: status, dot: 'bg-red-500' };
   const panelId = `group-${status.replace(/\s+/g, '-').toLowerCase()}`;
   return (
@@ -149,7 +146,6 @@ export function ProjectGroup({ status, count, expanded, onToggle, children }) {
           <ChevronDown className={cn('size-4 shrink-0 text-muted transition-transform', !expanded && '-rotate-90')} aria-hidden="true" />
           <span className={cn('size-2.5 rounded-full', meta.dot)} aria-hidden="true" />
           {meta.label}
-          <span className="font-medium text-muted">({count})</span>
         </button>
       </h2>
       {expanded && (

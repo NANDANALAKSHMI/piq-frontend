@@ -63,7 +63,7 @@ export function SelectControl({ options, placeholder, invalid, className = '', .
 export function Checkbox({ label, className, ...props }) {
   return (
     <label className={cn('inline-flex cursor-pointer items-center gap-2 text-[13px]', className)}>
-      <input type="checkbox" className="size-4 cursor-pointer accent-navy" {...props} />
+      <input type="checkbox" className="size-4 cursor-pointer accent-brand" {...props} />
       {label}
     </label>
   );
