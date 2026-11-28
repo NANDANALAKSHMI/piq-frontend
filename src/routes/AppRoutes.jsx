@@ -4,8 +4,10 @@ import DashboardLayout from '../components/layout/DashboardLayout.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import LoginPage from '../pages/LoginPage.jsx';
 
+import ComingSoonPage from '../pages/ComingSoonPage.jsx';
+
 // Pages are loaded on demand so the first screen stays fast.
-const DashboardPage = lazy(() => import('../pages/DashboardPage.jsx'));
+// Dashboard and Reports are parked as "Coming soon": pages/DashboardPage.jsx and ReportsPage.jsx are kept to switch back on.
 const ProjectsPage = lazy(() => import('../pages/ProjectsPage.jsx'));
 const ProjectDetailPage = lazy(() => import('../pages/ProjectDetailPage.jsx'));
 const AddProjectPage = lazy(() => import('../pages/AddProjectPage.jsx'));
@@ -23,7 +25,6 @@ const ServiceFormPage = lazy(() => import('../pages/ServiceFormPage.jsx'));
 const ServiceDetailPage = lazy(() => import('../pages/ServiceDetailPage.jsx'));
 const NotificationsPage = lazy(() => import('../pages/NotificationsPage.jsx'));
 const TeamPage = lazy(() => import('../pages/TeamPage.jsx'));
-const ReportsPage = lazy(() => import('../pages/ReportsPage.jsx'));
 const SettingsPage = lazy(() => import('../pages/SettingsPage.jsx'));
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage.jsx'));
 
@@ -66,7 +67,7 @@ export default function AppRoutes() {
           </RequireAuth>
         }
       >
-        <Route index element={page(DashboardPage)} />
+        <Route index element={<ComingSoonPage title="Dashboard" />} />
         <Route path="projects" element={page(ProjectsPage)} />
         <Route path="projects/new" element={page(AddProjectPage)} />
         <Route path="projects/:projectId" element={page(ProjectDetailPage)} />
@@ -89,7 +90,7 @@ export default function AppRoutes() {
         <Route path="categories" element={<Navigate to="/services" replace />} />
         <Route path="notifications" element={page(NotificationsPage)} />
         <Route path="team" element={page(TeamPage)} />
-        <Route path="reports" element={page(ReportsPage)} />
+        <Route path="reports" element={<ComingSoonPage title="Reports" />} />
         <Route path="settings" element={page(SettingsPage)} />
         <Route path="*" element={page(NotFoundPage)} />
       </Route>
